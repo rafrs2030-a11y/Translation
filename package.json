@@ -4,9 +4,11 @@
   "description": "Arab Research Publishing Platform - A digital platform for Arabic researchers to publish research globally",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:migrate": "node database/run-migrations.js",
+    "db:seed": "psql $DATABASE_URL -f database/seed.sql"
   },
   "keywords": [
     "research",
