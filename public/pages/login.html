@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - منصة نشر الأبحاث العربية</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/auth.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <!-- Auth Card -->
+        <div class="auth-card">
+            <!-- Logo & Title -->
+            <div class="auth-header">
+                <a href="/" class="auth-logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>منصة نشر الأبحاث العربية</span>
+                </a>
+                <h1>تسجيل الدخول</h1>
+                <p>مرحباً بعودتك! سجل دخولك للوصول إلى حسابك</p>
+            </div>
+
+            <!-- Alert Container -->
+            <div id="alert-container"></div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form">
+                <!-- Email -->
+                <div class="form-group">
+                    <label for="email" class="form-label required">البريد الإلكتروني</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-envelope"></i>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            class="form-input"
+                            placeholder="example@email.com"
+                            required
+                            autocomplete="email"
+                        >
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="form-group">
+                    <label for="password" class="form-label required">كلمة المرور</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-lock"></i>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            class="form-input"
+                            placeholder="••••••••"
+                            required
+                            autocomplete="current-password"
+                        >
+                        <button type="button" class="toggle-password" data-target="password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Remember Me & Forgot Password -->
+                <div class="form-options">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="remember" name="remember">
+                        <label for="remember">تذكرني</label>
+                    </div>
+                    <a href="/pages/forgot-password.html" class="link-primary">
+                        نسيت كلمة المرور؟
+                    </a>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary btn-large btn-block" id="submit-btn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>تسجيل الدخول</span>
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="auth-divider">
+                <span>أو</span>
+            </div>
+
+            <!-- Register Link -->
+            <div class="auth-footer">
+                <p>ليس لديك حساب؟</p>
+                <a href="/pages/register.html" class="btn btn-outline btn-block">
+                    <i class="fas fa-user-plus"></i>
+                    إنشاء حساب جديد
+                </a>
+            </div>
+
+            <!-- Back to Home -->
+            <div class="auth-back">
+                <a href="/">
+                    <i class="fas fa-arrow-right"></i>
+                    العودة للصفحة الرئيسية
+                </a>
+            </div>
+        </div>
+
+        <!-- Decorative Background -->
+        <div class="auth-bg">
+            <div class="auth-bg-circle circle-1"></div>
+            <div class="auth-bg-circle circle-2"></div>
+            <div class="auth-bg-circle circle-3"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="/js/main.js"></script>
+    <script type="module" src="/js/auth/login.js"></script>
+</body>
+</html>
+
