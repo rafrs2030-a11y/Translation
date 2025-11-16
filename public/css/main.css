@@ -3,12 +3,12 @@
    ======================================== */
 
 :root {
-    /* Colors */
-    --primary-color: #2563eb;
-    --primary-dark: #1e40af;
-    --primary-light: #3b82f6;
-    --secondary-color: #10b981;
-    --secondary-dark: #059669;
+    /* Colors - Based on Logo */
+    --primary-color: #3D5A94;
+    --primary-dark: #2A4070;
+    --primary-light: #5176B8;
+    --secondary-color: #E89A3C;
+    --secondary-dark: #D58520;
     
     --text-primary: #1f2937;
     --text-secondary: #6b7280;
@@ -25,9 +25,9 @@
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
     
     --success-color: #10b981;
-    --warning-color: #f59e0b;
+    --warning-color: #E89A3C;
     --error-color: #ef4444;
-    --info-color: #3b82f6;
+    --info-color: #3D5A94;
     
     /* Typography */
     --font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -258,7 +258,7 @@ section {
 .form-textarea:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 3px rgba(61, 90, 148, 0.1);
 }
 
 .form-input.error,
@@ -353,7 +353,7 @@ section {
 }
 
 .badge-primary {
-    background-color: rgba(37, 99, 235, 0.1);
+    background-color: rgba(61, 90, 148, 0.1);
     color: var(--primary-color);
 }
 
