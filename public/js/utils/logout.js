@@ -3,7 +3,7 @@
  * وظيفة تسجيل الخروج العامة
  */
 
-import { authStore } from '../stores/authStore.js';
+import authStore from '../stores/authStore.js';
 
 /**
  * Handle logout

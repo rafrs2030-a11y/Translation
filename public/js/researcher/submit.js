@@ -2,8 +2,8 @@
  * Research Submission Form JavaScript
  */
 
-import { submissionsStore } from '../stores/submissionsStore.js';
-import { authStore } from '../stores/authStore.js';
+import submissionsStore from '../stores/submissionsStore.js';
+import authStore from '../stores/authStore.js';
 
 // Form state
 let currentStep = 1;

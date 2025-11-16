@@ -3,8 +3,8 @@
  * إدارة المستخدمين للمسؤول
  */
 
-import { adminStore } from '../stores/adminStore.js';
-import { authStore } from '../stores/authStore.js';
+import adminStore from '../stores/adminStore.js';
+import authStore from '../stores/authStore.js';
 import { handleLogout } from '../utils/logout.js';
 import { supabase } from '../config/supabase.js';
 

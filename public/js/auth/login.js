@@ -2,7 +2,7 @@
  * Login Page JavaScript
  */
 
-import { authStore } from '../stores/authStore.js';
+import authStore from '../stores/authStore.js';
 
 // DOM Elements
 let form, submitBtn, alertContainer;

@@ -2,7 +2,7 @@
  * Forgot Password Page JavaScript
  */
 
-import { authStore } from '../stores/authStore.js';
+import authStore from '../stores/authStore.js';
 import { validateEmail } from '../utils/validators.js';
 
 // DOM Elements

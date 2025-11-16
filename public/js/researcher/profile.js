@@ -3,8 +3,8 @@
  * الملف الشخصي للباحث
  */
 
-import { authStore } from '../stores/authStore.js';
-import { submissionsStore } from '../stores/submissionsStore.js';
+import authStore from '../stores/authStore.js';
+import submissionsStore from '../stores/submissionsStore.js';
 import { handleLogout } from '../utils/logout.js';
 import { supabase } from '../config/supabase.js';
 

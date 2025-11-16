@@ -2,7 +2,7 @@
  * Register Page JavaScript
  */
 
-import { authStore } from '../stores/authStore.js';
+import authStore from '../stores/authStore.js';
 import { validateEmail, validatePassword, validatePhone, validateNationalId } from '../utils/validators.js';
 
 // DOM Elements

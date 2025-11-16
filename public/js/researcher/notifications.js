@@ -3,8 +3,8 @@
  * إشعارات الباحث
  */
 
-import { notificationsStore } from '../stores/notificationsStore.js';
-import { authStore } from '../stores/authStore.js';
+import notificationsStore from '../stores/notificationsStore.js';
+import authStore from '../stores/authStore.js';
 import { handleLogout } from '../utils/logout.js';
 
 // State
