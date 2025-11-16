@@ -11,15 +11,16 @@
     <!-- Styles -->
     <link rel="stylesheet" href="/css/main.css">
     <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/admin-enhanced.css">
     
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="dashboard-layout">
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <img src="/images/logo.png" alt="Research Assistant Logo" class="sidebar-logo">
+            <img src="/images/logo.png" alt="Research Assistant Logo" class="sidebar-logo" style="max-width: 120px;">
             <h2>لوحة المسؤول</h2>
         </div>
         
@@ -52,7 +53,7 @@
         </nav>
         
         <div class="sidebar-footer">
-            <button class="btn btn-ghost btn-block" id="logout-btn">
+            <button id="logout-btn">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>تسجيل الخروج</span>
             </button>
@@ -64,18 +65,20 @@
         <!-- Topbar -->
         <div class="topbar">
             <div class="topbar-left">
-                <button class="btn btn-ghost mobile-menu-btn">
+                <button class="mobile-menu-btn" id="mobile-menu-btn">
                     <i class="fas fa-bars"></i>
                 </button>
                 <h1>مرحباً، <span id="admin-name">المسؤول</span></h1>
             </div>
             <div class="topbar-actions">
-                <button class="btn btn-ghost icon-btn" id="notifications-btn">
+                <button class="topbar-icon-btn" id="notifications-btn">
                     <i class="fas fa-bell"></i>
                     <span class="notification-badge">3</span>
                 </button>
-                <div class="user-menu">
-                    <img src="/images/default-avatar.png" alt="Admin" class="user-avatar">
+                <div class="user-menu" id="user-menu-btn">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
                     <span id="user-email">admin@arabresearch.com</span>
                 </div>
             </div>

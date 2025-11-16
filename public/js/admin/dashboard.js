@@ -5,6 +5,7 @@
 
 import { adminStore } from '../../../stores/adminStore.js';
 import { authStore } from '../../../stores/authStore.js';
+import { handleLogout } from '../utils/logout.js';
 
 // DOM Elements
 let totalSubmissionsEl, pendingSubmissionsEl, approvedSubmissionsEl, rejectedSubmissionsEl;
@@ -63,7 +64,10 @@ function initElements() {
  */
 function initEventListeners() {
     // Logout
-    document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
     
     // Notifications
     document.getElementById('notifications-btn')?.addEventListener('click', () => {
@@ -71,7 +75,10 @@ function initEventListeners() {
     });
     
     // Mobile menu
-    document.querySelector('.mobile-menu-btn')?.addEventListener('click', toggleMobileMenu);
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+    }
     
     // Chart period selector
     document.getElementById('chart-period')?.addEventListener('change', (e) => {
@@ -267,25 +274,13 @@ async function loadChartData(period = 'month') {
 }
 
 /**
- * Handle logout
- */
-async function handleLogout() {
-    if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-        try {
-            await authStore.logout();
-            window.location.href = '/pages/login.html';
-        } catch (error) {
-            console.error('Logout error:', error);
-            alert('حدث خطأ أثناء تسجيل الخروج');
-        }
-    }
-}
-
-/**
  * Toggle mobile menu
  */
 function toggleMobileMenu() {
-    document.querySelector('.sidebar')?.classList.toggle('active');
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('active');
+    }
 }
 
 /**

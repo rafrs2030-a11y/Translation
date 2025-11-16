@@ -5,6 +5,7 @@
 
 import { adminStore } from '../../../stores/adminStore.js';
 import { authStore } from '../../../stores/authStore.js';
+import { handleLogout } from '../utils/logout.js';
 
 // State
 let currentPage = 1;
@@ -66,6 +67,20 @@ function initElements() {
  * Initialize event listeners
  */
 function initEventListeners() {
+    // Logout
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+    
+    // Mobile menu
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            document.getElementById('sidebar')?.classList.toggle('active');
+        });
+    }
+    
     // Filters
     statusFilter?.addEventListener('change', handleFilterChange);
     categoryFilter?.addEventListener('change', handleFilterChange);
