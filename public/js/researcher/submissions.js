@@ -2,9 +2,9 @@
  * Researcher Submissions List JavaScript
  */
 
-import { authStore } from '../../../stores/authStore.js';
-import { submissionsStore } from '../../../stores/submissionsStore.js';
-import { formatDate, formatRelativeTime } from '../../../utils/helpers.js';
+import { authStore } from '../stores/authStore.js';
+import { submissionsStore } from '../stores/submissionsStore.js';
+import { formatDate, formatRelativeTime } from '../utils/helpers.js';
 
 // State
 let currentPage = 1;

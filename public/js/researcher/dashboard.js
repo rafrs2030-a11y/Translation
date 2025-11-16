@@ -2,10 +2,10 @@
  * Researcher Dashboard JavaScript
  */
 
-import { authStore } from '../../../stores/authStore.js';
-import { submissionsStore } from '../../../stores/submissionsStore.js';
-import { notificationsStore } from '../../../stores/notificationsStore.js';
-import { formatDate, formatRelativeTime } from '../../../utils/helpers.js';
+import { authStore } from '../stores/authStore.js';
+import { submissionsStore } from '../stores/submissionsStore.js';
+import { notificationsStore } from '../stores/notificationsStore.js';
+import { formatDate, formatRelativeTime } from '../utils/helpers.js';
 import { handleLogout } from '../utils/logout.js';
 
 // DOM Elements

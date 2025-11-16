@@ -1,9 +1,13 @@
 /**
- * Auth Store - Browser Version
+ * Auth Store
  * إدارة حالة المصادقة والمستخدم الحالي
  */
 
-import { supabase } from '../config/supabase.js';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 class AuthStore {
   constructor() {
@@ -32,8 +36,6 @@ class AuthStore {
 
       if (session) {
         await this.setSession(session);
-      } else {
-        this.setState({ loading: false });
       }
 
       // الاستماع لتغييرات المصادقة
@@ -42,7 +44,6 @@ class AuthStore {
       });
 
     } catch (error) {
-      console.error('Auth initialization error:', error);
       this.setState({ error: error.message, loading: false });
     }
   }
@@ -52,31 +53,25 @@ class AuthStore {
    */
   async setSession(session) {
     if (session) {
-      try {
-        const { data: userData, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
 
-        if (error) {
-          console.error('Error fetching user data:', error);
-          this.setState({ error: error.message, loading: false });
-          return;
-        }
-
-        this.setState({
-          user: userData,
-          session,
-          isAuthenticated: true,
-          role: userData.role,
-          loading: false,
-          error: null,
-        });
-      } catch (error) {
-        console.error('Set session error:', error);
+      if (error) {
         this.setState({ error: error.message, loading: false });
+        return;
       }
+
+      this.setState({
+        user: userData,
+        session,
+        isAuthenticated: true,
+        role: userData.role,
+        loading: false,
+        error: null,
+      });
     } else {
       this.setState({
         user: null,
@@ -151,10 +146,9 @@ class AuthStore {
       if (error) throw error;
 
       this.setState({ loading: false });
-      return { success: true, user: this.state.user };
+      return { success: true, data };
 
     } catch (error) {
-      console.error('Login error:', error);
       this.setState({ error: error.message, loading: false });
       return { success: false, error: error.message };
     }
@@ -231,6 +225,37 @@ class AuthStore {
   }
 
   /**
+   * التحقق من البريد الإلكتروني
+   */
+  async verifyEmail(token) {
+    this.setState({ loading: true, error: null });
+
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: token,
+        type: 'email',
+      });
+
+      if (error) throw error;
+
+      // تحديث حالة التحقق في قاعدة البيانات
+      if (this.state.user) {
+        await supabase
+          .from('users')
+          .update({ email_verified: true })
+          .eq('id', this.state.user.id);
+      }
+
+      this.setState({ loading: false });
+      return { success: true };
+
+    } catch (error) {
+      this.setState({ error: error.message, loading: false });
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * تحديث الحالة
    */
   setState(newState) {
@@ -285,6 +310,7 @@ class AuthStore {
 }
 
 // إنشاء نسخة واحدة (Singleton)
-export const authStore = new AuthStore();
+const authStore = new AuthStore();
+
 export default authStore;
 
