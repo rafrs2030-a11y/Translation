@@ -125,7 +125,8 @@ async function loadStatistics() {
  */
 async function loadPendingSubmissions() {
     try {
-        const submissions = await adminStore.fetchSubmissions({ status: 'pending', limit: 5 });
+        const result = await adminStore.fetchSubmissions({ status: 'pending', limit: 5 });
+        const submissions = result?.data || [];
         
         if (!submissions || submissions.length === 0) {
             pendingListEl.innerHTML = `

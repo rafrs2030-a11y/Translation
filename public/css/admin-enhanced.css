@@ -760,6 +760,106 @@
 }
 
 /* ========================================
+   Sidebar Overlay for Mobile
+   ======================================== */
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+.sidebar.active {
+    transform: translateX(0);
+}
+
+/* ========================================
+   Mobile Menu Button
+   ======================================== */
+
+.mobile-menu-btn {
+    display: none;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-btn:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .sidebar {
+        position: fixed;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(100%);
+        z-index: 999;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
+/* ========================================
+   Developer Credit
+   ======================================== */
+
+.developer-credit {
+    text-align: center;
+    padding: var(--spacing-xl) 0;
+    margin-top: var(--spacing-2xl);
+    border-top: 1px solid var(--border-color);
+}
+
+.developer-credit a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+}
+
+.developer-credit a:hover {
+    color: var(--primary-color);
+    background: var(--bg-secondary);
+}
+
+.developer-credit a::before {
+    content: '👨‍💻';
+    font-size: 1.25rem;
+}
+
+/* ========================================
    Responsive Enhancements
    ======================================== */
 
@@ -776,6 +876,46 @@
     
     .action-card i {
         font-size: 2rem;
+    }
+    
+    .topbar-left h1 {
+        font-size: 1.125rem;
+    }
+    
+    .user-menu span {
+        display: none;
+    }
+    
+    .topbar-actions {
+        gap: var(--spacing-sm);
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid.grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+    }
+    
+    .submission-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .submission-actions {
+        width: 100%;
+        justify-content: space-between;
     }
 }
 

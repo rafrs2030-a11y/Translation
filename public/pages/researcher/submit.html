@@ -20,39 +20,36 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <a href="/" class="sidebar-logo">
-                <img src="/images/logo.png" alt="Research Assistant Logo" class="sidebar-logo-img">
-            </a>
-            <button class="sidebar-toggle" id="sidebar-toggle">
-                <i class="fas fa-times"></i>
-            </button>
+            <img src="/images/logo.png" alt="Research Assistant Logo" class="sidebar-logo" style="max-width: 120px;">
+            <h2>لوحة الباحث</h2>
         </div>
-
+        
         <nav class="sidebar-nav">
-            <a href="/pages/researcher/dashboard.html" class="nav-link">
+            <a href="/pages/researcher/dashboard.html" class="nav-item">
                 <i class="fas fa-home"></i>
                 <span>الرئيسية</span>
             </a>
-            <a href="/pages/researcher/submissions.html" class="nav-link">
-                <i class="fas fa-file-alt"></i>
+            <a href="/pages/researcher/submit.html" class="nav-item active">
+                <i class="fas fa-plus-circle"></i>
+                <span>تقديم بحث</span>
+            </a>
+            <a href="/pages/researcher/submissions.html" class="nav-item">
+                <i class="fas fa-folder-open"></i>
                 <span>طلباتي</span>
             </a>
-            <a href="/pages/researcher/submit.html" class="nav-link active">
-                <i class="fas fa-plus-circle"></i>
-                <span>تقديم بحث جديد</span>
-            </a>
-            <a href="/pages/researcher/notifications.html" class="nav-link">
+            <a href="/pages/researcher/notifications.html" class="nav-item">
                 <i class="fas fa-bell"></i>
                 <span>الإشعارات</span>
+                <span class="badge" id="sidebar-notification-count" style="display: none;">0</span>
             </a>
-            <a href="/pages/researcher/profile.html" class="nav-link">
+            <a href="/pages/researcher/profile.html" class="nav-item">
                 <i class="fas fa-user"></i>
                 <span>الملف الشخصي</span>
             </a>
         </nav>
-
+        
         <div class="sidebar-footer">
-            <button class="btn btn-ghost btn-block" id="logout-btn">
+            <button id="logout-btn">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>تسجيل الخروج</span>
             </button>
@@ -308,6 +305,9 @@
         </div>
     </main>
 
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <!-- Scripts -->
     <script type="module" src="/js/main.js"></script>
     <script type="module" src="/js/researcher/submit.js"></script>

@@ -40,11 +40,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Request logging
 app.use(requestLogger);
 
-// Rate limiting
-app.use(rateLimiter);
-
-// Serve static files
+// Serve static files (قبل Rate Limiting)
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Rate limiting (فقط على API routes)
+app.use('/api', rateLimiter);
 
 // ============================================
 // API ROUTES

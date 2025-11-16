@@ -237,6 +237,57 @@ class SubmissionsStore {
   /**
    * رفع ملف
    */
+  /**
+   * رفع ملف قبل إنشاء البحث (بدون submissionId)
+   */
+  async uploadFileBeforeSubmission(file) {
+    this.setState({ loading: true, error: null });
+
+    try {
+      const user = authStore.getState().user;
+      if (!user) throw new Error('المستخدم غير مسجل الدخول');
+
+      // إنشاء مسار الملف مع timestamp
+      const fileExt = file.name.split('.').pop();
+      const timestamp = Date.now();
+      const fileName = `${timestamp}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const filePath = `${user.id}/temp/${fileName}`;
+
+      // رفع الملف إلى Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('research-files')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      // الحصول على رابط الملف
+      const { data: urlData } = supabase.storage
+        .from('research-files')
+        .getPublicUrl(filePath);
+
+      // Validate that we got a valid URL
+      if (!urlData || !urlData.publicUrl) {
+        throw new Error('فشل الحصول على رابط الملف من التخزين');
+      }
+
+      this.setState({ loading: false });
+      return {
+        success: true,
+        url: urlData.publicUrl,
+        fileName: file.name,
+        fileSize: file.size,
+      };
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      this.setState({ error: error.message, loading: false });
+      return { success: false, error: error.message };
+    }
+  }
+
   async uploadFile(file, submissionId) {
     this.setState({ loading: true, error: null });
 
@@ -260,6 +311,11 @@ class SubmissionsStore {
       const { data: urlData } = supabase.storage
         .from('research-files')
         .getPublicUrl(filePath);
+
+      // Validate that we got a valid URL
+      if (!urlData || !urlData.publicUrl) {
+        throw new Error('فشل الحصول على رابط الملف من التخزين');
+      }
 
       this.setState({ loading: false });
       return {

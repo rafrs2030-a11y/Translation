@@ -468,20 +468,6 @@ function showSuccess(message) {
 }
 
 /**
- * Handle logout
- */
-async function handleLogout() {
-    if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-        try {
-            await authStore.logout();
-            window.location.href = '/pages/login.html';
-        } catch (error) {
-            console.error('Logout error:', error);
-        }
-    }
-}
-
-/**
  * Toggle mobile menu
  */
 function toggleMobileMenu() {

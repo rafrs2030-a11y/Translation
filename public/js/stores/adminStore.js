@@ -53,8 +53,11 @@ class AdminStore {
    * التحقق من صلاحيات المسؤول
    */
   checkAdminAccess() {
-    const { role } = authStore.getState();
-    if (role !== 'admin') {
+    const user = authStore.getState().user;
+    if (!user) {
+      throw new Error('يجب تسجيل الدخول أولاً');
+    }
+    if (user.role !== 'admin' && user.role !== 'super_admin') {
       throw new Error('غير مصرح لك بالوصول إلى هذه الصفحة');
     }
   }
@@ -63,10 +66,24 @@ class AdminStore {
    * جلب جميع الطلبات
    */
   async fetchAllSubmissions() {
+    return await this.fetchSubmissions({});
+  }
+
+  /**
+   * جلب الطلبات مع معاملات مخصصة
+   */
+  async fetchSubmissions(params = {}) {
     this.setState({ loading: true, error: null });
 
     try {
       this.checkAdminAccess();
+
+      // دمج المعاملات مع الحالة الحالية
+      const page = params.page || this.state.pagination.page;
+      const limit = params.limit || this.state.pagination.pageSize;
+      const status = params.status || this.state.filters.status;
+      const category = params.category || this.state.filters.category;
+      const search = params.search || this.state.filters.searchTerm;
 
       let query = supabase
         .from('submissions')
@@ -76,30 +93,50 @@ class AdminStore {
         `, { count: 'exact' })
         .eq('is_draft', false);
 
-      // تطبيق الفلاتر
-      query = this.applyFilters(query);
+      // تطبيق الفلاتر من المعاملات
+      if (status) query = query.eq('status', status);
+      if (category) query = query.eq('category', category);
+      if (search) {
+        query = query.or(`reference_number.ilike.%${search}%,full_name.ilike.%${search}%,email.ilike.%${search}%`);
+      }
 
       // تطبيق الترتيب
       const { field, order } = this.state.sortBy;
       query = query.order(field, { ascending: order === 'asc' });
 
       // تطبيق Pagination
-      const { page, pageSize } = this.state.pagination;
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
       query = query.range(from, to);
 
       const { data, error, count } = await query;
 
       if (error) throw error;
 
+      const totalPages = Math.ceil(count / limit);
+
       this.setState({
         allSubmissions: data,
         loading: false,
-        pagination: { ...this.state.pagination, totalCount: count },
+        pagination: {
+          page,
+          pageSize: limit,
+          totalCount: count,
+          total: count,
+          totalPages,
+        },
       });
 
-      return { success: true, data };
+      return {
+        success: true,
+        data,
+        pagination: {
+          page,
+          limit,
+          total: count,
+          totalPages,
+        },
+      };
 
     } catch (error) {
       this.setState({ error: error.message, loading: false });
@@ -463,6 +500,93 @@ class AdminStore {
     } catch (error) {
       this.setState({ error: error.message, loading: false });
       return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * الحصول على الإحصائيات (wrapper method)
+   */
+  async getStatistics() {
+    await this.fetchStats();
+    return this.state.stats;
+  }
+
+  /**
+   * جلب سجل الأنشطة (Audit Log)
+   */
+  async getAuditLog(params = {}) {
+    try {
+      this.checkAdminAccess();
+
+      const limit = params.limit || 50;
+      
+      const { data, error } = await supabase
+        .from('audit_log')
+        .select(`
+          *,
+          admin:users(username, email)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+
+      return data || [];
+
+    } catch (error) {
+      console.error('Error fetching audit log:', error);
+      return [];
+    }
+  }
+
+  /**
+   * الحصول على بيانات الرسوم البيانية
+   */
+  async getChartData() {
+    try {
+      this.checkAdminAccess();
+
+      // جلب الطلبات من آخر 30 يوم
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { data: submissions, error } = await supabase
+        .from('submissions')
+        .select('created_at, status')
+        .eq('is_draft', false)
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      // تجميع البيانات حسب اليوم
+      const dailyData = {};
+      submissions.forEach(submission => {
+        const date = new Date(submission.created_at).toLocaleDateString('ar-SA');
+        if (!dailyData[date]) {
+          dailyData[date] = { total: 0, pending: 0, approved: 0, rejected: 0 };
+        }
+        dailyData[date].total++;
+        if (submission.status === 'pending') dailyData[date].pending++;
+        if (submission.status === 'approved') dailyData[date].approved++;
+        if (submission.status === 'rejected') dailyData[date].rejected++;
+      });
+
+      return {
+        labels: Object.keys(dailyData),
+        datasets: [
+          {
+            label: 'إجمالي الطلبات',
+            data: Object.values(dailyData).map(d => d.total),
+            borderColor: '#3D5A94',
+            backgroundColor: 'rgba(61, 90, 148, 0.1)',
+          },
+        ],
+      };
+
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+      return { labels: [], datasets: [] };
     }
   }
 

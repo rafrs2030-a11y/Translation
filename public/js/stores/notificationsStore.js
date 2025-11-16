@@ -104,35 +104,76 @@ class NotificationsStore {
   /**
    * جلب جميع الإشعارات
    */
-  async fetchNotifications(limit = 50) {
+  async fetchNotifications(filters = {}) {
     this.setState({ loading: true, error: null });
 
     try {
       const user = authStore.getState().user;
       if (!user) throw new Error('المستخدم غير مسجل الدخول');
 
-      const { data, error } = await supabase
+      // Build query
+      let query = supabase
         .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
+        .select('*, submission:submissions(reference_number)', { count: 'exact' })
+        .eq('user_id', user.id);
+
+      // Apply filters
+      if (filters.is_read !== undefined) {
+        query = query.eq('is_read', filters.is_read);
+      }
+
+      if (filters.type) {
+        query = query.eq('type', filters.type);
+      }
+
+      // Pagination
+      const page = filters.page || 1;
+      const limit = filters.limit || 20;
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+
+      query = query
         .order('created_at', { ascending: false })
-        .limit(limit);
+        .range(from, to);
+
+      const { data, error, count } = await query;
 
       if (error) throw error;
 
-      const unreadCount = data.filter(n => !n.is_read).length;
+      // Calculate counts
+      const { count: totalCount } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      const { count: unreadCount } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+
+      const hasMore = count && (from + data.length) < count;
 
       this.setState({
-        notifications: data,
-        unreadCount,
+        notifications: data || [],
+        unreadCount: unreadCount || 0,
         loading: false,
       });
 
-      return { success: true, data };
+      return { 
+        success: true, 
+        data: data || [],
+        counts: {
+          total: totalCount || 0,
+          unread: unreadCount || 0
+        },
+        hasMore
+      };
 
     } catch (error) {
+      console.error('Error fetching notifications:', error);
       this.setState({ error: error.message, loading: false });
-      return { success: false, error: error.message };
+      return { success: false, error: error.message, data: [], counts: { total: 0, unread: 0 }, hasMore: false };
     }
   }
 
@@ -251,6 +292,59 @@ class NotificationsStore {
       this.setState({ error: error.message, loading: false });
       return { success: false, error: error.message };
     }
+  }
+
+  /**
+   * حذف جميع الإشعارات (alias)
+   */
+  async clearAll() {
+    return await this.deleteAllNotifications();
+  }
+
+  /**
+   * الحصول على إشعار واحد
+   */
+  async getNotification(notificationId) {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*, submission:submissions(reference_number)')
+        .eq('id', notificationId)
+        .single();
+
+      if (error) throw error;
+
+      return data;
+
+    } catch (error) {
+      console.error('Error getting notification:', error);
+      return null;
+    }
+  }
+
+  /**
+   * الاشتراك في الإشعارات (callback based)
+   */
+  subscribeToNotifications(callback) {
+    const user = authStore.getState().user;
+    if (!user) return;
+
+    const subscription = supabase
+      .channel('notifications_listener')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`,
+      }, (payload) => {
+        callback(payload.new);
+        this.handleNewNotification(payload.new);
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }
 
   /**

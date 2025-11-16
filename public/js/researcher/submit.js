@@ -343,15 +343,25 @@ async function handleSubmit(e) {
     setLoading(true);
     
     try {
+        // Validate file is uploaded
+        if (!uploadedFile) {
+            showAlert('يجب رفع ملف البحث', 'error');
+            setLoading(false);
+            return;
+        }
+
         // Upload file first
         let fileUrl = null;
-        if (uploadedFile) {
-            const uploadResult = await submissionsStore.uploadFile(uploadedFile);
-            if (uploadResult.success) {
-                fileUrl = uploadResult.url;
-            } else {
-                throw new Error('فشل رفع الملف');
-            }
+        const uploadResult = await submissionsStore.uploadFileBeforeSubmission(uploadedFile);
+        if (uploadResult.success && uploadResult.url) {
+            fileUrl = uploadResult.url;
+        } else {
+            throw new Error(uploadResult.error || 'فشل رفع الملف');
+        }
+        
+        // Validate that fileUrl is not null before proceeding
+        if (!fileUrl) {
+            throw new Error('فشل الحصول على رابط الملف. يرجى المحاولة مرة أخرى');
         }
         
         // Prepare submission data

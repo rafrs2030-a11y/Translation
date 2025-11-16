@@ -66,9 +66,7 @@ function initEventListeners() {
     // Mobile menu
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     if (mobileMenuBtn) {
-        mobileMenuBtn.addEventListener('click', () => {
-            document.getElementById('sidebar')?.classList.toggle('active');
-        });
+        mobileMenuBtn.addEventListener('click', toggleMobileMenu);
     }
     
     // Filters
@@ -87,12 +85,6 @@ function initEventListeners() {
     
     // Export
     document.getElementById('export-btn')?.addEventListener('click', handleExport);
-    
-    // Logout
-    document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
-    
-    // Mobile menu
-    document.querySelector('.mobile-menu-btn')?.addEventListener('click', toggleMobileMenu);
 }
 
 /**
@@ -337,21 +329,6 @@ async function handleExport() {
     } catch (error) {
         console.error('Export error:', error);
         showError('حدث خطأ أثناء تصدير البيانات');
-    }
-}
-
-/**
- * Handle logout
- */
-async function handleLogout() {
-    if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-        try {
-            await authStore.logout();
-            window.location.href = '/pages/login.html';
-        } catch (error) {
-            console.error('Logout error:', error);
-            alert('حدث خطأ أثناء تسجيل الخروج');
-        }
     }
 }
 
