@@ -7,6 +7,7 @@ import adminStore from '../stores/adminStore.js';
 import authStore from '../stores/authStore.js';
 import { handleLogout } from '../utils/logout.js';
 import { supabase } from '../config/supabase.js';
+import { requireAdmin } from '../utils/auth-guard.js';
 
 // State
 let allUsers = [];
@@ -23,26 +24,13 @@ let addUserForm, editUserForm;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    if (!await checkAuth()) return;
+    const user = await requireAdmin();
+    if (!user) return;
     
     initElements();
     initEventListeners();
     await loadUsers();
 });
-
-/**
- * Check authentication
- */
-async function checkAuth() {
-    const isLoggedIn = await authStore.isLoggedIn();
-    const user = authStore.state.user;
-    
-    if (!isLoggedIn || user?.role !== 'admin') {
-        window.location.href = '/pages/login.html';
-        return false;
-    }
-    return true;
-}
 
 /**
  * Initialize DOM elements

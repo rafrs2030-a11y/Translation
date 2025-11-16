@@ -3,15 +3,17 @@
  */
 
 import authStore from '../stores/authStore.js';
+import { guestOnly } from '../utils/auth-guard.js';
 
 // DOM Elements
 let form, submitBtn, alertContainer;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
+    await guestOnly(); // Redirect if already logged in
+    
     initElements();
     initEventListeners();
-    checkIfAlreadyLoggedIn();
 });
 
 /**
@@ -46,25 +48,6 @@ function initEventListeners() {
 }
 
 /**
- * Check if user is already logged in
- */
-async function checkIfAlreadyLoggedIn() {
-    try {
-        const isLoggedIn = await authStore.isLoggedIn();
-        if (isLoggedIn) {
-            const user = authStore.state.user;
-            if (user?.role === 'admin') {
-                window.location.href = '/pages/admin/dashboard.html';
-            } else {
-                window.location.href = '/pages/researcher/dashboard.html';
-            }
-        }
-    } catch (error) {
-        console.error('Error checking login status:', error);
-    }
-}
-
-/**
  * Handle form submission
  */
 async function handleSubmit(e) {
@@ -94,9 +77,12 @@ async function handleSubmit(e) {
             // Show success message
             showAlert('تم تسجيل الدخول بنجاح! جاري التحويل...', 'success');
             
+            // Get user data
+            const user = await authStore.getCurrentUser();
+            
             // Redirect based on role
             setTimeout(() => {
-                if (result.user.role === 'admin') {
+                if (user?.role === 'admin') {
                     window.location.href = '/pages/admin/dashboard.html';
                 } else {
                     window.location.href = '/pages/researcher/dashboard.html';

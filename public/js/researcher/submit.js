@@ -4,6 +4,7 @@
 
 import submissionsStore from '../stores/submissionsStore.js';
 import authStore from '../stores/authStore.js';
+import { requireResearcher } from '../utils/auth-guard.js';
 
 // Form state
 let currentStep = 1;
@@ -17,10 +18,16 @@ let alertContainer;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    if (!await requireAuth()) return;
+    const user = await requireResearcher();
+    if (!user) return;
     
     initElements();
     initEventListeners();
+    
+    // Pre-fill user data before loading draft
+    await prefillUserData(user);
+    
+    // Load draft after prefilling (draft will override prefilled data if exists)
     loadDraftIfExists();
 });
 
@@ -449,6 +456,64 @@ function loadDraftIfExists() {
 }
 
 /**
+ * Pre-fill form with user data from profile
+ */
+async function prefillUserData(user) {
+    try {
+        // Get current user data from authStore
+        const currentUser = await authStore.getCurrentUser();
+        
+        if (!currentUser) {
+            console.log('No user data available for prefilling');
+            return;
+        }
+        
+        // Pre-fill basic information fields
+        const fullNameInput = document.getElementById('full_name');
+        const emailInput = document.getElementById('email');
+        const idNumberInput = document.getElementById('id_number');
+        const genderInput = document.getElementById('gender');
+        const countryInput = document.getElementById('country');
+        
+        // Fill username/full_name
+        if (fullNameInput && currentUser.username && !fullNameInput.value) {
+            fullNameInput.value = currentUser.username;
+            formData.full_name = currentUser.username;
+        }
+        
+        // Fill email
+        if (emailInput && currentUser.email && !emailInput.value) {
+            emailInput.value = currentUser.email;
+            formData.email = currentUser.email;
+        }
+        
+        // Fill national_id
+        if (idNumberInput && currentUser.national_id && !idNumberInput.value) {
+            idNumberInput.value = currentUser.national_id;
+            formData.id_number = currentUser.national_id;
+        }
+        
+        // Fill gender if available
+        if (genderInput && currentUser.gender && !genderInput.value) {
+            genderInput.value = currentUser.gender;
+            formData.gender = currentUser.gender;
+        }
+        
+        // Fill country if available
+        if (countryInput && currentUser.country && !countryInput.value) {
+            countryInput.value = currentUser.country;
+            formData.country = currentUser.country;
+        }
+        
+        console.log('User data prefilled successfully');
+    } catch (error) {
+        console.error('Error prefilling user data:', error);
+        // Don't show error to user, just log it
+        // The form will remain empty and user can fill it manually
+    }
+}
+
+/**
  * Helper functions
  */
 
@@ -529,14 +594,5 @@ function getResearchTypeLabel(type) {
         'book': 'كتاب'
     };
     return labels[type] || type;
-}
-
-async function requireAuth() {
-    const isLoggedIn = await authStore.isLoggedIn();
-    if (!isLoggedIn) {
-        window.location.href = '/pages/login.html';
-        return false;
-    }
-    return true;
 }
 

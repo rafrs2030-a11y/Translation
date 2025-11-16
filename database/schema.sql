@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   email_verified BOOLEAN DEFAULT FALSE,
   role VARCHAR(20) DEFAULT 'researcher' CHECK (role IN ('researcher', 'admin', 'super_admin')),
+  gender VARCHAR(10) CHECK (gender IN ('ذكر', 'أنثى')),
+  country VARCHAR(100),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -26,6 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_email_verified ON users(email_verified);
+CREATE INDEX idx_users_country ON users(country);
 
 -- ============================================
 -- 2. SUBMISSIONS TABLE

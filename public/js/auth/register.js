@@ -4,13 +4,16 @@
 
 import authStore from '../stores/authStore.js';
 import { validateEmail, validatePassword, validatePhone, validateNationalId } from '../utils/validators.js';
+import { guestOnly } from '../utils/auth-guard.js';
 
 // DOM Elements
 let form, submitBtn, alertContainer, passwordInput, confirmPasswordInput;
 let strengthBar, strengthText;
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await guestOnly(); // Redirect if already logged in
+    
     initElements();
     initEventListeners();
 });
@@ -89,7 +92,9 @@ async function handleSubmit(e) {
             password: formData.password,
             full_name: formData.full_name,
             phone: formData.phone,
-            national_id: formData.national_id
+            national_id: formData.national_id,
+            gender: formData.gender,
+            country: formData.country
         });
         
         if (result.success) {
@@ -144,6 +149,18 @@ function validateForm(data) {
     const idValidation = validateNationalId(data.national_id);
     if (!idValidation.valid) {
         showFieldError('national_id', idValidation.error);
+        isValid = false;
+    }
+    
+    // Validate gender
+    if (!data.gender) {
+        showFieldError('gender', 'يرجى اختيار الجنس');
+        isValid = false;
+    }
+    
+    // Validate country
+    if (!data.country) {
+        showFieldError('country', 'يرجى اختيار الدولة');
         isValid = false;
     }
     

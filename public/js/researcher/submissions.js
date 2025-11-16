@@ -5,6 +5,7 @@
 import authStore from '../stores/authStore.js';
 import submissionsStore from '../stores/submissionsStore.js';
 import { formatDate, formatRelativeTime } from '../utils/helpers.js';
+import { requireResearcher } from '../utils/auth-guard.js';
 
 // State
 let currentPage = 1;
@@ -23,7 +24,8 @@ let prevPageBtn, nextPageBtn, pageInfo;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    if (!await requireAuth()) return;
+    const user = await requireResearcher();
+    if (!user) return;
     
     initElements();
     initEventListeners();
@@ -297,14 +299,5 @@ function getResearchTypeLabel(type) {
         'book': 'كتاب'
     };
     return labels[type] || type;
-}
-
-async function requireAuth() {
-    const isLoggedIn = await authStore.isLoggedIn();
-    if (!isLoggedIn) {
-        window.location.href = '/pages/login.html';
-        return false;
-    }
-    return true;
 }
 

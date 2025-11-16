@@ -6,6 +6,7 @@
 import adminStore from '../stores/adminStore.js';
 import authStore from '../stores/authStore.js';
 import { handleLogout } from '../utils/logout.js';
+import { requireAdmin } from '../utils/auth-guard.js';
 
 // State
 let currentPage = 1;
@@ -24,24 +25,13 @@ let actionModal, actionForm, newStatusSelect, adminCommentTextarea;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    await checkAuth();
+    const user = await requireAdmin();
+    if (!user) return;
+    
     initElements();
     initEventListeners();
     await loadSubmissions();
 });
-
-/**
- * Check if user is authenticated and is admin
- */
-async function checkAuth() {
-    const isLoggedIn = await authStore.isLoggedIn();
-    const user = authStore.state.user;
-    
-    if (!isLoggedIn || user?.role !== 'admin') {
-        window.location.href = '/pages/login.html';
-        return;
-    }
-}
 
 /**
  * Initialize DOM elements

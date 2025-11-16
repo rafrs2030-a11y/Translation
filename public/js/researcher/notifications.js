@@ -6,6 +6,7 @@
 import notificationsStore from '../stores/notificationsStore.js';
 import authStore from '../stores/authStore.js';
 import { handleLogout } from '../utils/logout.js';
+import { requireResearcher } from '../utils/auth-guard.js';
 
 // State
 let currentFilter = 'all';
@@ -19,24 +20,14 @@ let counters = {};
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    await checkAuth();
+    const user = await requireResearcher();
+    if (!user) return;
+    
     initElements();
     initEventListeners();
     await loadNotifications();
     subscribeToRealtime();
 });
-
-/**
- * Check if user is authenticated
- */
-async function checkAuth() {
-    const isLoggedIn = await authStore.isLoggedIn();
-    
-    if (!isLoggedIn) {
-        window.location.href = '/pages/login.html';
-        return;
-    }
-}
 
 /**
  * Initialize DOM elements

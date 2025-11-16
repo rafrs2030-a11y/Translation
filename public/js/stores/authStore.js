@@ -86,7 +86,7 @@ class AuthStore {
     this.setState({ loading: true, error: null });
 
     try {
-      const { username, email, national_id, phone, password } = userData;
+      const { username, email, national_id, phone, password, gender, country } = userData;
 
       // إنشاء حساب في Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -97,6 +97,8 @@ class AuthStore {
             username,
             national_id,
             phone,
+            gender,
+            country,
           }
         }
       });
@@ -112,6 +114,8 @@ class AuthStore {
           email,
           national_id,
           phone,
+          gender,
+          country,
           role: 'researcher',
           email_verified: false,
         }]);
