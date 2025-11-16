@@ -48,6 +48,11 @@
     --spacing-xl: 2rem;
     --spacing-2xl: 3rem;
     
+    /* Developer Credit */
+    --developer-bg: #f8f9fa;
+    --developer-text: #6b7280;
+    --developer-link: #3D5A94;
+    
     /* Border Radius */
     --radius-sm: 0.25rem;
     --radius-md: 0.5rem;
@@ -508,5 +513,55 @@ section {
         --font-size-4xl: 1.5rem;
         --font-size-3xl: 1.25rem;
     }
+}
+
+/* ========================================
+   Developer Credit
+   ======================================== */
+
+.developer-credit {
+    background: var(--developer-bg);
+    padding: 1rem;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+    margin-top: auto;
+}
+
+.developer-credit a {
+    color: var(--developer-text);
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.developer-credit a:hover {
+    color: var(--developer-link);
+    transform: translateY(-2px);
+}
+
+.developer-credit a::before {
+    content: '💻';
+    font-size: 1.2em;
+}
+
+/* For auth pages */
+.auth-page .developer-credit {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(248, 249, 250, 0.95);
+    backdrop-filter: blur(10px);
+}
+
+/* For dashboard pages */
+.dashboard-layout .developer-credit {
+    grid-column: 1 / -1;
+    margin-top: 2rem;
 }
 
