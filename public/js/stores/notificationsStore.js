@@ -3,12 +3,8 @@
  * إدارة حالة الإشعارات والبريد الإلكتروني
  */
 
-import { createClient } from '@supabase/supabase-js';
-import authStore from './authStore';
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '../config/supabase.js';
+import authStore from './authStore.js';
 
 class NotificationsStore {
   constructor() {
