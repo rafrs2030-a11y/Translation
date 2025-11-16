@@ -4,8 +4,8 @@
  */
 
 // Import Supabase client
-import { supabase } from '../../config/supabase.js';
-import { CONSTANTS } from '../../config/constants.js';
+import { supabase } from './config/supabase.js';
+import { CONSTANTS } from './config/constants.js';
 
 // ========================================
 // Global State

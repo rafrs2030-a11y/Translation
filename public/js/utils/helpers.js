@@ -3,7 +3,7 @@
  * وظائف مساعدة عامة
  */
 
-import { STATUS_LABELS, STATUS_COLORS } from '../config/constants';
+import { STATUS_LABELS, STATUS_COLORS } from '../config/constants.js';
 
 /**
  * تنسيق التاريخ بالعربية

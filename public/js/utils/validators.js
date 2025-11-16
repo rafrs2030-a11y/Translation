@@ -3,7 +3,7 @@
  * وظائف التحقق من صحة البيانات
  */
 
-import { REGEX_PATTERNS, ERROR_MESSAGES } from '../config/constants';
+import { REGEX_PATTERNS, ERROR_MESSAGES } from '../config/constants.js';
 
 /**
  * التحقق من البريد الإلكتروني
