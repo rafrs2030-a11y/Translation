@@ -5,6 +5,7 @@
 
 import { notificationsStore } from '../../../stores/notificationsStore.js';
 import { authStore } from '../../../stores/authStore.js';
+import { handleLogout } from '../utils/logout.js';
 
 // State
 let currentFilter = 'all';

@@ -149,7 +149,7 @@ class AdminStore {
   /**
    * تحديث حالة الطلب
    */
-  async updateSubmissionStatus(submissionId, newStatus) {
+  async updateSubmissionStatus(submissionId, newStatus, adminComment = null) {
     this.setState({ loading: true, error: null });
 
     try {
@@ -164,10 +164,19 @@ class AdminStore {
         .eq('id', submissionId)
         .single();
 
-      // تحديث الحالة
+      // تحديث الحالة والتعليق
+      const updateData = { 
+        status: newStatus, 
+        updated_at: new Date().toISOString()
+      };
+      
+      if (adminComment) {
+        updateData.admin_comment = adminComment;
+      }
+
       const { data, error } = await supabase
         .from('submissions')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .update(updateData)
         .eq('id', submissionId)
         .select()
         .single();
