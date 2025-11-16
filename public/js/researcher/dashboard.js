@@ -6,6 +6,7 @@ import { authStore } from '../../../stores/authStore.js';
 import { submissionsStore } from '../../../stores/submissionsStore.js';
 import { notificationsStore } from '../../../stores/notificationsStore.js';
 import { formatDate, formatRelativeTime } from '../../../utils/helpers.js';
+import { handleLogout } from '../utils/logout.js';
 
 // DOM Elements
 let sidebarEl, mobileMenuBtn, sidebarToggleBtn;
@@ -267,19 +268,7 @@ function toggleUserMenu() {
 /**
  * Handle logout
  */
-async function handleLogout() {
-    try {
-        const confirmed = await confirmDialog('هل أنت متأكد من تسجيل الخروج؟');
-        
-        if (confirmed) {
-            await authStore.logout();
-            window.location.href = '/pages/login.html';
-        }
-    } catch (error) {
-        console.error('Logout error:', error);
-        showNotification('فشل تسجيل الخروج', 'error');
-    }
-}
+// handleLogout is now imported from '../utils/logout.js'
 
 /**
  * Get status label in Arabic
