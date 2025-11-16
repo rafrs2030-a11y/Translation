@@ -7,6 +7,7 @@ import submissionsStore from '../stores/submissionsStore.js';
 import notificationsStore from '../stores/notificationsStore.js';
 import { formatDate, formatRelativeTime } from '../utils/helpers.js';
 import { handleLogout } from '../utils/logout.js';
+import { requireResearcher } from '../utils/auth-guard.js';
 
 // DOM Elements
 let sidebarEl, mobileMenuBtn, sidebarToggleBtn;
@@ -17,7 +18,8 @@ let statsElements = {};
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    if (!await requireAuth()) return;
+    const user = await requireResearcher();
+    if (!user) return;
     
     initElements();
     initEventListeners();
@@ -309,26 +311,5 @@ function getResearchTypeLabel(type) {
         'book': 'كتاب'
     };
     return labels[type] || type;
-}
-
-/**
- * Require authentication
- */
-async function requireAuth() {
-    const isLoggedIn = await authStore.isLoggedIn();
-    
-    if (!isLoggedIn) {
-        window.location.href = '/pages/login.html';
-        return false;
-    }
-    
-    // Check if user is admin
-    const user = authStore.state.user;
-    if (user?.role === 'admin') {
-        window.location.href = '/pages/admin/dashboard.html';
-        return false;
-    }
-    
-    return true;
 }
 

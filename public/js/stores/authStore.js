@@ -303,6 +303,63 @@ class AuthStore {
   isEmailVerified() {
     return this.state.user?.email_verified || false;
   }
+
+  /**
+   * الحصول على المستخدم الحالي
+   */
+  async getCurrentUser() {
+    try {
+      // إذا كان المستخدم محفوظ بالفعل، أرجعه
+      if (this.state.user) {
+        return this.state.user;
+      }
+
+      // الحصول على الجلسة الحالية
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) throw error;
+      
+      if (!session) {
+        return null;
+      }
+
+      // الحصول على بيانات المستخدم من قاعدة البيانات
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching user data:', userError);
+        return session.user; // إرجاع بيانات المستخدم الأساسية من auth
+      }
+
+      return userData;
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      return null;
+    }
+  }
+
+  /**
+   * انتظار انتهاء التحميل الأولي
+   */
+  async waitForInitialization() {
+    return new Promise((resolve) => {
+      if (!this.state.loading) {
+        resolve();
+        return;
+      }
+
+      const unsubscribe = this.subscribe((state) => {
+        if (!state.loading) {
+          unsubscribe();
+          resolve();
+        }
+      });
+    });
+  }
 }
 
 // إنشاء نسخة واحدة (Singleton)
