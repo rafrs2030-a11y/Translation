@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الإشعارات - منصة نشر الأبحاث العربية</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Research Assistant Logo" class="sidebar-logo">
+            <h2>لوحة الباحث</h2>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="/pages/researcher/dashboard.html" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>الرئيسية</span>
+            </a>
+            <a href="/pages/researcher/submit.html" class="nav-item">
+                <i class="fas fa-plus-circle"></i>
+                <span>تقديم بحث</span>
+            </a>
+            <a href="/pages/researcher/submissions.html" class="nav-item">
+                <i class="fas fa-folder-open"></i>
+                <span>طلباتي</span>
+            </a>
+            <a href="/pages/researcher/notifications.html" class="nav-item active">
+                <i class="fas fa-bell"></i>
+                <span>الإشعارات</span>
+                <span class="badge" id="sidebar-notification-count">0</span>
+            </a>
+            <a href="/pages/researcher/profile.html" class="nav-item">
+                <i class="fas fa-user"></i>
+                <span>الملف الشخصي</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <button class="btn btn-ghost btn-block" id="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>تسجيل الخروج</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="btn btn-ghost mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>الإشعارات</h1>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn btn-outline" id="mark-all-read">
+                    <i class="fas fa-check-double"></i>
+                    <span>تعليم الكل كمقروء</span>
+                </button>
+                <button class="btn btn-ghost" id="clear-all">
+                    <i class="fas fa-trash-alt"></i>
+                    <span>مسح الكل</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-container">
+            <!-- Filters -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="notification-filters">
+                        <button class="filter-btn active" data-filter="all">
+                            <i class="fas fa-inbox"></i>
+                            الكل
+                            <span class="filter-count" id="count-all">0</span>
+                        </button>
+                        <button class="filter-btn" data-filter="unread">
+                            <i class="fas fa-envelope"></i>
+                            غير مقروء
+                            <span class="filter-count" id="count-unread">0</span>
+                        </button>
+                        <button class="filter-btn" data-filter="status_change">
+                            <i class="fas fa-exchange-alt"></i>
+                            تغيير الحالة
+                        </button>
+                        <button class="filter-btn" data-filter="comment_added">
+                            <i class="fas fa-comment"></i>
+                            تعليقات
+                        </button>
+                        <button class="filter-btn" data-filter="system">
+                            <i class="fas fa-cog"></i>
+                            النظام
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications List -->
+            <div class="card">
+                <div class="card-body">
+                    <div id="notifications-container">
+                        <!-- Loading Spinner -->
+                        <div class="loading-placeholder">
+                            <div class="loading-spinner"></div>
+                            <p>جاري تحميل الإشعارات...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="pagination" id="pagination" style="display: none;">
+                <button class="btn btn-ghost" id="load-more">
+                    <i class="fas fa-sync"></i>
+                    تحميل المزيد
+                </button>
+            </div>
+            
+            <!-- Developer Credit -->
+            <div class="developer-credit" style="margin-top: 2rem;">
+                <a href="https://cv-omar-alodaini.netlify.app" target="_blank" rel="noopener noreferrer">
+                    تطوير: عمر العديني
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script type="module" src="/js/main.js"></script>
+    <script type="module" src="/js/researcher/notifications.js"></script>
+    
+    <style>
+        .notification-filters {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-family: var(--font-family);
+            font-size: var(--font-size-sm);
+        }
+        
+        .filter-btn:hover {
+            background: var(--bg-primary);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .filter-btn.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        
+        .filter-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-xs);
+            font-weight: 700;
+        }
+        
+        .notification-item {
+            display: flex;
+            gap: var(--spacing-md);
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+            transition: all var(--transition-fast);
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .notification-item:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        
+        .notification-item.unread {
+            background: rgba(61, 90, 148, 0.05);
+        }
+        
+        .notification-item.unread::before {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--primary-color);
+        }
+        
+        .notification-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.25rem;
+        }
+        
+        .notification-icon.status_change {
+            background: rgba(61, 90, 148, 0.1);
+            color: var(--primary-color);
+        }
+        
+        .notification-icon.comment_added {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+        
+        .notification-icon.new_submission {
+            background: rgba(232, 154, 60, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .notification-icon.system {
+            background: rgba(107, 114, 128, 0.1);
+            color: var(--text-secondary);
+        }
+        
+        .notification-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .notification-title {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0 0 var(--spacing-xs) 0;
+            font-size: var(--font-size-base);
+        }
+        
+        .notification-message {
+            color: var(--text-secondary);
+            margin: 0 0 var(--spacing-xs) 0;
+            font-size: var(--font-size-sm);
+        }
+        
+        .notification-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            font-size: var(--font-size-xs);
+            color: var(--text-light);
+        }
+        
+        .notification-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+            align-items: flex-start;
+        }
+        
+        .notification-actions .btn {
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+        
+        .notification-item:hover .notification-actions .btn {
+            opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .notification-filters {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+            
+            .topbar-actions span {
+                display: none;
+            }
+        }
+    </style>
+</body>
+</html>
+
