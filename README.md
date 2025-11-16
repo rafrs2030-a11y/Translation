@@ -6,7 +6,7 @@
 [![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org)
 [![Supabase](https://img.shields.io/badge/database-Supabase-green.svg)](https://supabase.com)
 
-## 🎯 نظرة عامة
+##  🎯 نظرة عامة
 
 منصة شاملة تسمح للباحثين العرب بتقديم أبحاثهم العلمية وكتبهم للمراجعة والنشر، مع لوحة تحكم احترافية للمسؤولين لإدارة الطلبات ومراجعة المحتوى.
 
