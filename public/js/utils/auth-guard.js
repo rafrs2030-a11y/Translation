@@ -68,7 +68,41 @@ export async function requireResearcher() {
  * التحقق من المصادقة للأدمن
  */
 export async function requireAdmin() {
-  return await requireAuth('admin');
+  try {
+    // انتظار انتهاء التهيئة
+    await authStore.waitForInitialization();
+
+    // التحقق من تسجيل الدخول
+    const isLoggedIn = authStore.isLoggedIn();
+    
+    if (!isLoggedIn) {
+      console.log('User not authenticated, redirecting to login...');
+      window.location.href = '/pages/login.html';
+      return null;
+    }
+
+    // الحصول على المستخدم الحالي
+    const user = await authStore.getCurrentUser();
+    
+    if (!user) {
+      console.log('User data not found, redirecting to login...');
+      window.location.href = '/pages/login.html';
+      return null;
+    }
+
+    // التحقق من أن المستخدم admin أو super_admin
+    if (user.role !== 'admin' && user.role !== 'super_admin') {
+      console.log(`User role mismatch. Required: admin or super_admin, Got: ${user.role}`);
+      window.location.href = '/pages/login.html';
+      return null;
+    }
+
+    return user;
+  } catch (error) {
+    console.error('Auth guard error:', error);
+    window.location.href = '/pages/login.html';
+    return null;
+  }
 }
 
 /**

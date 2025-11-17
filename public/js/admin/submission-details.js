@@ -34,13 +34,23 @@ document.addEventListener('DOMContentLoaded', async () => {
  * Check authentication
  */
 async function checkAuth() {
-    const isLoggedIn = await authStore.isLoggedIn();
-    const user = authStore.state.user;
+    // انتظار انتهاء التهيئة
+    await authStore.waitForInitialization();
     
-    if (!isLoggedIn || user?.role !== 'admin') {
+    const isLoggedIn = authStore.isLoggedIn();
+    const user = authStore.getState().user;
+    
+    if (!isLoggedIn || !user) {
         window.location.href = '/pages/login.html';
         return false;
     }
+    
+    // التحقق من الصلاحيات (admin أو super_admin)
+    if (user.role !== 'admin' && user.role !== 'super_admin') {
+        window.location.href = '/pages/login.html';
+        return false;
+    }
+    
     return true;
 }
 
@@ -150,11 +160,26 @@ async function loadSubmissionDetails() {
         // Show loading
         showLoading(true);
         
+        // التأكد من أن المستخدم محمل
+        await authStore.waitForInitialization();
+        
         // Fetch submission details
         const result = await adminStore.fetchSubmissionDetails(currentSubmissionId);
         
         if (!result.success) {
-            throw new Error(result.error || 'فشل في تحميل التفاصيل');
+            const errorMessage = result.error || 'فشل في تحميل التفاصيل';
+            
+            // إذا كان الخطأ متعلق بالصلاحيات، إعادة توجيه
+            if (errorMessage.includes('غير مصرح') || errorMessage.includes('يجب تسجيل الدخول')) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+            
+            throw new Error(errorMessage);
+        }
+        
+        if (!result.data) {
+            throw new Error('لم يتم العثور على بيانات البحث');
         }
         
         currentSubmission = result.data;
@@ -171,7 +196,7 @@ async function loadSubmissionDetails() {
         
     } catch (error) {
         console.error('Error loading submission details:', error);
-        showError(error.message);
+        showError(error.message || 'حدث خطأ غير متوقع');
     }
 }
 

@@ -52,11 +52,17 @@ class AdminStore {
   /**
    * التحقق من صلاحيات المسؤول
    */
-  checkAdminAccess() {
-    const user = authStore.getState().user;
+  async checkAdminAccess() {
+    // انتظار انتهاء تهيئة authStore
+    await authStore.waitForInitialization();
+    
+    const state = authStore.getState();
+    const user = state.user;
+    
     if (!user) {
       throw new Error('يجب تسجيل الدخول أولاً');
     }
+    
     if (user.role !== 'admin' && user.role !== 'super_admin') {
       throw new Error('غير مصرح لك بالوصول إلى هذه الصفحة');
     }
@@ -76,7 +82,7 @@ class AdminStore {
     this.setState({ loading: true, error: null });
 
     try {
-      this.checkAdminAccess();
+      await this.checkAdminAccess();
 
       // دمج المعاملات مع الحالة الحالية
       const page = params.page || this.state.pagination.page;
@@ -151,7 +157,7 @@ class AdminStore {
     this.setState({ loading: true, error: null });
 
     try {
-      this.checkAdminAccess();
+      await this.checkAdminAccess();
 
       const { data, error } = await supabase
         .from('submissions')
@@ -186,7 +192,7 @@ class AdminStore {
     this.setState({ loading: true, error: null });
 
     try {
-      this.checkAdminAccess();
+      await this.checkAdminAccess();
 
       const admin = authStore.getState().user;
 
@@ -267,7 +273,7 @@ class AdminStore {
     this.setState({ loading: true, error: null });
 
     try {
-      this.checkAdminAccess();
+      await this.checkAdminAccess();
 
       const admin = authStore.getState().user;
 
@@ -355,7 +361,7 @@ class AdminStore {
     this.setState({ loading: true, error: null });
 
     try {
-      this.checkAdminAccess();
+      await this.checkAdminAccess();
 
       const { data, error } = await supabase
         .from('admin_comments')
@@ -391,7 +397,7 @@ class AdminStore {
     this.setState({ loading: true, error: null });
 
     try {
-      this.checkAdminAccess();
+      await this.checkAdminAccess();
 
       const { error } = await supabase
         .from('admin_comments')
@@ -444,7 +450,7 @@ class AdminStore {
     this.setState({ loading: true, error: null });
 
     try {
-      this.checkAdminAccess();
+      await this.checkAdminAccess();
 
       // إحصائيات الطلبات
       const { data: submissions, error: submissionsError } = await supabase
@@ -516,7 +522,7 @@ class AdminStore {
    */
   async getAuditLog(params = {}) {
     try {
-      this.checkAdminAccess();
+      await this.checkAdminAccess();
 
       const limit = params.limit || 50;
       
@@ -542,44 +548,109 @@ class AdminStore {
   /**
    * الحصول على بيانات الرسوم البيانية
    */
-  async getChartData() {
+  async getChartData(period = 'month') {
     try {
-      this.checkAdminAccess();
+      await this.checkAdminAccess();
 
-      // جلب الطلبات من آخر 30 يوم
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      // تحديد تاريخ البداية حسب الفترة
+      const startDate = new Date();
+      let dateFormat, groupBy;
+      
+      switch (period) {
+        case 'week':
+          startDate.setDate(startDate.getDate() - 7);
+          dateFormat = { weekday: 'short', day: 'numeric', month: 'short' };
+          groupBy = 'day';
+          break;
+        case 'month':
+          startDate.setMonth(startDate.getMonth() - 1);
+          dateFormat = { day: 'numeric', month: 'short' };
+          groupBy = 'day';
+          break;
+        case 'year':
+          startDate.setFullYear(startDate.getFullYear() - 1);
+          dateFormat = { month: 'short', year: 'numeric' };
+          groupBy = 'month';
+          break;
+        default:
+          startDate.setMonth(startDate.getMonth() - 1);
+          dateFormat = { day: 'numeric', month: 'short' };
+          groupBy = 'day';
+      }
 
       const { data: submissions, error } = await supabase
         .from('submissions')
         .select('created_at, status')
         .eq('is_draft', false)
-        .gte('created_at', thirtyDaysAgo.toISOString())
+        .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      // تجميع البيانات حسب اليوم
-      const dailyData = {};
+      // تجميع البيانات حسب الفترة المحددة
+      const groupedData = {};
+      const keyDates = {}; // لتخزين أول تاريخ لكل مفتاح للترتيب
+      
       submissions.forEach(submission => {
-        const date = new Date(submission.created_at).toLocaleDateString('ar-SA');
-        if (!dailyData[date]) {
-          dailyData[date] = { total: 0, pending: 0, approved: 0, rejected: 0 };
+        const date = new Date(submission.created_at);
+        let key;
+        
+        if (groupBy === 'day') {
+          key = date.toLocaleDateString('ar-SA', dateFormat);
+        } else if (groupBy === 'month') {
+          key = date.toLocaleDateString('ar-SA', { month: 'short', year: 'numeric' });
         }
-        dailyData[date].total++;
-        if (submission.status === 'pending') dailyData[date].pending++;
-        if (submission.status === 'approved') dailyData[date].approved++;
-        if (submission.status === 'rejected') dailyData[date].rejected++;
+        
+        if (!groupedData[key]) {
+          groupedData[key] = { total: 0, pending: 0, approved: 0, rejected: 0, needs_revision: 0 };
+          keyDates[key] = date; // حفظ أول تاريخ لهذا المفتاح
+        }
+        groupedData[key].total++;
+        if (submission.status === 'pending') groupedData[key].pending++;
+        if (submission.status === 'approved') groupedData[key].approved++;
+        if (submission.status === 'rejected') groupedData[key].rejected++;
+        if (submission.status === 'needs_revision') groupedData[key].needs_revision++;
+      });
+
+      // ترتيب البيانات حسب التاريخ
+      const sortedKeys = Object.keys(groupedData).sort((a, b) => {
+        return keyDates[a] - keyDates[b];
       });
 
       return {
-        labels: Object.keys(dailyData),
+        labels: sortedKeys,
         datasets: [
           {
             label: 'إجمالي الطلبات',
-            data: Object.values(dailyData).map(d => d.total),
+            data: sortedKeys.map(key => groupedData[key].total),
             borderColor: '#3D5A94',
             backgroundColor: 'rgba(61, 90, 148, 0.1)',
+            tension: 0.4,
+            fill: true,
+          },
+          {
+            label: 'قيد المراجعة',
+            data: sortedKeys.map(key => groupedData[key].pending),
+            borderColor: '#E89A3C',
+            backgroundColor: 'rgba(232, 154, 60, 0.1)',
+            tension: 0.4,
+            fill: true,
+          },
+          {
+            label: 'معتمدة',
+            data: sortedKeys.map(key => groupedData[key].approved),
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            tension: 0.4,
+            fill: true,
+          },
+          {
+            label: 'مرفوضة',
+            data: sortedKeys.map(key => groupedData[key].rejected),
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            tension: 0.4,
+            fill: true,
           },
         ],
       };
@@ -633,7 +704,7 @@ class AdminStore {
    */
   async exportSubmissions(format = 'csv') {
     try {
-      this.checkAdminAccess();
+      await this.checkAdminAccess();
 
       const submissions = this.state.allSubmissions;
 

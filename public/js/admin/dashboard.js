@@ -13,6 +13,9 @@ let totalSubmissionsEl, pendingSubmissionsEl, approvedSubmissionsEl, rejectedSub
 let pendingListEl, activityListEl;
 let adminNameEl, userEmailEl;
 
+// Chart instance
+let submissionsChart = null;
+
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
     const user = await requireAdmin();
@@ -249,18 +252,129 @@ async function loadStatusDistribution() {
  */
 async function loadChartData(period = 'month') {
     try {
+        const chartContainer = document.getElementById('submissions-chart');
+        if (!chartContainer) return;
+        
         const chartData = await adminStore.getChartData(period);
         
-        if (!chartData) return;
+        if (!chartData || !chartData.labels || chartData.labels.length === 0) {
+            // Show empty state
+            chartContainer.innerHTML = `
+                <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 2rem;">
+                    <i class="fas fa-chart-line" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                    <p style="color: #666;">لا توجد بيانات لعرضها</p>
+                </div>
+            `;
+            // Destroy existing chart if it exists
+            if (submissionsChart) {
+                submissionsChart.destroy();
+                submissionsChart = null;
+            }
+            return;
+        }
         
-        // Here you would integrate with a charting library like Chart.js
-        // For now, we'll just log the data
-        console.log('Chart data:', chartData);
+        // Ensure canvas exists
+        let canvas = document.getElementById('chart-canvas');
+        if (!canvas) {
+            chartContainer.innerHTML = '<canvas id="chart-canvas"></canvas>';
+            canvas = document.getElementById('chart-canvas');
+        }
         
-        // TODO: Implement chart rendering with Chart.js or similar
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (submissionsChart) {
+            submissionsChart.destroy();
+        }
+        
+        // Create new chart
+        submissionsChart = new Chart(ctx, {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        rtl: true,
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: {
+                                family: 'Cairo, sans-serif',
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        rtl: true,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: {
+                            family: 'Cairo, sans-serif',
+                            size: 14
+                        },
+                        bodyFont: {
+                            family: 'Cairo, sans-serif',
+                            size: 12
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                family: 'Cairo, sans-serif',
+                                size: 11
+                            }
+                        }
+                    },
+                    y: {
+                        display: true,
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                family: 'Cairo, sans-serif',
+                                size: 11
+                            },
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
         
     } catch (error) {
         console.error('Error loading chart data:', error);
+        const chartContainer = document.getElementById('submissions-chart');
+        if (chartContainer) {
+            chartContainer.innerHTML = `
+                <div class="error-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 2rem;">
+                    <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;"></i>
+                    <p style="color: #ef4444;">حدث خطأ أثناء تحميل الرسم البياني</p>
+                </div>
+            `;
+            // Destroy existing chart if it exists
+            if (submissionsChart) {
+                submissionsChart.destroy();
+                submissionsChart = null;
+            }
+        }
     }
 }
 
