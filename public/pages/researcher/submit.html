@@ -395,6 +395,28 @@
                             </div>
 
                             <div class="form-group">
+                                <label for="research_owner_type" class="form-label required">مالك البحث</label>
+                                <select id="research_owner_type" name="research_owner_type" class="form-select" required>
+                                    <option value="">اختر نوع مالك البحث</option>
+                                    <option value="أفراد">أفراد</option>
+                                    <option value="أعمال">أعمال</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" id="business-type-group" style="display: none;">
+                                <label for="business_type" class="form-label required">نوع الأعمال</label>
+                                <select id="business_type" name="business_type" class="form-select">
+                                    <option value="">اختر نوع الأعمال</option>
+                                    <option value="جهة حكومية">جهة حكومية</option>
+                                    <option value="هيئة">هيئة</option>
+                                    <option value="قطاع خاص">قطاع خاص</option>
+                                    <option value="قطاع غير ربحي">قطاع غير ربحي</option>
+                                    <option value="جامعة حكومية">جامعة حكومية</option>
+                                    <option value="جامعة خاصة">جامعة خاصة</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
                                 <label for="main_researcher" class="form-label required">اسم الباحث الرئيسي</label>
                                 <input type="text" id="main_researcher" name="main_researcher" class="form-input" required>
                             </div>

@@ -107,6 +107,14 @@ function initEventListeners() {
         // Initialize on load
         handleCategoryChange();
     }
+    
+    // Handle research owner type change to show/hide business type field
+    const researchOwnerTypeSelect = document.getElementById('research_owner_type');
+    if (researchOwnerTypeSelect) {
+        researchOwnerTypeSelect.addEventListener('change', handleResearchOwnerTypeChange);
+        // Initialize on load
+        handleResearchOwnerTypeChange();
+    }
 }
 
 /**
@@ -197,6 +205,26 @@ function handleCategoryChange() {
 }
 
 /**
+ * Handle research owner type change
+ */
+function handleResearchOwnerTypeChange() {
+    const researchOwnerTypeSelect = document.getElementById('research_owner_type');
+    const businessTypeGroup = document.getElementById('business-type-group');
+    const businessTypeSelect = document.getElementById('business_type');
+    
+    if (!researchOwnerTypeSelect || !businessTypeGroup || !businessTypeSelect) return;
+    
+    if (researchOwnerTypeSelect.value === 'أعمال') {
+        businessTypeGroup.style.display = 'block';
+        businessTypeSelect.setAttribute('required', 'required');
+    } else {
+        businessTypeGroup.style.display = 'none';
+        businessTypeSelect.removeAttribute('required');
+        businessTypeSelect.value = '';
+    }
+}
+
+/**
  * Validate current step
  */
 function validateCurrentStep() {
@@ -220,6 +248,16 @@ function validateCurrentStep() {
     if (categorySelect && categorySelect.value === 'أخرى') {
         if (!otherCategoryInput || !otherCategoryInput.value.trim()) {
             showFieldError(otherCategoryInput, 'يرجى تحديد المجال الآخر');
+            isValid = false;
+        }
+    }
+    
+    // Special validation: if research_owner_type is "أعمال", business_type must be filled
+    const researchOwnerTypeSelect = document.getElementById('research_owner_type');
+    const businessTypeSelect = document.getElementById('business_type');
+    if (researchOwnerTypeSelect && researchOwnerTypeSelect.value === 'أعمال') {
+        if (!businessTypeSelect || !businessTypeSelect.value.trim()) {
+            showFieldError(businessTypeSelect, 'يرجى تحديد نوع الأعمال');
             isValid = false;
         }
     }
@@ -346,6 +384,16 @@ function updateReviewContent() {
                 <span class="review-value">${formData.category === 'أخرى' ? (formData.other_category || '-') : (formData.category || '-')}</span>
             </div>
             <div class="review-item">
+                <span class="review-label">مالك البحث:</span>
+                <span class="review-value">${formData.research_owner_type || '-'}</span>
+            </div>
+            ${formData.research_owner_type === 'أعمال' ? `
+            <div class="review-item">
+                <span class="review-label">نوع الأعمال:</span>
+                <span class="review-value">${formData.business_type || '-'}</span>
+            </div>
+            ` : ''}
+            <div class="review-item">
                 <span class="review-label">اسم الباحث الرئيسي:</span>
                 <span class="review-value">${formData.main_researcher || '-'}</span>
             </div>
@@ -426,6 +474,8 @@ async function handleSubmit(e) {
             id_number: formData.id_number,
             research_type: formData.research_type,
             category: categoryValue,
+            research_owner_type: formData.research_owner_type,
+            business_type: formData.research_owner_type === 'أعمال' ? formData.business_type : null,
             main_researcher: formData.main_researcher,
             general_specialization: formData.general_specialization,
             detailed_specialization: formData.detailed_specialization,
@@ -514,6 +564,7 @@ function loadDraftIfExists() {
                 // Use setTimeout to ensure DOM is ready
                 setTimeout(() => {
                     handleCategoryChange();
+                    handleResearchOwnerTypeChange();
                 }, 0);
                 
                 updateStepDisplay();

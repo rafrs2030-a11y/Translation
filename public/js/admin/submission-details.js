@@ -16,7 +16,7 @@ let currentSubmission = null;
 let loadingState, errorState, contentContainer;
 let submissionTitle, referenceNumber;
 let fullName, email, country, gender, idNumber, createdAt;
-let researchType, category, mainResearcher, generalSpecialization, detailedSpecialization;
+let researchType, category, researchOwnerType, businessType, businessTypeItem, mainResearcher, generalSpecialization, detailedSpecialization;
 let fileName, fileSize, downloadBtn;
 let currentStatusBadge, daysPending, statusChanges;
 let statusChangeForm, adminComment;
@@ -82,6 +82,9 @@ function initElements() {
     // Research info
     researchType = document.getElementById('research-type');
     category = document.getElementById('category');
+    researchOwnerType = document.getElementById('research-owner-type');
+    businessType = document.getElementById('business-type');
+    businessTypeItem = document.getElementById('business-type-item');
     mainResearcher = document.getElementById('main-researcher');
     generalSpecialization = document.getElementById('general-specialization');
     detailedSpecialization = document.getElementById('detailed-specialization');
@@ -235,6 +238,16 @@ function populateSubmissionData(submission) {
     // Research info
     researchType.textContent = submission.research_type || '-';
     category.textContent = submission.category || '-';
+    researchOwnerType.textContent = submission.research_owner_type || '-';
+    
+    // Show/hide business type based on research owner type
+    if (submission.research_owner_type === 'أعمال' && submission.business_type) {
+        businessType.textContent = submission.business_type;
+        businessTypeItem.style.display = 'block';
+    } else {
+        businessTypeItem.style.display = 'none';
+    }
+    
     mainResearcher.textContent = submission.main_researcher || '-';
     generalSpecialization.textContent = submission.general_specialization || '-';
     detailedSpecialization.textContent = submission.detailed_specialization || '-';

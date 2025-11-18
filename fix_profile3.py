@@ -21,9 +21,9 @@ contact_section = '''                    <!-- Contact Support Section -->
                                 <i class="fas fa-phone"></i>
                                 الاتصال: 966580002284
                             </a>
-                            <a href="mailto:rafrs2030@gmail.com" class="btn" style="background: var(--primary-light); color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: var(--spacing-sm); padding: var(--spacing-md); border-radius: var(--radius-md); transition: all 0.3s ease;">
+                            <a href="mailto:info@rafrs.com" class="btn" style="background: var(--primary-light); color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: var(--spacing-sm); padding: var(--spacing-md); border-radius: var(--radius-md); transition: all 0.3s ease;">
                                 <i class="fas fa-envelope"></i>
-                                البريد الإلكتروني: rafrs2030@gmail.com
+                                البريد الإلكتروني: info@rafrs.com
                             </a>
                         </div>
                     </div>'''
@@ -52,6 +52,6 @@ with open('public/pages/researcher/profile.html', 'w', encoding='utf-8') as f:
 print("تم إكمال قسم التواصل بنجاح!")
 print("- رابط واتساب: https://wa.me/966580002284")
 print("- رقم الجوال: 966580002284")
-print("- البريد الإلكتروني: rafrs2030@gmail.com")
+print("- البريد الإلكتروني: info@rafrs.com")
 
 

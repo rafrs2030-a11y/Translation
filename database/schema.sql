@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS submissions (
   id_number VARCHAR(50) NOT NULL,
   research_type VARCHAR(50) NOT NULL,
   category VARCHAR(100) NOT NULL,
+  research_owner_type VARCHAR(20) CHECK (research_owner_type IN ('أفراد', 'أعمال')),
+  business_type VARCHAR(50) CHECK (business_type IN ('جهة حكومية', 'هيئة', 'قطاع خاص', 'قطاع غير ربحي', 'جامعة حكومية', 'جامعة خاصة')),
   main_researcher VARCHAR(255) NOT NULL,
   general_specialization VARCHAR(255) NOT NULL,
   detailed_specialization VARCHAR(255) NOT NULL,
