@@ -6,6 +6,7 @@
 import notificationsStore from '../stores/notificationsStore.js';
 import authStore from '../stores/authStore.js';
 import { requireAdmin } from '../utils/auth-guard.js';
+import badgeManager from '../utils/badge-manager.js';
 
 // State
 let currentFilter = 'all';
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Initialize realtime subscriptions
     notificationsStore.initialize();
+    await badgeManager.initialize();
     
     // Subscribe to notification updates
     notificationsStore.subscribe(handleStoreUpdate);

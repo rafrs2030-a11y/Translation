@@ -389,5 +389,12 @@ window.removeFromStorage = removeFromStorage;
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('App initialized');
+    
+    // Initialize chat if chat button exists
+    import('./utils/init-chat.js').then(module => {
+        module.initChatIfExists();
+    }).catch(err => {
+        // Chat not available on this page, ignore
+    });
 });
 

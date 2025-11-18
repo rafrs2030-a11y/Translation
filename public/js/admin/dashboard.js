@@ -7,6 +7,10 @@ import adminStore from '../stores/adminStore.js';
 import authStore from '../stores/authStore.js';
 import { handleLogout } from '../utils/logout.js';
 import { requireAdmin } from '../utils/auth-guard.js';
+import { initChatDropdown } from '../utils/chat-dropdown.js';
+import badgeManager from '../utils/badge-manager.js';
+import { updateAvatarDisplay } from '../utils/avatar-helper.js';
+import { supabase } from '../config/supabase.js';
 
 // DOM Elements
 let totalSubmissionsEl, pendingSubmissionsEl, approvedSubmissionsEl, rejectedSubmissionsEl;
@@ -24,6 +28,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     initElements();
     initEventListeners();
     await loadDashboardData();
+    await initChatDropdown();
+    await badgeManager.initialize();
 });
 
 /**
@@ -47,8 +53,8 @@ function initElements() {
     // Set user info
     const user = authStore.state.user;
     if (user) {
-        adminNameEl.textContent = user.username || 'المسؤول';
-        userEmailEl.textContent = user.email;
+        if (adminNameEl) adminNameEl.textContent = user.username || 'المسؤول';
+        if (userEmailEl) userEmailEl.textContent = user.email;
     }
 }
 
@@ -84,6 +90,28 @@ function initEventListeners() {
  */
 async function loadDashboardData() {
     try {
+        // Load user data with profile picture
+        const user = await authStore.getCurrentUser();
+        if (user) {
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+            
+            if (!userError && userData) {
+                // Update admin name
+                if (adminNameEl) adminNameEl.textContent = userData.username || 'المسؤول';
+                if (userEmailEl) userEmailEl.textContent = userData.email || '';
+                
+                // Update avatar
+                const avatarEl = document.querySelector('.user-avatar');
+                if (avatarEl) {
+                    updateAvatarDisplay(avatarEl, userData, { size: 40 });
+                }
+            }
+        }
+        
         // Load statistics
         await loadStatistics();
         
@@ -113,10 +141,10 @@ async function loadStatistics() {
         const stats = await adminStore.getStatistics();
         
         if (stats) {
-            totalSubmissionsEl.textContent = stats.total || 0;
-            pendingSubmissionsEl.textContent = stats.pending || 0;
-            approvedSubmissionsEl.textContent = stats.approved || 0;
-            rejectedSubmissionsEl.textContent = stats.rejected || 0;
+            if (totalSubmissionsEl) totalSubmissionsEl.textContent = stats.total || 0;
+            if (pendingSubmissionsEl) pendingSubmissionsEl.textContent = stats.pending || 0;
+            if (approvedSubmissionsEl) approvedSubmissionsEl.textContent = stats.approved || 0;
+            if (rejectedSubmissionsEl) rejectedSubmissionsEl.textContent = stats.rejected || 0;
         }
     } catch (error) {
         console.error('Error loading statistics:', error);
@@ -128,6 +156,8 @@ async function loadStatistics() {
  */
 async function loadPendingSubmissions() {
     try {
+        if (!pendingListEl) return;
+        
         const result = await adminStore.fetchSubmissions({ status: 'pending', limit: 5 });
         const submissions = result?.data || [];
         
@@ -179,6 +209,8 @@ async function loadPendingSubmissions() {
  */
 async function loadRecentActivity() {
     try {
+        if (!activityListEl) return;
+        
         const activities = await adminStore.getAuditLog({ limit: 10 });
         
         if (!activities || activities.length === 0) {
@@ -231,16 +263,26 @@ async function loadStatusDistribution() {
         const rejected = ((stats.rejected || 0) / total * 100).toFixed(1);
         
         // Update bars
-        document.querySelector('[data-status="pending"]').style.width = `${pending}%`;
-        document.querySelector('[data-status="approved"]').style.width = `${approved}%`;
-        document.querySelector('[data-status="needs-revision"]').style.width = `${needsRevision}%`;
-        document.querySelector('[data-status="rejected"]').style.width = `${rejected}%`;
+        const pendingBar = document.querySelector('[data-status="pending"]');
+        const approvedBar = document.querySelector('[data-status="approved"]');
+        const needsRevisionBar = document.querySelector('[data-status="needs-revision"]');
+        const rejectedBar = document.querySelector('[data-status="rejected"]');
+        
+        if (pendingBar) pendingBar.style.width = `${pending}%`;
+        if (approvedBar) approvedBar.style.width = `${approved}%`;
+        if (needsRevisionBar) needsRevisionBar.style.width = `${needsRevision}%`;
+        if (rejectedBar) rejectedBar.style.width = `${rejected}%`;
         
         // Update percentages
-        document.getElementById('pending-percent').textContent = `${pending}%`;
-        document.getElementById('approved-percent').textContent = `${approved}%`;
-        document.getElementById('revision-percent').textContent = `${needsRevision}%`;
-        document.getElementById('rejected-percent').textContent = `${rejected}%`;
+        const pendingPercent = document.getElementById('pending-percent');
+        const approvedPercent = document.getElementById('approved-percent');
+        const revisionPercent = document.getElementById('revision-percent');
+        const rejectedPercent = document.getElementById('rejected-percent');
+        
+        if (pendingPercent) pendingPercent.textContent = `${pending}%`;
+        if (approvedPercent) approvedPercent.textContent = `${approved}%`;
+        if (revisionPercent) revisionPercent.textContent = `${needsRevision}%`;
+        if (rejectedPercent) rejectedPercent.textContent = `${rejected}%`;
         
     } catch (error) {
         console.error('Error loading status distribution:', error);

@@ -8,6 +8,7 @@ import authStore from '../stores/authStore.js';
 import { handleLogout } from '../utils/logout.js';
 import { supabase } from '../config/supabase.js';
 import { requireAdmin } from '../utils/auth-guard.js';
+import { getInitials } from '../utils/avatar-helper.js';
 
 // State
 let allUsers = [];
@@ -164,12 +165,23 @@ function renderUsers() {
     tableContainer.style.display = 'block';
     emptyState.style.display = 'none';
     
+    // Store getInitials in local scope for template string
+    const getInitialsFn = getInitials;
+    
     usersTableBody.innerHTML = filteredUsers.map(user => `
         <tr>
             <td>
                 <div class="user-info">
                     <div class="user-avatar-table">
-                        ${getInitials(user.username)}
+                        ${user.profile_picture 
+                            ? `<img src="${user.profile_picture}" alt="الصورة الشخصية" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                               <div style="display: none; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                                   ${getInitialsFn(user.username)}
+                               </div>`
+                            : `<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                                   ${getInitialsFn(user.username)}
+                               </div>`
+                        }
                     </div>
                     <div class="user-details">
                         <h4>${user.username}</h4>
@@ -469,18 +481,6 @@ async function deleteUser(userId) {
         console.error('Error deleting user:', error);
         alert('حدث خطأ: ' + error.message);
     }
-}
-
-/**
- * Get initials from username
- */
-function getInitials(username) {
-    if (!username) return '?';
-    const parts = username.split(' ');
-    if (parts.length >= 2) {
-        return parts[0][0] + parts[1][0];
-    }
-    return username.substring(0, 2).toUpperCase();
 }
 
 /**

@@ -252,6 +252,87 @@ router.post('/forgot-password', async (req, res, next) => {
 });
 
 /**
+ * POST /api/auth/reset-password-direct
+ * إعادة تعيين كلمة المرور مباشرة بعد التحقق من رقم الهوية
+ */
+router.post('/reset-password-direct', async (req, res, next) => {
+  try {
+    const { email, national_id, new_password } = req.body;
+
+    if (!email || !national_id || !new_password) {
+      return res.status(400).json({
+        success: false,
+        error: 'البريد الإلكتروني ورقم الهوية وكلمة المرور الجديدة مطلوبة'
+      });
+    }
+
+    // التحقق من رقم الهوية مع البريد الإلكتروني
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('id, email, national_id')
+      .eq('email', email.trim().toLowerCase())
+      .single();
+
+    if (userError || !userData) {
+      return res.status(404).json({
+        success: false,
+        error: 'البريد الإلكتروني غير مسجل'
+      });
+    }
+
+    // التحقق من رقم الهوية
+    if (userData.national_id && userData.national_id !== national_id.trim()) {
+      return res.status(403).json({
+        success: false,
+        error: 'رقم الهوية غير صحيح'
+      });
+    }
+
+    // استخدام Supabase Admin API لإعادة تعيين كلمة المرور
+    // هذا يتطلب service_role key
+    const { createClient } = require('@supabase/supabase-js');
+    const supabaseAdmin = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
+    // إعادة تعيين كلمة المرور مباشرة
+    const { data: updateData, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      userData.id,
+      {
+        password: new_password
+      }
+    );
+
+    if (updateError) {
+      console.error('Admin update password error:', updateError);
+      return res.status(500).json({
+        success: false,
+        error: 'فشل إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'تم إعادة تعيين كلمة المرور بنجاح'
+    });
+
+  } catch (error) {
+    console.error('Direct reset password error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'حدث خطأ أثناء إعادة تعيين كلمة المرور'
+    });
+  }
+});
+
+/**
  * POST /api/auth/reset-password
  * إعادة تعيين كلمة المرور
  */

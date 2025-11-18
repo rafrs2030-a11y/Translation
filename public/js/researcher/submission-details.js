@@ -1,12 +1,14 @@
 /**
- * Admin Submission Details JavaScript
- * صفحة تفاصيل البحث للمسؤول
+ * Researcher Submission Details JavaScript
+ * صفحة تفاصيل البحث للباحث
  */
 
-import adminStore from '../stores/adminStore.js';
+import submissionsStore from '../stores/submissionsStore.js';
 import authStore from '../stores/authStore.js';
 import { handleLogout } from '../utils/logout.js';
-import { updateAvatarDisplay, getInitials } from '../utils/avatar-helper.js';
+import { requireResearcher } from '../utils/auth-guard.js';
+import { formatDate, formatRelativeTime, formatFileSize, getStatusLabel } from '../utils/helpers.js';
+import { initNotificationDropdown } from '../utils/notification-dropdown.js';
 
 // State
 let currentSubmissionId = null;
@@ -15,46 +17,22 @@ let currentSubmission = null;
 // DOM Elements
 let loadingState, errorState, contentContainer;
 let submissionTitle, referenceNumber;
-let fullName, email, country, gender, idNumber, createdAt;
-let researchType, category, mainResearcher, generalSpecialization, detailedSpecialization;
+let researchType, category, mainResearcher, generalSpecialization, detailedSpecialization, createdAt;
 let fileName, fileSize, downloadBtn;
-let currentStatusBadge, daysPending, statusChanges;
-let statusChangeForm, adminComment;
+let currentStatusBadge, daysPending, statusChanges, lastUpdated;
+let adminCommentCard, adminCommentContent;
 let historyTimeline;
-let researcherAvatar, researcherName;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    if (!await checkAuth()) return;
+    const user = await requireResearcher();
+    if (!user) return;
     
     initElements();
     initEventListeners();
     await loadSubmissionDetails();
+    await initNotificationDropdown();
 });
-
-/**
- * Check authentication
- */
-async function checkAuth() {
-    // انتظار انتهاء التهيئة
-    await authStore.waitForInitialization();
-    
-    const isLoggedIn = authStore.isLoggedIn();
-    const user = authStore.getState().user;
-    
-    if (!isLoggedIn || !user) {
-        window.location.href = '/pages/login.html';
-        return false;
-    }
-    
-    // التحقق من الصلاحيات (admin أو super_admin)
-    if (user.role !== 'admin' && user.role !== 'super_admin') {
-        window.location.href = '/pages/login.html';
-        return false;
-    }
-    
-    return true;
-}
 
 /**
  * Initialize DOM elements
@@ -69,22 +47,13 @@ function initElements() {
     submissionTitle = document.getElementById('submission-title');
     referenceNumber = document.getElementById('reference-number');
     
-    // Researcher info
-    researcherAvatar = document.getElementById('researcher-avatar');
-    researcherName = document.getElementById('researcher-name');
-    fullName = document.getElementById('full-name');
-    email = document.getElementById('email');
-    country = document.getElementById('country');
-    gender = document.getElementById('gender');
-    idNumber = document.getElementById('id-number');
-    createdAt = document.getElementById('created-at');
-    
     // Research info
     researchType = document.getElementById('research-type');
     category = document.getElementById('category');
     mainResearcher = document.getElementById('main-researcher');
     generalSpecialization = document.getElementById('general-specialization');
     detailedSpecialization = document.getElementById('detailed-specialization');
+    createdAt = document.getElementById('created-at');
     
     // File
     fileName = document.getElementById('file-name');
@@ -95,10 +64,13 @@ function initElements() {
     currentStatusBadge = document.getElementById('current-status-badge');
     daysPending = document.getElementById('days-pending');
     statusChanges = document.getElementById('status-changes');
+    lastUpdated = document.getElementById('last-updated');
     
-    // Form
-    statusChangeForm = document.getElementById('status-change-form');
-    adminComment = document.getElementById('admin-comment');
+    // Admin comment
+    adminCommentCard = document.getElementById('admin-comment-card');
+    adminCommentContent = document.getElementById('admin-comment-content');
+    
+    // History
     historyTimeline = document.getElementById('history-timeline');
 }
 
@@ -120,31 +92,11 @@ function initEventListeners() {
         });
     }
     
-    // Status options
-    document.querySelectorAll('.status-option').forEach(option => {
-        option.addEventListener('click', () => {
-            const radio = option.querySelector('input[type="radio"]');
-            radio.checked = true;
-            
-            // Update UI
-            document.querySelectorAll('.status-option').forEach(opt => {
-                opt.classList.remove('selected');
-            });
-            option.classList.add('selected');
-        });
-    });
-    
-    // Status change form
-    statusChangeForm?.addEventListener('submit', handleStatusChange);
-    
     // Download button
     downloadBtn?.addEventListener('click', handleDownload);
     
     // Print button
     document.getElementById('print-btn')?.addEventListener('click', handlePrint);
-    
-    // Export PDF button
-    document.getElementById('export-pdf-btn')?.addEventListener('click', handleExportPDF);
 }
 
 /**
@@ -164,16 +116,22 @@ async function loadSubmissionDetails() {
         // Show loading
         showLoading(true);
         
-        // التأكد من أن المستخدم محمل
+        // Wait for auth initialization
         await authStore.waitForInitialization();
         
+        const user = authStore.getState().user;
+        if (!user) {
+            window.location.href = '/pages/login.html';
+            return;
+        }
+        
         // Fetch submission details
-        const result = await adminStore.fetchSubmissionDetails(currentSubmissionId);
+        const result = await submissionsStore.fetchSubmissionById(currentSubmissionId);
         
         if (!result.success) {
             const errorMessage = result.error || 'فشل في تحميل التفاصيل';
             
-            // إذا كان الخطأ متعلق بالصلاحيات، إعادة توجيه
+            // If error is related to permissions, redirect
             if (errorMessage.includes('غير مصرح') || errorMessage.includes('يجب تسجيل الدخول')) {
                 window.location.href = '/pages/login.html';
                 return;
@@ -187,6 +145,12 @@ async function loadSubmissionDetails() {
         }
         
         currentSubmission = result.data;
+        
+        // Verify that the submission belongs to the logged-in researcher
+        if (currentSubmission.user_id !== user.id) {
+            showError('ليس لديك صلاحية لعرض هذا الطلب');
+            return;
+        }
         
         // Populate UI
         populateSubmissionData(currentSubmission);
@@ -209,39 +173,27 @@ async function loadSubmissionDetails() {
  */
 function populateSubmissionData(submission) {
     // Header
-    submissionTitle.textContent = submission.main_researcher;
-    referenceNumber.textContent = submission.reference_number;
-    
-    // Researcher info with avatar
-    if (submission.user) {
-        const user = submission.user;
-        if (researcherName) researcherName.textContent = user.username || submission.full_name || '-';
-        
-        // Update avatar
-        if (researcherAvatar) {
-            updateAvatarDisplay(researcherAvatar, user, { size: 60, fontSize: '1.5rem' });
-        }
-    } else {
-        if (researcherName) researcherName.textContent = submission.full_name || '-';
-    }
-    
-    fullName.textContent = submission.full_name || '-';
-    email.textContent = submission.email || '-';
-    country.textContent = submission.country || '-';
-    gender.textContent = submission.gender || '-';
-    idNumber.textContent = submission.id_number || '-';
-    createdAt.textContent = formatDate(submission.created_at);
+    submissionTitle.textContent = submission.main_researcher || 'تفاصيل البحث';
+    referenceNumber.textContent = submission.reference_number || 'REF-000000';
     
     // Research info
-    researchType.textContent = submission.research_type || '-';
+    researchType.textContent = getResearchTypeLabel(submission.research_type) || '-';
     category.textContent = submission.category || '-';
     mainResearcher.textContent = submission.main_researcher || '-';
     generalSpecialization.textContent = submission.general_specialization || '-';
     detailedSpecialization.textContent = submission.detailed_specialization || '-';
+    createdAt.textContent = formatDate(submission.created_at, true) || '-';
     
     // File
-    fileName.textContent = submission.file_name || 'research.pdf';
-    fileSize.textContent = formatFileSize(submission.file_size);
+    if (submission.file_url) {
+        fileName.textContent = submission.file_name || 'research.pdf';
+        fileSize.textContent = formatFileSize(submission.file_size) || '0 MB';
+        downloadBtn.style.display = 'block';
+    } else {
+        fileName.textContent = 'لا يوجد ملف';
+        fileSize.textContent = '-';
+        downloadBtn.style.display = 'none';
+    }
     
     // Quick info
     const statusLabel = getStatusLabel(submission.status);
@@ -253,16 +205,19 @@ function populateSubmissionData(submission) {
     const days = calculateDaysPending(submission.created_at);
     daysPending.textContent = days;
     
-    // Set current status radio
-    const currentStatusRadio = document.getElementById(`status-${submission.status.replace('_', '-')}`);
-    if (currentStatusRadio) {
-        currentStatusRadio.checked = true;
-        currentStatusRadio.closest('.status-option').classList.add('selected');
+    // Last updated
+    if (submission.updated_at) {
+        lastUpdated.textContent = formatRelativeTime(submission.updated_at);
+    } else {
+        lastUpdated.textContent = formatRelativeTime(submission.created_at);
     }
     
-    // Populate admin comment if exists
+    // Admin comment
     if (submission.admin_comment) {
-        adminComment.value = submission.admin_comment;
+        adminCommentContent.textContent = submission.admin_comment;
+        adminCommentCard.style.display = 'block';
+    } else {
+        adminCommentCard.style.display = 'none';
     }
 }
 
@@ -271,24 +226,34 @@ function populateSubmissionData(submission) {
  */
 async function loadHistory() {
     try {
-        // For now, create a basic history from submission data
+        // Create a basic history from submission data
         // In production, you would fetch from status_history table
         const history = [
             {
                 type: 'created',
-                title: 'تم إنشاء البحث',
-                description: `قدّم الباحث ${currentSubmission.full_name} البحث`,
+                title: 'تم تقديم البحث',
+                description: `تم تقديم البحث بنجاح`,
                 time: currentSubmission.created_at,
-                user: currentSubmission.full_name
+                user: 'أنت'
             }
         ];
         
-        if (currentSubmission.status !== 'pending') {
+        if (currentSubmission.status !== 'pending' && currentSubmission.status !== 'draft') {
             history.push({
                 type: 'status-change',
                 title: `تم تغيير الحالة إلى: ${getStatusLabel(currentSubmission.status)}`,
-                description: currentSubmission.admin_comment || 'لا يوجد تعليق',
-                time: currentSubmission.updated_at,
+                description: currentSubmission.admin_comment || 'تم تحديث حالة البحث',
+                time: currentSubmission.updated_at || currentSubmission.created_at,
+                user: 'المسؤول'
+            });
+        }
+        
+        if (currentSubmission.admin_comment) {
+            history.push({
+                type: 'comment',
+                title: 'تعليق من المسؤول',
+                description: currentSubmission.admin_comment,
+                time: currentSubmission.updated_at || currentSubmission.created_at,
                 user: 'المسؤول'
             });
         }
@@ -297,7 +262,7 @@ async function loadHistory() {
         renderHistory(history);
         
         // Update status changes count
-        statusChanges.textContent = history.length - 1;
+        statusChanges.textContent = history.filter(h => h.type === 'status-change').length;
         
     } catch (error) {
         console.error('Error loading history:', error);
@@ -308,6 +273,15 @@ async function loadHistory() {
  * Render history timeline
  */
 function renderHistory(history) {
+    if (!history || history.length === 0) {
+        historyTimeline.innerHTML = `
+            <div style="text-align: center; padding: var(--spacing-lg); color: var(--text-secondary);">
+                لا يوجد سجل تغييرات
+            </div>
+        `;
+        return;
+    }
+    
     historyTimeline.innerHTML = history.map(item => `
         <div class="history-item">
             <div class="history-icon ${item.type}">
@@ -328,61 +302,13 @@ function renderHistory(history) {
 }
 
 /**
- * Handle status change
- */
-async function handleStatusChange(e) {
-    e.preventDefault();
-    
-    try {
-        const formData = new FormData(e.target);
-        const newStatus = formData.get('status');
-        const comment = formData.get('comment');
-        
-        if (!newStatus) {
-            alert('الرجاء اختيار الحالة الجديدة');
-            return;
-        }
-        
-        // Confirm
-        if (!confirm(`هل أنت متأكد من تغيير الحالة إلى: ${getStatusLabel(newStatus)}؟`)) {
-            return;
-        }
-        
-        // Show loading
-        const submitBtn = document.getElementById('submit-status-btn');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>جاري الحفظ...</span>';
-        
-        // Update status
-        const result = await adminStore.updateSubmissionStatus(currentSubmissionId, newStatus, comment);
-        
-        if (!result.success) {
-            throw new Error(result.error || 'فشل في تحديث الحالة');
-        }
-        
-        // Show success
-        alert('تم تحديث الحالة بنجاح ✓');
-        
-        // Reload page
-        window.location.reload();
-        
-    } catch (error) {
-        console.error('Error updating status:', error);
-        alert('حدث خطأ: ' + error.message);
-        
-        // Reset button
-        const submitBtn = document.getElementById('submit-status-btn');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-save"></i> <span>حفظ التغييرات</span>';
-    }
-}
-
-/**
  * Handle download
  */
 function handleDownload() {
     if (currentSubmission && currentSubmission.file_url) {
         window.open(currentSubmission.file_url, '_blank');
+    } else {
+        alert('لا يوجد ملف للتحميل');
     }
 }
 
@@ -391,13 +317,6 @@ function handleDownload() {
  */
 function handlePrint() {
     window.print();
-}
-
-/**
- * Handle export PDF
- */
-function handleExportPDF() {
-    alert('سيتم تنفيذ هذه الميزة قريباً');
 }
 
 /**
@@ -421,20 +340,6 @@ function showError(message) {
     contentContainer.style.display = 'none';
     errorState.style.display = 'block';
     document.getElementById('error-message').textContent = message;
-}
-
-/**
- * Get status label
- */
-function getStatusLabel(status) {
-    const labels = {
-        'pending': 'قيد المراجعة',
-        'approved': 'معتمد',
-        'rejected': 'مرفوض',
-        'needs_revision': 'يحتاج مراجعة',
-        'draft': 'مسودة'
-    };
-    return labels[status] || status;
 }
 
 /**
@@ -464,42 +369,6 @@ function getHistoryIcon(type) {
 }
 
 /**
- * Format date
- */
-function formatDate(dateString) {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ar-SA', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-/**
- * Format relative time
- */
-function formatRelativeTime(dateString) {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now - date;
-    
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
-    if (minutes < 1) return 'الآن';
-    if (minutes < 60) return `منذ ${minutes} دقيقة`;
-    if (hours < 24) return `منذ ${hours} ساعة`;
-    if (days < 7) return `منذ ${days} يوم`;
-    
-    return formatDate(dateString);
-}
-
-/**
  * Calculate days pending
  */
 function calculateDaysPending(dateString) {
@@ -512,17 +381,20 @@ function calculateDaysPending(dateString) {
 }
 
 /**
- * Format file size
+ * Get research type label
  */
-function formatFileSize(bytes) {
-    if (!bytes) return '0 MB';
-    const mb = bytes / (1024 * 1024);
-    return mb.toFixed(2) + ' MB';
+function getResearchTypeLabel(type) {
+    const labels = {
+        'scientific_paper': 'ورقة علمية',
+        'masters_thesis': 'رسالة ماجستير',
+        'phd_dissertation': 'أطروحة دكتوراه',
+        'book': 'كتاب'
+    };
+    return labels[type] || type;
 }
 
 // Export functions if needed
 export {
-    loadSubmissionDetails,
-    handleStatusChange
+    loadSubmissionDetails
 };
 

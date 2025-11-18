@@ -20,31 +20,75 @@ export async function handleLogout() {
         
         // Show loading (if there's a button)
         const logoutBtn = document.getElementById('logout-btn');
+        const logoutLink = document.getElementById('logout-link');
+        
         if (logoutBtn) {
             logoutBtn.disabled = true;
             logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>جاري تسجيل الخروج...</span>';
         }
+        
+        if (logoutLink) {
+            logoutLink.style.pointerEvents = 'none';
+            logoutLink.style.opacity = '0.6';
+        }
 
         // Call authStore logout
-        await authStore.logout();
+        const result = await authStore.logout();
+        
+        if (!result.success) {
+            throw new Error(result.error || 'فشل تسجيل الخروج');
+        }
         
         console.log('Logout successful, redirecting...');
         
-        // Redirect to login page
-        window.location.href = '/pages/login.html';
+        // تنظيف إضافي للتأكد
+        try {
+            // تنظيف جميع مفاتيح Supabase
+            const supabaseKeys = Object.keys(localStorage).filter(key => 
+                key.startsWith('sb-') || 
+                key.startsWith('supabase.') ||
+                key.includes('supabase')
+            );
+            supabaseKeys.forEach(key => localStorage.removeItem(key));
+            
+            sessionStorage.clear();
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('session');
+            localStorage.removeItem('auth');
+        } catch (cleanupError) {
+            console.warn('Cleanup warning:', cleanupError);
+        }
+        
+        // Redirect to login page with cache busting
+        window.location.replace('/pages/login.html');
         
     } catch (error) {
         console.error('Logout error:', error);
         
+        // Force logout locally even if there was an error
+        try {
+            const supabaseKeys = Object.keys(localStorage).filter(key => 
+                key.startsWith('sb-') || 
+                key.startsWith('supabase.') ||
+                key.includes('supabase')
+            );
+            supabaseKeys.forEach(key => localStorage.removeItem(key));
+            
+            sessionStorage.clear();
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('session');
+            localStorage.removeItem('auth');
+        } catch (cleanupError) {
+            console.error('Cleanup error:', cleanupError);
+        }
+        
         // Show error message
         alert('حدث خطأ أثناء تسجيل الخروج. سيتم تسجيل خروجك محلياً.');
         
-        // Force logout locally
-        localStorage.removeItem('token');
-        sessionStorage.clear();
-        
         // Redirect anyway
-        window.location.href = '/pages/login.html';
+        window.location.replace('/pages/login.html');
     }
 }
 

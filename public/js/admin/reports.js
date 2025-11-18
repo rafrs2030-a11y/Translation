@@ -151,10 +151,7 @@ async function handleCustomReport(e) {
 async function fetchSubmissionsData(dateFrom, dateTo) {
     let query = supabase
         .from('submissions')
-        .select(`
-            *,
-            user:users(full_name, email)
-        `);
+        .select('*');
     
     if (dateFrom && dateTo) {
         query = query

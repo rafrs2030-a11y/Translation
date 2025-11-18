@@ -5,6 +5,7 @@
 import submissionsStore from '../stores/submissionsStore.js';
 import authStore from '../stores/authStore.js';
 import { requireResearcher } from '../utils/auth-guard.js';
+import { handleLogout } from '../utils/logout.js';
 
 // Form state
 let currentStep = 1;
@@ -51,6 +52,12 @@ function initElements() {
  * Initialize event listeners
  */
 function initEventListeners() {
+    // Logout
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+    
     // Navigation buttons
     prevBtn.addEventListener('click', goToPreviousStep);
     nextBtn.addEventListener('click', goToNextStep);
@@ -92,6 +99,14 @@ function initEventListeners() {
             saveFormData();
         });
     });
+    
+    // Handle category change to show/hide other category field
+    const categorySelect = document.getElementById('category');
+    if (categorySelect) {
+        categorySelect.addEventListener('change', handleCategoryChange);
+        // Initialize on load
+        handleCategoryChange();
+    }
 }
 
 /**
@@ -159,6 +174,29 @@ function updateStepDisplay() {
 }
 
 /**
+ * Handle category change
+ */
+function handleCategoryChange() {
+    const categorySelect = document.getElementById('category');
+    const otherCategoryGroup = document.getElementById('other-category-group');
+    const otherCategoryInput = document.getElementById('other_category');
+    
+    if (!categorySelect || !otherCategoryGroup || !otherCategoryInput) return;
+    
+    if (categorySelect.value === 'أخرى') {
+        otherCategoryGroup.style.display = 'block';
+        otherCategoryInput.setAttribute('required', 'required');
+        // Clear category value so we can use other_category instead
+        categorySelect.removeAttribute('required');
+    } else {
+        otherCategoryGroup.style.display = 'none';
+        otherCategoryInput.removeAttribute('required');
+        otherCategoryInput.value = '';
+        categorySelect.setAttribute('required', 'required');
+    }
+}
+
+/**
  * Validate current step
  */
 function validateCurrentStep() {
@@ -175,6 +213,16 @@ function validateCurrentStep() {
             clearFieldError(input);
         }
     });
+    
+    // Special validation: if category is "أخرى", other_category must be filled
+    const categorySelect = document.getElementById('category');
+    const otherCategoryInput = document.getElementById('other_category');
+    if (categorySelect && categorySelect.value === 'أخرى') {
+        if (!otherCategoryInput || !otherCategoryInput.value.trim()) {
+            showFieldError(otherCategoryInput, 'يرجى تحديد المجال الآخر');
+            isValid = false;
+        }
+    }
     
     // Special validation for file upload on step 3
     if (currentStep === 3 && !uploadedFile) {
@@ -215,10 +263,10 @@ function handleFileSelect(e) {
         return;
     }
     
-    // Validate file size (10MB)
-    const maxSize = 10 * 1024 * 1024;
+    // Validate file size (200MB)
+    const maxSize = 200 * 1024 * 1024; // 200MB
     if (file.size > maxSize) {
-        showAlert('حجم الملف كبير جداً. الحد الأقصى 10MB', 'error');
+        showAlert('حجم الملف كبير جداً. الحد الأقصى 200MB', 'error');
         return;
     }
     
@@ -295,7 +343,7 @@ function updateReviewContent() {
             </div>
             <div class="review-item">
                 <span class="review-label">تصنيف البحث:</span>
-                <span class="review-value">${formData.category || '-'}</span>
+                <span class="review-value">${formData.category === 'أخرى' ? (formData.other_category || '-') : (formData.category || '-')}</span>
             </div>
             <div class="review-item">
                 <span class="review-label">اسم الباحث الرئيسي:</span>
@@ -365,6 +413,11 @@ async function handleSubmit(e) {
         }
         
         // Prepare submission data
+        // If category is "أخرى", use other_category value instead
+        const categoryValue = formData.category === 'أخرى' 
+            ? (formData.other_category || 'أخرى')
+            : formData.category;
+        
         const submissionData = {
             full_name: formData.full_name,
             country: formData.country,
@@ -372,7 +425,7 @@ async function handleSubmit(e) {
             gender: formData.gender,
             id_number: formData.id_number,
             research_type: formData.research_type,
-            category: formData.category,
+            category: categoryValue,
             main_researcher: formData.main_researcher,
             general_specialization: formData.general_specialization,
             detailed_specialization: formData.detailed_specialization,
@@ -456,6 +509,12 @@ function loadDraftIfExists() {
                         }
                     }
                 });
+                
+                // Handle category change after loading draft
+                // Use setTimeout to ensure DOM is ready
+                setTimeout(() => {
+                    handleCategoryChange();
+                }, 0);
                 
                 updateStepDisplay();
             }

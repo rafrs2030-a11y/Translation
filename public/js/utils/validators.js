@@ -58,15 +58,19 @@ export const validatePasswordMatch = (password, confirmPassword) => {
 };
 
 /**
- * التحقق من رقم الهاتف السعودي
+ * التحقق من رقم الهاتف
  */
 export const validatePhone = (phone) => {
   if (!phone) {
     return { valid: false, error: ERROR_MESSAGES.REQUIRED_FIELD };
   }
   
-  if (!REGEX_PATTERNS.PHONE.test(phone)) {
-    return { valid: false, error: 'رقم الهاتف غير صحيح' };
+  // تنظيف الرقم من المسافات والأحرف
+  const cleanedPhone = phone.replace(/\s+/g, '').replace(/[^\d+]/g, '');
+  
+  // التحقق من أن الرقم يبدأ بـ + أو رقم ويحتوي على 8-15 رقم
+  if (!/^(\+?\d{1,4})?\d{8,15}$/.test(cleanedPhone)) {
+    return { valid: false, error: 'رقم الهاتف غير صحيح. يجب أن يكون بين 8 و 15 رقم' };
   }
   
   return { valid: true };
@@ -80,8 +84,16 @@ export const validateNationalId = (nationalId) => {
     return { valid: false, error: ERROR_MESSAGES.REQUIRED_FIELD };
   }
   
-  if (!REGEX_PATTERNS.NATIONAL_ID.test(nationalId)) {
-    return { valid: false, error: 'رقم الهوية غير صحيح' };
+  // تنظيف الرقم من المسافات والأحرف
+  const cleanedId = nationalId.replace(/\s+/g, '').replace(/[^\d]/g, '');
+  
+  // التحقق من أن الرقم يحتوي على أرقام فقط وطوله معقول (من 8 إلى 20 رقم)
+  if (!/^\d+$/.test(cleanedId)) {
+    return { valid: false, error: 'رقم الهوية يجب أن يحتوي على أرقام فقط' };
+  }
+  
+  if (cleanedId.length < 8 || cleanedId.length > 20) {
+    return { valid: false, error: 'رقم الهوية يجب أن يكون بين 8 و 20 رقم' };
   }
   
   return { valid: true };

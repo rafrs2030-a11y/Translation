@@ -1,13 +1,12 @@
 /**
- * Researcher Profile JavaScript
- * الملف الشخصي للباحث
+ * Admin Profile JavaScript
+ * الملف الشخصي للمسؤول
  */
 
 import authStore from '../stores/authStore.js';
-import submissionsStore from '../stores/submissionsStore.js';
 import { handleLogout } from '../utils/logout.js';
 import { supabase, STORAGE_BUCKETS } from '../config/supabase.js';
-import { requireResearcher } from '../utils/auth-guard.js';
+import { requireAdmin } from '../utils/auth-guard.js';
 import { initNotificationDropdown } from '../utils/notification-dropdown.js';
 
 // State
@@ -15,12 +14,11 @@ let currentUser = null;
 
 // DOM Elements
 let profileAvatar, profileName, profileEmail, profilePhone;
-let totalSubmissions, approvedCount, pendingCount;
-let personalInfoForm, contactInfoForm, notificationSettingsForm, changePasswordForm;
+let roleBadge, totalReviewed, accountStatus;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    currentUser = await requireResearcher();
+    currentUser = await requireAdmin();
     if (!currentUser) return;
     
     initElements();
@@ -40,15 +38,9 @@ function initElements() {
     profilePhone = document.getElementById('profile-phone');
     
     // Stats
-    totalSubmissions = document.getElementById('total-submissions');
-    approvedCount = document.getElementById('approved-count');
-    pendingCount = document.getElementById('pending-count');
-    
-    // Forms
-    personalInfoForm = document.getElementById('personal-info-form');
-    contactInfoForm = document.getElementById('contact-info-form');
-    notificationSettingsForm = document.getElementById('notification-settings-form');
-    changePasswordForm = document.getElementById('change-password-form');
+    roleBadge = document.getElementById('role-badge');
+    totalReviewed = document.getElementById('total-reviewed');
+    accountStatus = document.getElementById('account-status');
 }
 
 /**
@@ -76,10 +68,10 @@ function initEventListeners() {
     });
     
     // Forms
-    personalInfoForm?.addEventListener('submit', handlePersonalInfoUpdate);
-    contactInfoForm?.addEventListener('submit', handleContactInfoUpdate);
-    notificationSettingsForm?.addEventListener('submit', handleNotificationSettings);
-    changePasswordForm?.addEventListener('submit', handlePasswordChange);
+    document.getElementById('personal-info-form')?.addEventListener('submit', handlePersonalInfoUpdate);
+    document.getElementById('contact-info-form')?.addEventListener('submit', handleContactInfoUpdate);
+    document.getElementById('notification-settings-form')?.addEventListener('submit', handleNotificationSettings);
+    document.getElementById('change-password-form')?.addEventListener('submit', handlePasswordChange);
     
     // Avatar upload
     document.getElementById('avatar-upload')?.addEventListener('change', handleAvatarUpload);
@@ -148,6 +140,11 @@ function populateProfileHeader() {
     profileEmail.textContent = currentUser.email;
     profilePhone.textContent = currentUser.phone || 'غير محدد';
     
+    // Role
+    const roleLabel = currentUser.role === 'super_admin' ? 'مسؤول رئيسي' : 'مسؤول';
+    roleBadge.textContent = roleLabel;
+    document.getElementById('user-role').textContent = roleLabel;
+    
     // Email verified badge
     const verifiedBadge = document.getElementById('email-verified-badge');
     if (currentUser.email_verified) {
@@ -157,6 +154,9 @@ function populateProfileHeader() {
         verifiedBadge.textContent = 'غير موثّق';
         verifiedBadge.className = 'badge badge-warning';
     }
+    
+    // Account status
+    accountStatus.textContent = 'نشط';
     
     // Dates
     document.getElementById('created-at').textContent = formatDate(currentUser.created_at);
@@ -206,20 +206,16 @@ function populateForms() {
  */
 async function loadStats() {
     try {
+        // Count reviewed submissions (approved, rejected, needs_revision)
         const { data, error } = await supabase
             .from('submissions')
             .select('status')
-            .eq('user_id', currentUser.id);
+            .in('status', ['approved', 'rejected', 'needs_revision']);
         
         if (error) throw error;
         
-        const total = data.length;
-        const approved = data.filter(s => s.status === 'approved').length;
-        const pending = data.filter(s => s.status === 'pending').length;
-        
-        totalSubmissions.textContent = total;
-        approvedCount.textContent = approved;
-        pendingCount.textContent = pending;
+        const reviewed = data.length;
+        totalReviewed.textContent = reviewed;
         
     } catch (error) {
         console.error('Error loading stats:', error);
@@ -352,7 +348,6 @@ async function handleNotificationSettings(e) {
     e.preventDefault();
     
     try {
-        const formData = new FormData(e.target);
         const settings = {
             email_enabled: document.getElementById('email-notifications').checked,
             status_change_email: document.getElementById('status-notifications').checked,
@@ -403,7 +398,6 @@ async function handlePasswordChange(e) {
     
     try {
         const formData = new FormData(e.target);
-        const currentPassword = formData.get('current_password');
         const newPassword = formData.get('new_password');
         const confirmPassword = formData.get('confirm_password');
         
@@ -536,7 +530,6 @@ async function handleAvatarUpload(e) {
         }
         
         // Show loading
-        const originalContent = profileAvatar.innerHTML;
         profileAvatar.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i>';
         
         // Get file extension
@@ -638,7 +631,7 @@ async function handleAvatarUpload(e) {
  * Handle delete account
  */
 async function handleDeleteAccount() {
-    if (!confirm('هل أنت متأكد من حذف حسابك؟\n\nهذا الإجراء نهائي ولا يمكن التراجع عنه!\n\nسيتم حذف جميع بياناتك وأبحاثك.')) {
+    if (!confirm('هل أنت متأكد من حذف حسابك؟\n\nهذا الإجراء نهائي ولا يمكن التراجع عنه!\n\nسيتم حذف جميع بياناتك.')) {
         return;
     }
     

@@ -7,6 +7,7 @@ import notificationsStore from '../stores/notificationsStore.js';
 import authStore from '../stores/authStore.js';
 import { handleLogout } from '../utils/logout.js';
 import { requireResearcher } from '../utils/auth-guard.js';
+import badgeManager from '../utils/badge-manager.js';
 
 // State
 let currentFilter = 'all';
@@ -20,13 +21,35 @@ let counters = {};
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    const user = await requireResearcher();
-    if (!user) return;
-    
-    initElements();
-    initEventListeners();
-    await loadNotifications();
-    subscribeToRealtime();
+    try {
+        const user = await requireResearcher();
+        if (!user) return;
+        
+        // Initialize notifications store first
+        await notificationsStore.initialize();
+        
+        initElements();
+        initEventListeners();
+        await loadNotifications();
+        subscribeToRealtime();
+        await badgeManager.initialize();
+    } catch (error) {
+        console.error('Error initializing notifications page:', error);
+        // Show error message
+        const container = document.getElementById('notifications-container');
+        if (container) {
+            container.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <h3>حدث خطأ أثناء تحميل الصفحة</h3>
+                    <p>يرجى إعادة تحميل الصفحة</p>
+                    <button class="btn btn-primary" onclick="window.location.reload()">
+                        إعادة التحميل
+                    </button>
+                </div>
+            `;
+        }
+    }
 });
 
 /**
@@ -44,6 +67,12 @@ function initElements() {
         all: document.getElementById('count-all'),
         unread: document.getElementById('count-unread')
     };
+    
+    // Check if required elements exist
+    if (!notificationsContainer) {
+        console.error('Notifications container not found!');
+        throw new Error('Notifications container element not found');
+    }
 }
 
 /**
@@ -72,6 +101,11 @@ function initEventListeners() {
  */
 async function loadNotifications(append = false) {
     try {
+        if (!notificationsContainer) {
+            console.error('Notifications container not initialized');
+            return;
+        }
+        
         if (!append) {
             showLoading();
         }
@@ -91,9 +125,29 @@ async function loadNotifications(append = false) {
         
         const result = await notificationsStore.fetchNotifications(filters);
         
-        if (!result || !result.data) {
+        if (!result) {
+            console.error('No result from fetchNotifications');
+            if (!append) {
+                showError('فشل تحميل الإشعارات');
+            }
+            return;
+        }
+        
+        if (!result.success) {
+            console.error('Fetch notifications failed:', result.error);
+            if (!append) {
+                showError(result.error || 'حدث خطأ أثناء تحميل الإشعارات');
+            }
+            return;
+        }
+        
+        if (!result.data || result.data.length === 0) {
             if (!append) {
                 showEmpty();
+            }
+            // Still update counters even if no data
+            if (result.counts) {
+                updateCounters(result.counts);
             }
             return;
         }
@@ -104,12 +158,19 @@ async function loadNotifications(append = false) {
             renderNotifications(result.data);
         }
         
-        updateCounters(result.counts);
-        updateLoadMoreButton(result.hasMore);
+        if (result.counts) {
+            updateCounters(result.counts);
+        }
+        
+        if (result.hasMore !== undefined) {
+            updateLoadMoreButton(result.hasMore);
+        }
         
     } catch (error) {
         console.error('Error loading notifications:', error);
-        showError('حدث خطأ أثناء تحميل الإشعارات');
+        if (!append && notificationsContainer) {
+            showError('حدث خطأ أثناء تحميل الإشعارات: ' + error.message);
+        }
     }
 }
 

@@ -4,7 +4,12 @@
  */
 
 // Import Supabase from CDN (loaded in HTML)
-const { createClient } = window.supabase || {};
+// Supabase from CDN exposes createClient on window.supabase
+if (typeof window === 'undefined' || !window.supabase) {
+  throw new Error('Supabase client not loaded. Make sure to include Supabase CDN script before this file.');
+}
+
+const { createClient } = window.supabase;
 
 // Supabase credentials (from your Supabase project)
 const supabaseUrl = 'https://rzenhmmwocctvonwhnrj.supabase.co';
@@ -30,6 +35,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Storage buckets
 export const STORAGE_BUCKETS = {
   RESEARCH_FILES: 'research-files',
+  AVATARS: 'avatars',
 };
 
 // Helper functions

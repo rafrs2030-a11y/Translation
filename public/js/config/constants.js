@@ -42,9 +42,9 @@ export const RESEARCH_TYPES = [
 export const RESEARCH_CATEGORIES = [
   'العلوم الصحية',
   'العلوم الاجتماعية',
-  'الدراسات الإسلامية',
+  'الدراسات الإسلامية العربية',
   'التاريخ',
-  'الاقتصاد',
+  'الاقتصاد المالي',
   'الهندسة وتقنية المعلومات',
   'أخرى',
 ];
@@ -104,8 +104,8 @@ export const ALLOWED_FILE_TYPES = [
 // امتدادات الملفات المسموحة
 export const ALLOWED_FILE_EXTENSIONS = ['.pdf', '.docx', '.doc'];
 
-// الحد الأقصى لحجم الملف (50MB)
-export const MAX_FILE_SIZE = 50 * 1024 * 1024;
+// الحد الأقصى لحجم الملف (200MB)
+export const MAX_FILE_SIZE = 200 * 1024 * 1024;
 
 // عدد العناصر في الصفحة
 export const ITEMS_PER_PAGE = {

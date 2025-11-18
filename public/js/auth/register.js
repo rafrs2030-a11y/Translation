@@ -66,11 +66,35 @@ async function handleSubmit(e) {
     clearAlerts();
     
     // Get form data
+    let email = document.getElementById('email').value.trim().toLowerCase();
+    
+    // تصحيح الأخطاء الإملائية الشائعة في البريد الإلكتروني
+    const emailCorrections = {
+        'gmai.com': 'gmail.com',
+        'gmial.com': 'gmail.com',
+        'gmaill.com': 'gmail.com',
+        'gmaiil.com': 'gmail.com',
+        'yahooo.com': 'yahoo.com',
+        'yaho.com': 'yahoo.com',
+        'hotmial.com': 'hotmail.com',
+        'hotmai.com': 'hotmail.com',
+        'hotmali.com': 'hotmail.com',
+    };
+    
+    // تطبيق التصحيحات
+    Object.keys(emailCorrections).forEach(wrong => {
+        if (email.includes('@' + wrong)) {
+            email = email.replace('@' + wrong, '@' + emailCorrections[wrong]);
+        }
+    });
+    
     const formData = {
         full_name: document.getElementById('full_name').value.trim(),
-        email: document.getElementById('email').value.trim().toLowerCase(),
-        phone: document.getElementById('phone').value.trim(),
-        national_id: document.getElementById('national_id').value.trim(),
+        email: email,
+        phone: document.getElementById('phone').value.trim().replace(/\s+/g, ''),
+        national_id: document.getElementById('national_id').value.trim().replace(/\s+/g, ''),
+        gender: document.getElementById('gender').value.trim(),
+        country: document.getElementById('country').value.trim(),
         password: document.getElementById('password').value,
         confirm_password: document.getElementById('confirm_password').value,
         terms: document.getElementById('terms').checked
@@ -87,10 +111,9 @@ async function handleSubmit(e) {
     try {
         // Register
         const result = await authStore.register({
-            username: formData.email.split('@')[0],
+            username: formData.full_name, // استخدام الاسم الكامل كاسم مستخدم
             email: formData.email,
             password: formData.password,
-            full_name: formData.full_name,
             phone: formData.phone,
             national_id: formData.national_id,
             gender: formData.gender,

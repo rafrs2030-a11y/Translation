@@ -854,11 +854,6 @@
     background: var(--bg-secondary);
 }
 
-.developer-credit a::before {
-    content: '👨‍💻';
-    font-size: 1.25rem;
-}
-
 /* ========================================
    Responsive Enhancements
    ======================================== */

@@ -83,11 +83,19 @@ class SubmissionsStore {
     this.setState({ loading: true, error: null });
 
     try {
-      const { data, error } = await supabase
+      const user = authStore.getState().user;
+      if (!user) throw new Error('المستخدم غير مسجل الدخول');
+
+      let query = supabase
         .from('submissions')
         .select('*')
-        .eq('id', id)
-        .single();
+        .eq('id', id);
+
+      // Filter by user_id to ensure researchers can only see their own submissions
+      // Admins can see all submissions, but this store is for researchers
+      query = query.eq('user_id', user.id);
+
+      const { data, error } = await query.single();
 
       if (error) throw error;
 
@@ -240,7 +248,7 @@ class SubmissionsStore {
   /**
    * رفع ملف قبل إنشاء البحث (بدون submissionId)
    */
-  async uploadFileBeforeSubmission(file) {
+  async uploadFileBeforeSubmission(file, onProgress = null) {
     this.setState({ loading: true, error: null });
 
     try {
@@ -254,14 +262,27 @@ class SubmissionsStore {
       const filePath = `${user.id}/temp/${fileName}`;
 
       // رفع الملف إلى Supabase Storage
+      // Supabase handles large files automatically with chunked upload
       const { data, error } = await supabase.storage
         .from('research-files')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          contentType: file.type || 'application/octet-stream'
         });
 
-      if (error) throw error;
+      if (error) {
+        // Handle specific error for file size limit
+        if (error.message && error.message.includes('File size exceeds')) {
+          throw new Error('حجم الملف يتجاوز الحد المسموح (200MB)');
+        }
+        throw error;
+      }
+      
+      // Update progress to 100% if callback provided
+      if (onProgress) {
+        onProgress(100);
+      }
 
       // الحصول على رابط الملف
       const { data: urlData } = supabase.storage
@@ -301,9 +322,14 @@ class SubmissionsStore {
       const filePath = `${user.id}/${submissionId}/${fileName}`;
 
       // رفع الملف إلى Supabase Storage
+      // For large files, use chunked upload
       const { data, error } = await supabase.storage
         .from('research-files')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type || 'application/octet-stream'
+        });
 
       if (error) throw error;
 
@@ -437,7 +463,7 @@ class SubmissionsStore {
   }
 
   /**
-   * حساب الإحصائيات
+   * حساب الإحصائيات من الحالة المحلية
    */
   getStats() {
     const total = this.state.submissions.length;
@@ -455,6 +481,61 @@ class SubmissionsStore {
       needsRevision,
       acceptanceRate,
     };
+  }
+
+  /**
+   * جلب الإحصائيات من قاعدة البيانات مباشرة
+   * هذا يضمن الحصول على جميع الطلبات وليس فقط الصفحة الحالية
+   */
+  async fetchStats() {
+    this.setState({ loading: true, error: null });
+
+    try {
+      const user = authStore.getState().user;
+      if (!user) throw new Error('المستخدم غير مسجل الدخول');
+
+      // جلب جميع طلبات المستخدم (بدون pagination) للحصول على الإحصائيات الصحيحة
+      const { data: submissions, error } = await supabase
+        .from('submissions')
+        .select('status')
+        .eq('user_id', user.id)
+        .eq('is_draft', false);
+
+      if (error) throw error;
+
+      // حساب الإحصائيات
+      const total = submissions.length;
+      const pending = submissions.filter(s => s.status === 'pending').length;
+      const approved = submissions.filter(s => s.status === 'approved').length;
+      const rejected = submissions.filter(s => s.status === 'rejected').length;
+      const needsRevision = submissions.filter(s => s.status === 'needs_revision').length;
+      const acceptanceRate = total > 0 ? ((approved / total) * 100).toFixed(1) : 0;
+
+      const stats = {
+        total,
+        pending,
+        approved,
+        rejected,
+        needsRevision,
+        acceptanceRate,
+      };
+
+      this.setState({ loading: false });
+      return stats;
+
+    } catch (error) {
+      this.setState({ error: error.message, loading: false });
+      console.error('Error fetching stats:', error);
+      // إرجاع إحصائيات فارغة في حالة الخطأ
+      return {
+        total: 0,
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        needsRevision: 0,
+        acceptanceRate: 0,
+      };
+    }
   }
 
   /**

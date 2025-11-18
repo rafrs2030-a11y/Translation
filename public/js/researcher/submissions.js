@@ -6,6 +6,8 @@ import authStore from '../stores/authStore.js';
 import submissionsStore from '../stores/submissionsStore.js';
 import { formatDate, formatRelativeTime } from '../utils/helpers.js';
 import { requireResearcher } from '../utils/auth-guard.js';
+import { handleLogout } from '../utils/logout.js';
+import badgeManager from '../utils/badge-manager.js';
 
 // State
 let currentPage = 1;
@@ -30,6 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initElements();
     initEventListeners();
     await loadSubmissions();
+    await badgeManager.initialize();
 });
 
 /**
@@ -53,6 +56,12 @@ function initElements() {
  * Initialize event listeners
  */
 function initEventListeners() {
+    // Logout
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+    
     // Filters
     statusFilter.addEventListener('change', () => {
         filters.status = statusFilter.value;

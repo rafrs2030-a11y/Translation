@@ -31,17 +31,27 @@ class NotificationsStore {
    * تهيئة الإشعارات الفورية
    */
   async initialize() {
-    const user = authStore.getState().user;
-    if (!user) return;
+    try {
+      const user = authStore.getState().user;
+      if (!user) {
+        // إذا لم يكن المستخدم مسجل دخول، لا تفعل شيئاً
+        return;
+      }
 
-    // جلب الإشعارات الأولية
-    await this.fetchNotifications();
+      // جلب الإشعارات الأولية
+      await this.fetchNotifications();
 
-    // جلب التفضيلات
-    await this.fetchPreferences();
+      // جلب التفضيلات
+      await this.fetchPreferences();
 
-    // الاشتراك في الإشعارات الفورية
-    this.subscribeToRealtime();
+      // الاشتراك في الإشعارات الفورية
+      this.subscribeToRealtime();
+    } catch (error) {
+      // تجاهل الأخطاء أثناء التهيئة إذا لم يكن المستخدم مسجل دخول
+      if (error.message && !error.message.includes('غير مسجل الدخول')) {
+        console.error('Error initializing notifications:', error);
+      }
+    }
   }
 
   /**
@@ -109,7 +119,21 @@ class NotificationsStore {
 
     try {
       const user = authStore.getState().user;
-      if (!user) throw new Error('المستخدم غير مسجل الدخول');
+      if (!user) {
+        // إرجاع قائمة فارغة بدلاً من رمي خطأ
+        this.setState({ 
+          notifications: [], 
+          unreadCount: 0, 
+          loading: false 
+        });
+        return { 
+          success: false, 
+          error: 'المستخدم غير مسجل الدخول', 
+          data: [], 
+          counts: { total: 0, unread: 0 }, 
+          hasMore: false 
+        };
+      }
 
       // Build query
       let query = supabase

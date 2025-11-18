@@ -57,7 +57,28 @@ async function handleSubmit(e) {
     clearAlerts();
     
     // Get form data
-    const email = document.getElementById('email').value.trim();
+    let email = document.getElementById('email').value.trim().toLowerCase();
+    
+    // تصحيح الأخطاء الإملائية الشائعة في البريد الإلكتروني
+    const emailCorrections = {
+        'gmai.com': 'gmail.com',
+        'gmial.com': 'gmail.com',
+        'gmaill.com': 'gmail.com',
+        'gmaiil.com': 'gmail.com',
+        'yahooo.com': 'yahoo.com',
+        'yaho.com': 'yahoo.com',
+        'hotmial.com': 'hotmail.com',
+        'hotmai.com': 'hotmail.com',
+        'hotmali.com': 'hotmail.com',
+    };
+    
+    // تطبيق التصحيحات
+    Object.keys(emailCorrections).forEach(wrong => {
+        if (email.includes('@' + wrong)) {
+            email = email.replace('@' + wrong, '@' + emailCorrections[wrong]);
+        }
+    });
+    
     const password = document.getElementById('password').value;
     const remember = document.getElementById('remember').checked;
     
@@ -89,11 +110,23 @@ async function handleSubmit(e) {
                 }
             }, 1000);
         } else {
-            showAlert(result.error || 'فشل تسجيل الدخول', 'error');
+            // عرض رسالة الخطأ من authStore
+            const errorMsg = result.error || 'فشل تسجيل الدخول';
+            showAlert(errorMsg, 'error');
+            console.error('Login failed:', result);
+            
+            // إذا كان الخطأ متعلق بكلمة المرور، عرض خيار إعادة التعيين
+            if (errorMsg.includes('كلمة المرور') || 
+                errorMsg.includes('credentials') || 
+                errorMsg.includes('غير صحيحة')) {
+                showPasswordResetOption(email);
+            }
         }
     } catch (error) {
         console.error('Login error:', error);
-        showAlert('حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.', 'error');
+        // عرض رسالة الخطأ إذا كانت موجودة
+        const errorMsg = error.message || 'حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.';
+        showAlert(errorMsg, 'error');
     } finally {
         setLoading(false);
     }
@@ -214,6 +247,75 @@ function setLoading(loading) {
             <i class="fas fa-sign-in-alt"></i>
             <span>تسجيل الدخول</span>
         `;
+    }
+}
+
+/**
+ * Show password reset option
+ */
+function showPasswordResetOption(email) {
+    // إزالة أي رسالة سابقة
+    const existingReset = document.getElementById('password-reset-option');
+    if (existingReset) {
+        existingReset.remove();
+    }
+    
+    // إنشاء رسالة إعادة تعيين كلمة المرور
+    const resetDiv = document.createElement('div');
+    resetDiv.id = 'password-reset-option';
+    resetDiv.className = 'alert alert-info';
+    resetDiv.style.marginTop = '1rem';
+    resetDiv.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <i class="fas fa-key"></i>
+                <span>نسيت كلمة المرور؟</span>
+            </div>
+            <button type="button" class="btn btn-outline btn-small" id="reset-password-btn">
+                <i class="fas fa-envelope"></i>
+                إرسال رابط إعادة التعيين
+            </button>
+        </div>
+    `;
+    
+    alertContainer.appendChild(resetDiv);
+    
+    // إضافة event listener للزر
+    document.getElementById('reset-password-btn').addEventListener('click', async () => {
+        await handlePasswordReset(email);
+    });
+}
+
+/**
+ * Handle password reset
+ */
+async function handlePasswordReset(email) {
+    if (!email) {
+        showAlert('يرجى إدخال البريد الإلكتروني', 'error');
+        return;
+    }
+    
+    const resetBtn = document.getElementById('reset-password-btn');
+    const originalHTML = resetBtn.innerHTML;
+    resetBtn.disabled = true;
+    resetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+    
+    try {
+        const result = await authStore.requestPasswordReset(email);
+        
+        if (result.success) {
+            showAlert('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. يرجى التحقق من صندوق الوارد.', 'success');
+            resetBtn.innerHTML = '<i class="fas fa-check"></i> تم الإرسال';
+        } else {
+            showAlert(result.error || 'فشل إرسال رابط إعادة التعيين', 'error');
+            resetBtn.disabled = false;
+            resetBtn.innerHTML = originalHTML;
+        }
+    } catch (error) {
+        console.error('Password reset error:', error);
+        showAlert('حدث خطأ أثناء إرسال رابط إعادة التعيين', 'error');
+        resetBtn.disabled = false;
+        resetBtn.innerHTML = originalHTML;
     }
 }
 

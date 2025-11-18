@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
   role VARCHAR(20) DEFAULT 'researcher' CHECK (role IN ('researcher', 'admin', 'super_admin')),
   gender VARCHAR(10) CHECK (gender IN ('ذكر', 'أنثى')),
   country VARCHAR(100),
+  profile_picture TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

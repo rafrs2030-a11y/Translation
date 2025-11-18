@@ -470,9 +470,64 @@
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.footer-bottom-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
 .footer-bottom p {
     margin: 0;
     color: rgba(255, 255, 255, 0.5);
+}
+
+.developer-credit-inline {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.developer-credit-inline .developer-credit-content {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+    transition: color var(--transition-fast);
+}
+
+.developer-credit-inline .developer-credit-content:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.developer-credit-inline .developer-logo {
+    height: 24px;
+    width: auto;
+    object-fit: contain;
+}
+
+.developer-credit-inline .developer-name {
+    font-weight: 600;
+    margin-left: var(--spacing-xs);
+}
+
+.developer-credit-inline .developer-text {
+    margin-right: var(--spacing-xs);
+}
+
+@media (max-width: 768px) {
+    .footer-bottom-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .developer-credit-inline {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
 }
 
 /* Responsive Design */

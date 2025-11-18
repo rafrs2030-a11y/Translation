@@ -95,7 +95,7 @@ class AdminStore {
         .from('submissions')
         .select(`
           *,
-          user:users(username, email, phone)
+          user:users!user_id(username, email, phone, profile_picture)
         `, { count: 'exact' })
         .eq('is_draft', false);
 
@@ -163,7 +163,7 @@ class AdminStore {
         .from('submissions')
         .select(`
           *,
-          user:users(id, username, email, phone, national_id)
+          user:users!user_id(id, username, email, phone, national_id, profile_picture)
         `)
         .eq('id', id)
         .single();

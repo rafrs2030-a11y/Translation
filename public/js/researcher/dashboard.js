@@ -8,6 +8,11 @@ import notificationsStore from '../stores/notificationsStore.js';
 import { formatDate, formatRelativeTime } from '../utils/helpers.js';
 import { handleLogout } from '../utils/logout.js';
 import { requireResearcher } from '../utils/auth-guard.js';
+import { updateAvatarDisplay } from '../utils/avatar-helper.js';
+import { supabase } from '../config/supabase.js';
+import { initNotificationDropdown } from '../utils/notification-dropdown.js';
+import { initChatDropdown } from '../utils/chat-dropdown.js';
+import badgeManager from '../utils/badge-manager.js';
 
 // DOM Elements
 let sidebarEl, mobileMenuBtn, sidebarToggleBtn;
@@ -24,6 +29,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     initElements();
     initEventListeners();
     await loadDashboardData();
+    await initNotificationDropdown();
+    await initChatDropdown();
+    await badgeManager.initialize();
 });
 
 /**
@@ -91,10 +99,30 @@ async function loadDashboardData() {
         const user = await authStore.getCurrentUser();
         
         if (user) {
-            // Update user name
-            const displayName = user.user_metadata?.full_name || user.email.split('@')[0];
-            if (userNameEl) userNameEl.textContent = displayName;
-            if (welcomeNameEl) welcomeNameEl.textContent = displayName;
+            // Load full user data with profile picture
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+            
+            if (!userError && userData) {
+                // Update user name
+                const displayName = userData.username || user.email.split('@')[0];
+                if (userNameEl) userNameEl.textContent = displayName;
+                if (welcomeNameEl) welcomeNameEl.textContent = displayName;
+                
+                // Update avatar
+                const avatarEl = document.querySelector('.user-avatar');
+                if (avatarEl) {
+                    updateAvatarDisplay(avatarEl, userData, { size: 40 });
+                }
+            } else {
+                // Fallback to basic user data
+                const displayName = user.user_metadata?.full_name || user.email.split('@')[0];
+                if (userNameEl) userNameEl.textContent = displayName;
+                if (welcomeNameEl) welcomeNameEl.textContent = displayName;
+            }
         }
         
         // Load submissions stats
@@ -103,7 +131,7 @@ async function loadDashboardData() {
         // Load recent submissions
         await loadRecentSubmissions();
         
-        // Load notifications count
+        // Load notifications count (dropdown will handle badge updates)
         await loadNotificationsCount();
         
     } catch (error) {
@@ -117,14 +145,16 @@ async function loadDashboardData() {
  */
 async function loadSubmissionsStats() {
     try {
-        const stats = await submissionsStore.getStats();
+        // استخدام fetchStats() للحصول على الإحصائيات من قاعدة البيانات مباشرة
+        // بدلاً من getStats() التي تعتمد على الحالة المحلية (التي قد تكون مقسمة)
+        const stats = await submissionsStore.fetchStats();
         
         if (stats) {
-            statsElements.total.textContent = stats.total || 0;
-            statsElements.approved.textContent = stats.approved || 0;
-            statsElements.pending.textContent = stats.pending || 0;
-            statsElements.rejected.textContent = stats.rejected || 0;
-            statsElements.submissionsCount.textContent = stats.total || 0;
+            if (statsElements.total) statsElements.total.textContent = stats.total || 0;
+            if (statsElements.approved) statsElements.approved.textContent = stats.approved || 0;
+            if (statsElements.pending) statsElements.pending.textContent = stats.pending || 0;
+            if (statsElements.rejected) statsElements.rejected.textContent = stats.rejected || 0;
+            if (statsElements.submissionsCount) statsElements.submissionsCount.textContent = stats.total || 0;
         }
     } catch (error) {
         console.error('Error loading stats:', error);
@@ -242,10 +272,14 @@ async function loadNotificationsCount() {
         const unreadCount = notificationsStore.state.unreadCount || 0;
         
         if (unreadCount > 0) {
-            statsElements.unreadCount.textContent = unreadCount;
-            statsElements.unreadCount.style.display = '';
-            statsElements.notificationBadge.textContent = unreadCount;
-            statsElements.notificationBadge.style.display = '';
+            if (statsElements.unreadCount) {
+                statsElements.unreadCount.textContent = unreadCount;
+                statsElements.unreadCount.style.display = '';
+            }
+            if (statsElements.notificationBadge) {
+                statsElements.notificationBadge.textContent = unreadCount;
+                statsElements.notificationBadge.style.display = '';
+            }
         }
     } catch (error) {
         console.error('Error loading notifications:', error);

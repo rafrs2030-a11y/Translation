@@ -6,7 +6,9 @@
 import adminStore from '../stores/adminStore.js';
 import authStore from '../stores/authStore.js';
 import { handleLogout } from '../utils/logout.js';
+import { updateAvatarDisplay, getInitials } from '../utils/avatar-helper.js';
 import { requireAdmin } from '../utils/auth-guard.js';
+import badgeManager from '../utils/badge-manager.js';
 
 // State
 let currentPage = 1;
@@ -31,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initElements();
     initEventListeners();
     await loadSubmissions();
+    await badgeManager.initialize();
 });
 
 /**
@@ -135,12 +138,32 @@ function renderSubmissions(submissions) {
         return;
     }
     
-    tableBody.innerHTML = submissions.map(submission => `
+    tableBody.innerHTML = submissions.map(submission => {
+        const user = submission.user || {};
+        const userName = user.username || submission.full_name || 'غير محدد';
+        const userAvatar = user.profile_picture || null;
+        
+        return `
         <tr data-id="${submission.id}">
             <td>
                 <strong>${submission.reference_number}</strong>
             </td>
-            <td>${submission.full_name}</td>
+            <td>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; overflow: hidden;">
+                        ${userAvatar 
+                            ? `<img src="${userAvatar}" alt="الصورة الشخصية" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                               <div style="display: none; width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem;">
+                                   ${getInitials(userName)}
+                               </div>`
+                            : `<div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem;">
+                                   ${getInitials(userName)}
+                               </div>`
+                        }
+                    </div>
+                    <span>${submission.full_name}</span>
+                </div>
+            </td>
             <td>${submission.research_type}</td>
             <td>${submission.category}</td>
             <td>${formatDate(submission.created_at)}</td>
@@ -176,23 +199,30 @@ function renderSubmissions(submissions) {
                 </div>
             </td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 }
 
 /**
  * View submission details
  */
-window.viewSubmission = (id) => {
+function viewSubmission(id) {
     window.location.href = `/pages/admin/submission-details.html?id=${id}`;
-};
+}
+
+// Attach to window for inline onclick handlers
+window.viewSubmission = viewSubmission;
 
 /**
  * Change submission status
  */
-window.changeStatus = (id) => {
+function changeStatus(id) {
     currentSubmissionId = id;
     openModal();
-};
+}
+
+// Attach to window for inline onclick handlers
+window.changeStatus = changeStatus;
 
 /**
  * Open action modal
@@ -414,7 +444,8 @@ function showError(message) {
 // Export functions if needed
 export {
     loadSubmissions,
-    changeStatus,
     viewSubmission
 };
+
+// Note: changeStatus is available on window object for inline onclick handlers
 
