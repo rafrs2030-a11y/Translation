@@ -16,3 +16,9 @@
   node_bundler = "esbuild"
   external_node_modules = ["express"]
 
+# Cypress plugin configuration
+[[plugins]]
+  package = "netlify-plugin-cypress"
+  [plugins.inputs]
+    record = false
+
