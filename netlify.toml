@@ -7,6 +7,9 @@
   to = "/.netlify/functions/api/:splat"
   status = 200
 
+# Redirect rules - files are served first, then redirect to index.html for SPA routes
+# Static files (HTML, CSS, JS, images) are automatically served if they exist
+# This catch-all only applies if the file doesn't exist
 [[redirects]]
   from = "/*"
   to = "/index.html"
