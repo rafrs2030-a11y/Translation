@@ -858,23 +858,33 @@
    Responsive Enhancements
    ======================================== */
 
-@media (max-width: 768px) {
-    .stat-details h3 {
-        font-size: 1.75rem;
+@media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
     
-    .stat-icon {
-        width: 56px;
-        height: 56px;
+    .grid.grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .stat-details h3 {
         font-size: 1.5rem;
     }
     
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+    
     .action-card i {
-        font-size: 2rem;
+        font-size: 1.5rem;
     }
     
     .topbar-left h1 {
-        font-size: 1.125rem;
+        font-size: var(--font-size-base);
     }
     
     .user-menu span {
@@ -882,11 +892,18 @@
     }
     
     .topbar-actions {
-        gap: var(--spacing-sm);
+        gap: var(--spacing-xs);
+    }
+    
+    .topbar-icon-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 0.875rem;
     }
     
     .stats-grid {
         grid-template-columns: 1fr;
+        gap: var(--spacing-md);
     }
     
     .grid.grid-cols-2 {
@@ -895,22 +912,147 @@
     
     .actions-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
+    }
+    
+    .card {
+        padding: var(--spacing-md);
     }
     
     .card-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: var(--spacing-md);
+        gap: var(--spacing-sm);
+        padding-bottom: var(--spacing-sm);
+    }
+    
+    .card-title {
+        font-size: var(--font-size-lg);
     }
     
     .submission-item {
         flex-direction: column;
         align-items: flex-start;
+        gap: var(--spacing-sm);
     }
     
     .submission-actions {
         width: 100%;
-        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+    }
+    
+    .submission-actions .btn {
+        flex: 1;
+        min-width: 100px;
+        font-size: var(--font-size-xs);
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .welcome-section {
+        padding: var(--spacing-lg);
+    }
+    
+    .welcome-section h2 {
+        font-size: var(--font-size-xl);
+    }
+    
+    .quick-actions {
+        padding: var(--spacing-lg);
+    }
+    
+    .quick-actions h3 {
+        font-size: var(--font-size-lg);
+    }
+}
+
+@media (max-width: 480px) {
+    .stat-details h3 {
+        font-size: var(--font-size-xl);
+    }
+    
+    .stat-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 1rem;
+    }
+    
+    .action-card {
+        padding: var(--spacing-sm);
+    }
+    
+    .action-card i {
+        font-size: 1.25rem;
+    }
+    
+    .topbar-left h1 {
+        font-size: var(--font-size-sm);
+    }
+    
+    .topbar-icon-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+    }
+    
+    .user-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+    
+    .actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .card {
+        padding: var(--spacing-sm);
+    }
+    
+    .card-title {
+        font-size: var(--font-size-base);
+    }
+    
+    .submission-actions {
+        flex-direction: column;
+    }
+    
+    .submission-actions .btn {
+        width: 100%;
+    }
+    
+    .welcome-section {
+        padding: var(--spacing-md);
+    }
+    
+    .welcome-section h2 {
+        font-size: var(--font-size-lg);
+    }
+    
+    .welcome-section p {
+        font-size: var(--font-size-sm);
+    }
+    
+    .quick-actions {
+        padding: var(--spacing-md);
+    }
+    
+    .quick-actions h3 {
+        font-size: var(--font-size-base);
+    }
+}
+
+@media (max-width: 360px) {
+    .topbar-left h1 {
+        font-size: var(--font-size-xs);
+    }
+    
+    .stat-details h3 {
+        font-size: var(--font-size-lg);
+    }
+    
+    .welcome-section h2 {
+        font-size: var(--font-size-base);
     }
 }
 

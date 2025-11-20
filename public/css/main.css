@@ -492,19 +492,65 @@ section {
    Responsive Design
    ======================================== */
 
+/* Tablet and below */
+@media (max-width: 1024px) {
+    .container {
+        padding: 0 var(--spacing-lg);
+    }
+}
+
 @media (max-width: 768px) {
     :root {
         --font-size-4xl: 1.875rem;
         --font-size-3xl: 1.5rem;
         --font-size-2xl: 1.25rem;
+        --font-size-xl: 1.125rem;
+        --font-size-lg: 1rem;
     }
     
     .container {
         padding: 0 var(--spacing-md);
     }
     
+    .container-fluid {
+        padding: 0 var(--spacing-md);
+    }
+    
     section {
         padding: var(--spacing-xl) 0;
+    }
+    
+    /* Buttons */
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: var(--font-size-sm);
+    }
+    
+    .btn-large {
+        padding: 0.75rem 1.5rem;
+        font-size: var(--font-size-base);
+    }
+    
+    /* Cards */
+    .card {
+        padding: var(--spacing-md);
+    }
+    
+    /* Forms */
+    .form-group {
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .form-input,
+    .form-select,
+    .form-textarea {
+        padding: 0.625rem;
+        font-size: var(--font-size-sm);
+    }
+    
+    /* Utilities */
+    .d-flex {
+        flex-wrap: wrap;
     }
 }
 
@@ -512,6 +558,85 @@ section {
     :root {
         --font-size-4xl: 1.5rem;
         --font-size-3xl: 1.25rem;
+        --font-size-2xl: 1.125rem;
+        --font-size-xl: 1rem;
+    }
+    
+    .container {
+        padding: 0 var(--spacing-sm);
+    }
+    
+    .container-fluid {
+        padding: 0 var(--spacing-sm);
+    }
+    
+    section {
+        padding: var(--spacing-lg) 0;
+    }
+    
+    /* Typography */
+    h1 { font-size: var(--font-size-3xl); }
+    h2 { font-size: var(--font-size-2xl); }
+    h3 { font-size: var(--font-size-xl); }
+    h4 { font-size: var(--font-size-lg); }
+    
+    /* Buttons */
+    .btn {
+        padding: 0.5rem 0.875rem;
+        font-size: var(--font-size-sm);
+        width: 100%;
+    }
+    
+    .btn-large {
+        padding: 0.75rem 1.25rem;
+        font-size: var(--font-size-base);
+    }
+    
+    /* Cards */
+    .card {
+        padding: var(--spacing-sm);
+    }
+    
+    .card-header,
+    .card-footer {
+        padding: var(--spacing-sm) 0;
+    }
+    
+    /* Forms */
+    .form-input,
+    .form-select,
+    .form-textarea {
+        padding: 0.625rem;
+        font-size: var(--font-size-sm);
+    }
+    
+    .form-textarea {
+        min-height: 80px;
+    }
+    
+    /* Badges */
+    .badge {
+        padding: 0.2rem 0.5rem;
+        font-size: var(--font-size-xs);
+    }
+    
+    /* Alerts */
+    .alert {
+        padding: var(--spacing-sm);
+        font-size: var(--font-size-sm);
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 360px) {
+    :root {
+        --font-size-4xl: 1.25rem;
+        --font-size-3xl: 1.125rem;
+        --font-size-2xl: 1rem;
+    }
+    
+    .container {
+        padding: 0 var(--spacing-xs);
     }
 }
 
@@ -547,9 +672,12 @@ section {
 
 .developer-logo {
     height: 24px;
-    width: auto;
+    width: 24px;
+    min-width: 24px;
     object-fit: contain;
     vertical-align: middle;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
 /* For auth pages */

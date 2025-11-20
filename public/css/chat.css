@@ -450,21 +450,201 @@
    Responsive
    ======================================== */
 
+@media (max-width: 992px) {
+    .chat-dropdown {
+        width: 360px;
+    }
+    
+    .chat-window {
+        width: 380px;
+    }
+}
+
 @media (max-width: 768px) {
     .chat-dropdown {
-        width: calc(100vw - 40px);
+        width: calc(100vw - 2rem);
         max-width: 380px;
         left: 50%;
         transform: translateX(-50%);
+        max-height: calc(100vh - 2rem);
+    }
+    
+    .chat-dropdown-header {
+        padding: var(--spacing-md);
+    }
+    
+    .chat-dropdown-header h3 {
+        font-size: var(--font-size-base);
+    }
+    
+    .chat-conversation-item {
+        padding: var(--spacing-sm);
+    }
+    
+    .chat-conversation-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .chat-conversation-name {
+        font-size: var(--font-size-sm);
+    }
+    
+    .chat-conversation-time {
+        font-size: var(--font-size-xs);
     }
 
     .chat-window {
-        width: calc(100vw - 40px);
-        height: calc(100vh - 40px);
+        width: calc(100vw - 2rem);
+        height: calc(100vh - 2rem);
         max-width: 400px;
         max-height: 600px;
         left: 50%;
-        transform: translateX(-50%);
+        bottom: 50%;
+        transform: translate(-50%, 50%);
+    }
+    
+    .chat-window-header {
+        padding: var(--spacing-md);
+    }
+    
+    .chat-window-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 0.875rem;
+    }
+    
+    .chat-window-user h4 {
+        font-size: var(--font-size-sm);
+    }
+    
+    .chat-window-status {
+        font-size: var(--font-size-xs);
+    }
+    
+    .chat-window-messages {
+        padding: var(--spacing-md);
+    }
+    
+    .chat-message-content {
+        max-width: 80%;
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+    
+    .chat-message-content p {
+        font-size: var(--font-size-sm);
+    }
+    
+    .chat-message-time {
+        font-size: 0.625rem;
+    }
+    
+    .chat-window-input {
+        padding: var(--spacing-md);
+    }
+    
+    .chat-window-input input {
+        padding: var(--spacing-sm);
+        font-size: var(--font-size-sm);
+    }
+    
+    .chat-window-input button {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .chat-user-selection-modal {
+        padding: var(--spacing-md);
+    }
+    
+    .chat-user-selection-content {
+        max-width: 100%;
+        max-height: 90vh;
+    }
+    
+    .chat-user-selection-header {
+        padding: var(--spacing-md);
+    }
+    
+    .chat-user-selection-header h3 {
+        font-size: var(--font-size-base);
+    }
+    
+    .chat-user-selection-search {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+    
+    .chat-user-selection-search input {
+        padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 2rem;
+        font-size: var(--font-size-sm);
+    }
+    
+    .chat-user-selection-item {
+        padding: var(--spacing-sm);
+    }
+    
+    .chat-user-selection-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .chat-user-selection-info h4 {
+        font-size: var(--font-size-sm);
+    }
+    
+    .chat-user-selection-info p {
+        font-size: var(--font-size-xs);
+    }
+}
+
+@media (max-width: 480px) {
+    .chat-dropdown {
+        width: calc(100vw - 1rem);
+        max-height: calc(100vh - 1rem);
+    }
+    
+    .chat-window {
+        width: 100vw;
+        height: 100vh;
+        max-width: 100%;
+        max-height: 100%;
+        left: 0;
+        bottom: 0;
+        transform: none;
+        border-radius: 0;
+    }
+    
+    .chat-message-content {
+        max-width: 85%;
+    }
+    
+    .chat-user-selection-modal {
+        padding: 0;
+    }
+    
+    .chat-user-selection-content {
+        width: 100%;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+}
+
+@media (max-width: 360px) {
+    .chat-conversation-avatar,
+    .chat-window-avatar,
+    .chat-user-selection-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 0.875rem;
+    }
+    
+    .chat-message-content {
+        max-width: 90%;
+        padding: var(--spacing-xs) var(--spacing-sm);
     }
 }
 
