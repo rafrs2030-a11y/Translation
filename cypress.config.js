@@ -10,8 +10,13 @@ module.exports = defineConfig({
     baseUrl: 'http://localhost:3000',
     // Skip video recording to speed up builds
     video: false,
+    // Disable screenshots on failure
+    screenshotOnRunFailure: false,
     // Only run tests if they exist
     specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
+    // Increase timeout for CI environments
+    defaultCommandTimeout: 10000,
+    requestTimeout: 10000,
   },
 });
 
