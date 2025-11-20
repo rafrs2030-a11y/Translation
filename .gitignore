@@ -153,3 +153,6 @@ public/uploads/
 # Email test files
 test-emails/
 
+
+# Local Netlify folder
+.netlify
