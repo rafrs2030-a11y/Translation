@@ -1,7 +1,3 @@
 # API routes
 /api/* /.netlify/functions/api/:splat 200
 
-# SPA fallback - Netlify serves static files first automatically
-# This redirect only applies if the file doesn't exist
-/* /index.html 200
-
