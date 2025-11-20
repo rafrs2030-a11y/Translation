@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Disallow admin and private pages
+Disallow: /pages/admin/
+Disallow: /pages/researcher/
+Disallow: /api/
+
+# Allow public pages
+Allow: /pages/login.html
+Allow: /pages/register.html
+Allow: /index.html
+
+# Sitemap
+Sitemap: https://your-domain.com/sitemap.xml
+
