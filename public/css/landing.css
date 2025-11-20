@@ -282,8 +282,9 @@
     opacity: 0.3;
 }
 
-.step:first-child::after {
-    display: none;
+.step:last-child::after {
+    left: -35px;
+    top: 25px;
 }
 
 .step-number {
