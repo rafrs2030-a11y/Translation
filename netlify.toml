@@ -16,3 +16,8 @@
   node_bundler = "esbuild"
   external_node_modules = ["express"]
 
+# Disable Cypress plugin if no tests exist
+[[plugins]]
+  package = "netlify-plugin-cypress"
+  enabled = false
+
