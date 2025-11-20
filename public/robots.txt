@@ -12,5 +12,5 @@ Allow: /pages/register.html
 Allow: /index.html
 
 # Sitemap
-Sitemap: https://your-domain.com/sitemap.xml
+Sitemap: https://res-assistant.com//sitemap.xml
 
