@@ -6,7 +6,7 @@
     <meta name="description" content="منصة نشر الأبحاث العربية - منصة رقمية شاملة تمكّن الهيئات والمؤسسات والجامعات والباحثين العرب من تقديم أبحاثهم العلمية وكتبهم للمراجعة والنشر عالمياً في مجلات عالمية علمية محكمة">
     <meta name="keywords" content="أبحاث عربية، نشر علمي، باحثين عرب، نشر كتب">
     <meta name="theme-color" content="#3D5A94">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;">
     <title>منصة نشر الأبحاث العربية - الصفحة الرئيسية</title>
     
     <!-- Manifest -->
@@ -16,21 +16,25 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet"></noscript>
     
-    <!-- Styles -->
-    <link rel="stylesheet" href="/css/main.css">
-    <link rel="stylesheet" href="/css/landing.css">
+    <!-- Styles - Preload critical CSS -->
+    <link rel="preload" href="/css/main.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="/css/main.css"></noscript>
+    <link rel="preload" href="/css/landing.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="/css/landing.css"></noscript>
     
     <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar">
         <div class="container">
             <div class="nav-brand">
-                <img src="/images/logo.png" alt="Research Assistant Logo" class="brand-logo" width="150" height="50">
+                <img src="/images/logo.png" alt="Research Assistant Logo" class="brand-logo" width="150" height="50" loading="eager" style="aspect-ratio: 3/1;">
             </div>
             <ul class="nav-menu">
                 <li><a href="#features">الميزات</a></li>
@@ -190,7 +194,7 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <img src="/images/logo.png" alt="Research Assistant Logo" class="footer-logo" style="max-width: 200px; margin-bottom: 1rem;" width="200" height="67">
+                    <img src="/images/logo.png" alt="Research Assistant Logo" class="footer-logo" style="max-width: 200px; margin-bottom: 1rem; aspect-ratio: 3/1;" width="200" height="67" loading="lazy">
                     <h4 style="margin-bottom: 1rem; color: white;">المنصة العالمية لنشر الأبحاث العربية إلى الإنجليزية</h4>
                     <p>تتشرف المنصة العالمية لنشر الأبحاث العربية إلى الإنجليزية الخاصة بشركة مساعد البحث للبحوث والدراسات باستقبال طلباتكم وأبحاثكم لنشرها في مجلات عالمية علمية محكمة ISI- Scopus (Q1-Q2-Q3).<br><br>
                     وذلك لتمكين الهيئات والجامعات والمؤسسات والباحث الأكاديمي من النشر العالمي لأبحاثهم العلمية العربية عالمياً.</p>
@@ -242,7 +246,7 @@
                     <p>&copy; 2025 منصة نشر الأبحاث العربية. جميع الحقوق محفوظة.</p>
                     <div class="developer-credit-inline">
                         <a href="https://wa.me/966533189111" target="_blank" rel="noopener noreferrer" class="developer-credit-content" aria-label="تواصل مع باكورة التقنيات - مطور المنصة">
-                            <img src="/images/logob.png" alt="باكورة التقنيات" class="developer-logo" width="24" height="24">
+                            <img src="/images/logob.png" alt="باكورة التقنيات" class="developer-logo" width="24" height="24" loading="lazy" style="aspect-ratio: 1/1;">
                             <span class="developer-text">تم تطوير المنصة بواسطة الحاضنة الرقمية باكورة التقنيات</span>
                         </a>
                     </div>
@@ -255,6 +259,26 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script type="module" src="/js/main.js" defer></script>
     <script src="/js/landing.js" defer></script>
+    
+    <!-- LoadCSS polyfill for async CSS loading -->
+    <script>
+        !function(e){"use strict";var t=function(t,n,o){var i,r=e.document,a=r.createElement("link");if(n)i=n;else{var l=(r.body||r.getElementsByTagName("head")[0]).childNodes;i=l[l.length-1]}var d=r.styleSheets;a.rel="stylesheet",a.href=t,a.media="only x",function e(t){if(r.body)return t();setTimeout(function(){e(t)})}(function(){i.parentNode.insertBefore(a,n?i:i.nextSibling)});var f=function(e){for(var t=a.href,n=d.length;n--;)if(d[n].href===t)return e();setTimeout(function(){f(e)})};return a.addEventListener&&a.addEventListener("load",function(){this.media=o||"all"}),a.onloadcssdefined=f,f(function(){a.media!==o&&(a.media=o||"all")}),a};"undefined"!=typeof exports?exports.loadCSS=t:e.loadCSS=t}("undefined"!=typeof global?global:this);
+    </script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('Service Worker registered:', registration);
+                    })
+                    .catch((error) => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
 </body>
 </html>
 
