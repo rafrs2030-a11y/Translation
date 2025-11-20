@@ -9,11 +9,12 @@
 
 # Redirect rules - files are served first, then redirect to index.html for SPA routes
 # Static files (HTML, CSS, JS, images) are automatically served if they exist
-# This catch-all only applies if the file doesn't exist
+# force = false means this redirect only applies if the file doesn't exist
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = false
 
 [functions]
   node_bundler = "esbuild"
