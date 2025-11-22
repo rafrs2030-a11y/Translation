@@ -669,7 +669,9 @@ html {
 }
 
 /* إظهار الأسهم بعد الخطوات 1، 2، 3 فقط (بين 1-2، 2-3، 3-4) */
-.step:nth-child(1)::after,
+/* ملاحظة: السهم يظهر "بعد" كل step باستخدام ::after في right: -20px */
+/* السهم بعد step 1 يظهر بين 1-2، بعد step 2 بين 2-3، بعد step 3 بين 3-4 */
+.step:nth-child(1):not(:only-child)::after,
 .step:nth-child(2)::after,
 .step:nth-child(3)::after {
     display: block !important;
