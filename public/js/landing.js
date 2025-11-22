@@ -55,7 +55,7 @@ function initMobileMenu() {
 }
 
 /**
- * Smooth Scroll for Anchor Links
+ * Smooth Scroll for Anchor Links (optimized for mobile)
  */
 function initSmoothScroll() {
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -64,34 +64,62 @@ function initSmoothScroll() {
             const target = document.querySelector(this.getAttribute('href'));
             
             if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
+                // Close mobile menu if open
+                const menu = document.querySelector('.nav-menu');
+                const actions = document.querySelector('.nav-actions');
+                const toggle = document.querySelector('.mobile-menu-toggle');
+                if (menu && menu.classList.contains('active')) {
+                    menu.classList.remove('active');
+                    actions?.classList.remove('active');
+                    toggle?.classList.remove('active');
+                    const icon = toggle?.querySelector('i');
+                    if (icon) {
+                        icon.classList.add('fa-bars');
+                        icon.classList.remove('fa-times');
+                    }
+                }
+                
+                // Calculate offset for fixed navbar
+                const navbar = document.querySelector('.navbar');
+                const navbarHeight = navbar ? navbar.offsetHeight : 0;
+                const targetPosition = target.offsetTop - navbarHeight;
+                
+                window.scrollTo({
+                    top: targetPosition,
+                    behavior: 'smooth'
                 });
             }
-        });
+        }, { passive: false });
     });
 }
 
 /**
- * Navbar Scroll Effect
+ * Navbar Scroll Effect (optimized for mobile)
  */
 function initNavbarScroll() {
     const navbar = document.querySelector('.navbar');
     if (!navbar) return;
 
     let lastScroll = 0;
+    let ticking = false;
+    
     window.addEventListener('scroll', () => {
-        const currentScroll = window.pageYOffset;
-        
-        if (currentScroll > 50) {
-            navbar.classList.add('scrolled');
-        } else {
-            navbar.classList.remove('scrolled');
-        }
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                const currentScroll = window.pageYOffset;
+                
+                if (currentScroll > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
 
-        lastScroll = currentScroll;
-    });
+                lastScroll = currentScroll;
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }, { passive: true });
 }
 
 /**
@@ -122,17 +150,28 @@ function initAnimations() {
 }
 
 /**
- * Parallax Effect for Hero Section
+ * Parallax Effect for Hero Section (disabled on mobile for performance)
  */
 function initParallax() {
     const hero = document.querySelector('.hero');
     if (!hero) return;
 
+    // Disable parallax on mobile devices for better performance
+    const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
+    if (isMobile) return;
+
+    let ticking = false;
     window.addEventListener('scroll', () => {
-        const scrolled = window.pageYOffset;
-        const rate = scrolled * 0.5;
-        hero.style.transform = `translateY(${rate}px)`;
-    });
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                const scrolled = window.pageYOffset;
+                const rate = scrolled * 0.5;
+                hero.style.transform = `translateY(${rate}px)`;
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }, { passive: true });
 }
 
 /**
@@ -160,7 +199,7 @@ function initLazyLoading() {
 }
 
 /**
- * Scroll to Top Button
+ * Scroll to Top Button (optimized for mobile)
  */
 function initScrollToTop() {
     // Create button
@@ -168,16 +207,32 @@ function initScrollToTop() {
     button.className = 'scroll-to-top';
     button.setAttribute('aria-label', 'العودة إلى الأعلى');
     button.innerHTML = '<i class="fas fa-arrow-up"></i>';
+    button.style.touchAction = 'manipulation';
     document.body.appendChild(button);
 
-    // Show/hide on scroll
+    let ticking = false;
+    let isVisible = false;
+
+    // Show/hide on scroll (throttled)
     window.addEventListener('scroll', () => {
-        if (window.pageYOffset > 300) {
-            button.classList.add('visible');
-        } else {
-            button.classList.remove('visible');
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                const shouldShow = window.pageYOffset > 300;
+                
+                if (shouldShow !== isVisible) {
+                    if (shouldShow) {
+                        button.classList.add('visible');
+                    } else {
+                        button.classList.remove('visible');
+                    }
+                    isVisible = shouldShow;
+                }
+                
+                ticking = false;
+            });
+            ticking = true;
         }
-    });
+    }, { passive: true });
 
     // Scroll to top on click
     button.addEventListener('click', () => {
@@ -185,11 +240,11 @@ function initScrollToTop() {
             top: 0,
             behavior: 'smooth'
         });
-    });
+    }, { passive: true });
 }
 
 /**
- * Active Navigation Links on Scroll
+ * Active Navigation Links on Scroll (optimized for mobile)
  */
 function initActiveNavLinks() {
     const navLinks = document.querySelectorAll('.nav-menu a[href^="#"]');
@@ -197,6 +252,8 @@ function initActiveNavLinks() {
 
     if (navLinks.length === 0 || sections.length === 0) return;
 
+    let ticking = false;
+    
     function updateActiveLink() {
         const scrollPos = window.scrollY + 100;
 
@@ -219,9 +276,17 @@ function initActiveNavLinks() {
         if (window.scrollY < 100) {
             navLinks.forEach(link => link.classList.remove('active'));
         }
+        
+        ticking = false;
     }
 
-    window.addEventListener('scroll', updateActiveLink);
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            window.requestAnimationFrame(updateActiveLink);
+            ticking = true;
+        }
+    }, { passive: true });
+    
     updateActiveLink(); // Initial check
 }
 

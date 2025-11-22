@@ -539,14 +539,59 @@ section {
    Responsive Design
    ======================================== */
 
-/* Tablet and below */
-@media (max-width: 1024px) {
+/* Large Desktop (1400px+) */
+@media (min-width: 1400px) {
+    .container {
+        max-width: 1320px;
+        padding: 0 var(--spacing-xl);
+    }
+}
+
+/* Desktop (1200px - 1399px) */
+@media (max-width: 1399px) and (min-width: 1200px) {
+    .container {
+        max-width: 1140px;
+        padding: 0 var(--spacing-lg);
+    }
+}
+
+/* Tablet Landscape & Small Desktop (992px - 1199px) */
+@media (max-width: 1199px) and (min-width: 992px) {
     .container {
         padding: 0 var(--spacing-lg);
     }
 }
 
-@media (max-width: 768px) {
+/* Tablet Portrait & Small Desktop (768px - 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+    .container {
+        padding: 0 var(--spacing-lg);
+    }
+    
+    .btn {
+        min-height: 44px;
+    }
+    
+    .form-input,
+    .form-select,
+    .form-textarea {
+        min-height: 44px;
+    }
+}
+
+/* Mobile Landscape & Small Tablet (576px - 767px) */
+@media (max-width: 767px) and (min-width: 576px) {
+    .container {
+        padding: 0 var(--spacing-md);
+    }
+    
+    .btn {
+        min-height: 44px;
+    }
+}
+
+/* Mobile Portrait (up to 767px) */
+@media (max-width: 767px) {
     :root {
         --font-size-4xl: 1.875rem;
         --font-size-3xl: 1.5rem;
@@ -569,13 +614,16 @@ section {
     
     /* Buttons */
     .btn {
-        padding: 0.5rem 1rem;
+        padding: 0.625rem 1rem;
         font-size: var(--font-size-sm);
+        min-height: 44px; /* Touch target */
+        width: auto;
     }
     
     .btn-large {
         padding: 0.75rem 1.5rem;
         font-size: var(--font-size-base);
+        min-height: 48px;
     }
     
     /* Cards */
@@ -591,8 +639,9 @@ section {
     .form-input,
     .form-select,
     .form-textarea {
-        padding: 0.625rem;
+        padding: 0.75rem;
         font-size: var(--font-size-sm);
+        min-height: 44px; /* Touch target */
     }
     
     /* Utilities */
@@ -601,6 +650,7 @@ section {
     }
 }
 
+/* Small Mobile (up to 480px) */
 @media (max-width: 480px) {
     :root {
         --font-size-4xl: 1.5rem;
@@ -629,14 +679,16 @@ section {
     
     /* Buttons */
     .btn {
-        padding: 0.5rem 0.875rem;
+        padding: 0.625rem 0.875rem;
         font-size: var(--font-size-sm);
         width: 100%;
+        min-height: 48px;
     }
     
     .btn-large {
         padding: 0.75rem 1.25rem;
         font-size: var(--font-size-base);
+        min-height: 48px;
     }
     
     /* Cards */
@@ -653,18 +705,20 @@ section {
     .form-input,
     .form-select,
     .form-textarea {
-        padding: 0.625rem;
+        padding: 0.75rem;
         font-size: var(--font-size-sm);
+        min-height: 48px;
     }
     
     .form-textarea {
-        min-height: 80px;
+        min-height: 100px;
     }
     
     /* Badges */
     .badge {
-        padding: 0.2rem 0.5rem;
+        padding: 0.25rem 0.5rem;
         font-size: var(--font-size-xs);
+        min-height: 24px;
     }
     
     /* Alerts */
@@ -672,9 +726,18 @@ section {
         padding: var(--spacing-sm);
         font-size: var(--font-size-sm);
     }
+    
+    /* Checkbox and Radio */
+    .checkbox,
+    .radio {
+        width: 20px;
+        height: 20px;
+        min-width: 20px;
+        min-height: 20px;
+    }
 }
 
-/* Extra small devices */
+/* Extra Small Mobile (up to 360px) */
 @media (max-width: 360px) {
     :root {
         --font-size-4xl: 1.25rem;
@@ -684,6 +747,94 @@ section {
     
     .container {
         padding: 0 var(--spacing-xs);
+    }
+    
+    .container-fluid {
+        padding: 0 var(--spacing-xs);
+    }
+    
+    section {
+        padding: var(--spacing-md) 0;
+    }
+    
+    .btn {
+        padding: 0.5rem 0.75rem;
+        font-size: var(--font-size-xs);
+    }
+}
+
+/* Landscape Orientation for Mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+    section {
+        padding: var(--spacing-md) 0;
+    }
+    
+    .hero {
+        padding: 2rem 0;
+    }
+}
+
+/* iPad Specific (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .container {
+        padding: 0 var(--spacing-lg);
+    }
+}
+
+/* iPhone X and newer (375px - 414px) */
+@media (min-width: 375px) and (max-width: 414px) {
+    .container {
+        padding: 0 var(--spacing-md);
+    }
+}
+
+/* High DPI Displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    * {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .btn,
+    a,
+    button {
+        -webkit-tap-highlight-color: rgba(61, 90, 148, 0.2);
+        touch-action: manipulation;
+    }
+    
+    .btn:active,
+    button:active {
+        transform: scale(0.98);
+    }
+    
+    .btn:hover {
+        transform: none;
+    }
+    
+    .btn:active {
+        transform: scale(0.98);
+    }
+    
+    /* Increase touch targets */
+    .checkbox,
+    .radio {
+        min-width: 24px;
+        min-height: 24px;
+    }
+}
+
+/* Accessibility - Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
 }
 

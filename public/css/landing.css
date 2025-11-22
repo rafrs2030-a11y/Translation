@@ -2,6 +2,38 @@
    Landing Page Specific Styles
    ======================================== */
 
+/* Performance Optimizations for Mobile */
+* {
+    -webkit-tap-highlight-color: rgba(61, 90, 148, 0.2);
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Prevent text size adjustment on iOS */
+html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* Safe area insets for iPhone X and newer */
+@supports (padding: max(0px)) {
+    .navbar,
+    .footer {
+        padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-md), env(safe-area-inset-right));
+    }
+    
+    .scroll-to-top {
+        left: max(1rem, env(safe-area-inset-left));
+        bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+}
+
 /* Navbar */
 .navbar {
     background-color: rgba(255, 255, 255, 0.95);
@@ -86,6 +118,9 @@
     gap: var(--spacing-xs);
     border-radius: var(--radius-md);
     font-size: var(--font-size-base);
+    min-height: 44px;
+    -webkit-tap-highlight-color: rgba(61, 90, 148, 0.2);
+    touch-action: manipulation;
 }
 
 .nav-menu a i {
@@ -180,6 +215,9 @@
     font-size: var(--font-size-sm);
     padding: 0.625rem 1.125rem;
     min-width: fit-content;
+    min-height: 44px;
+    -webkit-tap-highlight-color: rgba(61, 90, 148, 0.2);
+    touch-action: manipulation;
 }
 
 .nav-actions .btn-outline {
@@ -202,9 +240,13 @@
     transition: all var(--transition-base);
     width: 44px;
     height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     align-items: center;
     justify-content: center;
     z-index: 1001;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .mobile-menu-toggle:hover {
@@ -854,7 +896,7 @@
 }
 
 .developer-credit-inline .developer-logo {
-    height: 12px;
+    height: 10px;
     width: auto;
     object-fit: contain;
 }
@@ -909,13 +951,33 @@
 }
 
 /* Responsive Design */
-@media (max-width: 1200px) {
+
+/* Large Desktop (1400px+) */
+@media (min-width: 1400px) {
+    .container {
+        max-width: 1320px;
+    }
+    
+    .hero-title {
+        font-size: 3.5rem;
+    }
+}
+
+/* Desktop (1200px - 1399px) */
+@media (max-width: 1399px) and (min-width: 1200px) {
+    .container {
+        max-width: 1140px;
+    }
+}
+
+/* Tablet Landscape & Small Desktop (992px - 1199px) */
+@media (max-width: 1199px) and (min-width: 992px) {
     .navbar .container {
         gap: var(--spacing-md);
     }
     
     .nav-menu {
-        gap: var(--spacing-md);
+        gap: var(--spacing-sm);
     }
     
     .hero-title {
@@ -928,18 +990,23 @@
     }
     
     .hero .container {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1.1fr 0.9fr;
         gap: var(--spacing-xl);
+    }
+    
+    .features-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (max-width: 992px) {
+/* Tablet Portrait & Small Desktop (768px - 991px) */
+@media (max-width: 991px) and (min-width: 768px) {
     .navbar .container {
         gap: var(--spacing-md);
     }
     
     .nav-menu {
-        gap: var(--spacing-md);
+        gap: var(--spacing-sm);
     }
     
     .nav-menu a {
@@ -952,13 +1019,41 @@
         font-size: var(--font-size-sm);
     }
     
+    .hero-title {
+        font-size: 2.25rem;
+    }
+    
+    .hero {
+        padding: 3.5rem 0;
+        min-height: 500px;
+    }
+    
     .hero .container {
         grid-template-columns: 1fr;
         gap: var(--spacing-xl);
     }
     
     .hero-image {
-        display: none;
+        height: 300px;
+        display: block;
+    }
+    
+    .floating-card {
+        padding: var(--spacing-md);
+        font-size: var(--font-size-sm);
+    }
+    
+    .floating-card i {
+        font-size: 1.5rem;
+    }
+    
+    .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-md);
+    }
+    
+    .steps {
+        grid-template-columns: repeat(2, 1fr);
     }
     
     .steps .step::after {
@@ -970,7 +1065,28 @@
     }
 }
 
-@media (max-width: 768px) {
+/* Mobile Landscape & Small Tablet (576px - 767px) */
+@media (max-width: 767px) and (min-width: 576px) {
+    .hero-title {
+        font-size: 2rem;
+    }
+    
+    .hero-description {
+        font-size: var(--font-size-base);
+    }
+    
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .steps {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* Mobile Portrait (up to 767px) */
+@media (max-width: 767px) {
     .navbar {
         padding: var(--spacing-sm) 0;
     }
@@ -982,6 +1098,7 @@
     .navbar .container {
         flex-wrap: wrap;
         gap: var(--spacing-md);
+        padding: 0 var(--spacing-md);
     }
     
     .nav-brand {
@@ -990,6 +1107,7 @@
     
     .brand-logo {
         height: 40px;
+        max-width: 120px;
     }
     
     .navbar.scrolled .brand-logo {
@@ -1026,6 +1144,7 @@
         padding: var(--spacing-md) var(--spacing-lg);
         border-radius: var(--radius-md);
         font-size: var(--font-size-base);
+        min-height: 44px; /* Touch target */
     }
     
     @keyframes slideDown {
@@ -1058,12 +1177,15 @@
         justify-content: center;
         padding: var(--spacing-md) var(--spacing-lg);
         font-size: var(--font-size-base);
+        min-height: 44px; /* Touch target */
     }
     
     .mobile-menu-toggle {
-        display: block;
+        display: flex;
         order: 2;
         transition: transform var(--transition-base);
+        min-width: 44px;
+        min-height: 44px;
     }
     
     .mobile-menu-toggle.active {
@@ -1073,6 +1195,10 @@
     .hero {
         padding: 3rem 0;
         min-height: auto;
+    }
+    
+    .hero .container {
+        padding: 0 var(--spacing-md);
     }
     
     .hero-title {
@@ -1096,6 +1222,11 @@
     .hero-actions .btn {
         width: 100%;
         justify-content: center;
+        min-height: 48px; /* Touch target */
+    }
+    
+    .hero-image {
+        display: none;
     }
     
     .features-grid {
@@ -1135,6 +1266,10 @@
     .footer {
         padding: var(--spacing-lg) 0 var(--spacing-md);
         margin-top: var(--spacing-lg);
+    }
+    
+    .footer .container {
+        padding: 0 var(--spacing-md);
     }
     
     .footer-content {
@@ -1177,11 +1312,24 @@
         justify-content: center;
     }
     
+    .social-links a {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
     .contact-info li {
         justify-content: center;
     }
+    
+    .scroll-to-top {
+        width: 48px;
+        height: 48px;
+        bottom: 1.5rem;
+        left: 1.5rem;
+    }
 }
 
+/* Small Mobile (up to 480px) */
 @media (max-width: 480px) {
     .navbar .container {
         padding: 0 var(--spacing-sm);
@@ -1189,6 +1337,10 @@
     
     .hero {
         padding: 2.5rem 0;
+    }
+    
+    .hero .container {
+        padding: 0 var(--spacing-sm);
     }
     
     .hero-title {
@@ -1206,6 +1358,7 @@
     .hero-actions .btn {
         padding: 0.875rem 1rem;
         font-size: var(--font-size-sm);
+        min-height: 48px;
     }
     
     .section-header {
@@ -1262,6 +1415,10 @@
         margin-top: var(--spacing-md);
     }
     
+    .footer .container {
+        padding: 0 var(--spacing-sm);
+    }
+    
     .footer-content {
         gap: var(--spacing-sm);
         margin-bottom: var(--spacing-sm);
@@ -1282,6 +1439,9 @@
     
     .footer-section ul li a {
         font-size: var(--font-size-xs);
+        min-height: 44px;
+        display: flex;
+        align-items: center;
     }
     
     .social-links {
@@ -1290,9 +1450,11 @@
     }
     
     .social-links a {
-        width: 32px;
-        height: 32px;
-        font-size: 0.75rem;
+        width: 40px;
+        height: 40px;
+        font-size: 0.875rem;
+        min-width: 44px;
+        min-height: 44px;
     }
     
     .footer-bottom {
@@ -1302,19 +1464,155 @@
     .footer-bottom p {
         font-size: var(--font-size-xs);
     }
+    
+    .scroll-to-top {
+        width: 44px;
+        height: 44px;
+        bottom: 1rem;
+        left: 1rem;
+        font-size: 1rem;
+    }
 }
 
+/* Extra Small Mobile (up to 360px) */
 @media (max-width: 360px) {
+    .navbar .container {
+        padding: 0 var(--spacing-xs);
+    }
+    
+    .hero {
+        padding: 2rem 0;
+    }
+    
+    .hero .container {
+        padding: 0 var(--spacing-xs);
+    }
+    
     .hero-title {
         font-size: 1.25rem;
+        line-height: 1.3;
+    }
+    
+    .hero-description {
+        font-size: var(--font-size-xs);
     }
     
     .brand-logo {
         height: 35px;
+        max-width: 100px;
     }
     
     .feature-card {
         padding: var(--spacing-sm);
+    }
+    
+    .feature-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 1.25rem;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        font-size: var(--font-size-base);
+    }
+    
+    .section-title {
+        font-size: var(--font-size-lg);
+    }
+    
+    .footer .container {
+        padding: 0 var(--spacing-xs);
+    }
+}
+
+/* Landscape Orientation for Mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+    .hero {
+        padding: 2rem 0;
+        min-height: auto;
+    }
+    
+    .hero-title {
+        font-size: 1.5rem;
+    }
+    
+    .hero-description {
+        font-size: var(--font-size-sm);
+    }
+    
+    .navbar {
+        padding: var(--spacing-xs) 0;
+    }
+}
+
+/* iPad Specific (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .hero .container {
+        grid-template-columns: 1fr;
+    }
+    
+    .hero-image {
+        height: 250px;
+        margin-top: var(--spacing-lg);
+    }
+    
+    .floating-card {
+        padding: var(--spacing-sm);
+        font-size: var(--font-size-xs);
+    }
+    
+    .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .steps {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* iPhone X and newer (375px - 414px) */
+@media (min-width: 375px) and (max-width: 414px) {
+    .hero-title {
+        font-size: 1.65rem;
+    }
+    
+    .hero-description {
+        font-size: var(--font-size-base);
+    }
+}
+
+/* High DPI Displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .brand-logo,
+    .footer-logo {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .btn,
+    .nav-menu a,
+    .feature-card,
+    .step {
+        -webkit-tap-highlight-color: rgba(61, 90, 148, 0.2);
+    }
+    
+    .btn:active,
+    .nav-menu a:active {
+        transform: scale(0.98);
+    }
+    
+    .feature-card:hover,
+    .step:hover {
+        transform: none;
+    }
+    
+    .feature-card:active {
+        transform: scale(0.98);
     }
 }
 
@@ -1327,6 +1625,14 @@
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+    }
+    
+    .floating-card {
+        animation: none !important;
+    }
+    
+    .hero::before {
+        animation: none !important;
     }
 }
 
