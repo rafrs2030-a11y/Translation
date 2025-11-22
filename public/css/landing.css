@@ -676,9 +676,24 @@ html {
     display: block;
 }
 
+.step:nth-child(4)::after,
 .step:last-child::after {
     display: none !important;
-    content: none !important;
+    content: '' !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    left: -9999px !important;
+}
+
+.step:nth-child(4):hover::after,
+.step:last-child:hover::after {
+    display: none !important;
+    content: '' !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
 }
 
 .step:hover,
