@@ -1,7 +1,8 @@
 [build]
   publish = "public"
   functions = "netlify/functions"
-  command = "echo 'No build step required - static site'"
+  # Install dependencies including Cypress if needed
+  command = "npm ci || (npm install && echo 'Dependencies installed')"
 
 # Headers for security and CORS
 [[headers]]
