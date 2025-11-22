@@ -40,13 +40,11 @@
 # SPA fallback - redirect non-file requests to index.html
 # Netlify serves static files first, so this only applies to non-existent routes
 # The force = false ensures existing files are served directly
-# Important: This must be the last redirect rule
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
   force = false
-  conditions = {}
 
 [functions]
   node_bundler = "esbuild"
