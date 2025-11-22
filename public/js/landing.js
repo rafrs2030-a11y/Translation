@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initParallax();
     initLazyLoading();
     initScrollToTop();
+    initActiveNavLinks();
 });
 
 /**
@@ -185,6 +186,43 @@ function initScrollToTop() {
             behavior: 'smooth'
         });
     });
+}
+
+/**
+ * Active Navigation Links on Scroll
+ */
+function initActiveNavLinks() {
+    const navLinks = document.querySelectorAll('.nav-menu a[href^="#"]');
+    const sections = document.querySelectorAll('section[id]');
+
+    if (navLinks.length === 0 || sections.length === 0) return;
+
+    function updateActiveLink() {
+        const scrollPos = window.scrollY + 100;
+
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.offsetHeight;
+            const sectionId = section.getAttribute('id');
+
+            if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${sectionId}`) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+
+        // Check if at top of page
+        if (window.scrollY < 100) {
+            navLinks.forEach(link => link.classList.remove('active'));
+        }
+    }
+
+    window.addEventListener('scroll', updateActiveLink);
+    updateActiveLink(); // Initial check
 }
 
 /**
