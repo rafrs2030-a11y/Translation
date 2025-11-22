@@ -669,7 +669,8 @@ html {
 }
 
 .step:last-child::after {
-    display: none;
+    display: none !important;
+    content: none !important;
 }
 
 .step:hover,
