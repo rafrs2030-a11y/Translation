@@ -6,6 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initMobileMenu();
     initSmoothScroll();
     initAnimations();
+    initNavbarScroll();
+    initParallax();
+    initLazyLoading();
+    initScrollToTop();
 });
 
 /**
@@ -18,14 +22,32 @@ function initMobileMenu() {
 
     if (toggle) {
         toggle.addEventListener('click', () => {
+            const isActive = menu?.classList.contains('active');
             menu?.classList.toggle('active');
             actions?.classList.toggle('active');
+            toggle.classList.toggle('active');
             
             // Toggle icon
             const icon = toggle.querySelector('i');
             if (icon) {
                 icon.classList.toggle('fa-bars');
                 icon.classList.toggle('fa-times');
+            }
+            
+            // Close menu when clicking outside
+            if (!isActive) {
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!toggle.contains(e.target) && !menu?.contains(e.target) && !actions?.contains(e.target)) {
+                        menu?.classList.remove('active');
+                        actions?.classList.remove('active');
+                        toggle.classList.remove('active');
+                        if (icon) {
+                            icon.classList.add('fa-bars');
+                            icon.classList.remove('fa-times');
+                        }
+                        document.removeEventListener('click', closeMenu);
+                    }
+                });
             }
         });
     }
@@ -51,22 +73,117 @@ function initSmoothScroll() {
 }
 
 /**
- * Scroll Animations
+ * Navbar Scroll Effect
+ */
+function initNavbarScroll() {
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+        const currentScroll = window.pageYOffset;
+        
+        if (currentScroll > 50) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
+
+        lastScroll = currentScroll;
+    });
+}
+
+/**
+ * Scroll Animations with Stagger
  */
 function initAnimations() {
     const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
+        entries.forEach((entry, index) => {
             if (entry.isIntersecting) {
-                entry.target.classList.add('animate-in');
+                setTimeout(() => {
+                    entry.target.classList.add('animate-in');
+                }, index * 100);
+                observer.unobserve(entry.target);
             }
         });
     }, {
-        threshold: 0.1
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
     });
 
-    // Observe elements
-    document.querySelectorAll('.feature-card, .step, .stat-box').forEach(el => {
+    // Observe elements with stagger
+    document.querySelectorAll('.feature-card, .step').forEach((el, index) => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = `all 0.6s ease ${index * 0.1}s`;
         observer.observe(el);
+    });
+}
+
+/**
+ * Parallax Effect for Hero Section
+ */
+function initParallax() {
+    const hero = document.querySelector('.hero');
+    if (!hero) return;
+
+    window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        const rate = scrolled * 0.5;
+        hero.style.transform = `translateY(${rate}px)`;
+    });
+}
+
+/**
+ * Lazy Loading for Images
+ */
+function initLazyLoading() {
+    const images = document.querySelectorAll('img[loading="lazy"]');
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.style.opacity = '0';
+                    img.style.transition = 'opacity 0.3s';
+                    setTimeout(() => {
+                        img.style.opacity = '1';
+                    }, 100);
+                    imageObserver.unobserve(img);
+                }
+            });
+        });
+
+        images.forEach(img => imageObserver.observe(img));
+    }
+}
+
+/**
+ * Scroll to Top Button
+ */
+function initScrollToTop() {
+    // Create button
+    const button = document.createElement('button');
+    button.className = 'scroll-to-top';
+    button.setAttribute('aria-label', 'العودة إلى الأعلى');
+    button.innerHTML = '<i class="fas fa-arrow-up"></i>';
+    document.body.appendChild(button);
+
+    // Show/hide on scroll
+    window.addEventListener('scroll', () => {
+        if (window.pageYOffset > 300) {
+            button.classList.add('visible');
+        } else {
+            button.classList.remove('visible');
+        }
+    });
+
+    // Scroll to top on click
+    button.addEventListener('click', () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
     });
 }
 
