@@ -1,8 +1,8 @@
 [build]
   publish = "public"
   functions = "netlify/functions"
-  # Install dependencies (including Cypress for tests)
-  command = "npm install"
+  # No build step required for static site
+  command = "echo 'No build step required - static site'"
 
 # Headers for security and CORS
 [[headers]]
@@ -37,9 +37,9 @@
   to = "/.netlify/functions/api/:splat"
   status = 200
 
-# SPA fallback - only redirect if file doesn't exist
-# Netlify automatically serves static files first, so this only applies to non-existent routes
-# The force = false ensures static files (HTML, CSS, JS, images) are served directly
+# SPA fallback - redirect non-file requests to index.html
+# Netlify serves static files first, so this only applies to non-existent routes
+# The force = false ensures existing files are served directly
 [[redirects]]
   from = "/*"
   to = "/index.html"
