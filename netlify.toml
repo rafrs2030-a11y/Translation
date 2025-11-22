@@ -1,8 +1,8 @@
 [build]
   publish = "public"
   functions = "netlify/functions"
-  # Install dependencies including Cypress if needed
-  command = "npm ci || (npm install && echo 'Dependencies installed')"
+  # Install dependencies (including Cypress for tests)
+  command = "npm install"
 
 # Headers for security and CORS
 [[headers]]
@@ -54,12 +54,11 @@
 [[plugins]]
   package = "@netlify/plugin-lighthouse"
 
-# Cypress plugin - configure to skip if no tests run
-# This prevents the plugin from failing when tests don't run
+# Cypress plugin - configured to run tests
+# Tests run after the site is deployed
 [[plugins]]
   package = "netlify-plugin-cypress"
   [plugins.inputs]
     record = false
     build = false
-    skip = true  # Skip if Cypress is not installed or tests fail
 
