@@ -650,6 +650,10 @@ html {
     display: none;
 }
 
+.step:last-child::before {
+    display: none;
+}
+
 .step::after {
     content: '←';
     position: absolute;
@@ -666,6 +670,10 @@ html {
     opacity: 1;
     transform: translateX(5px);
     color: var(--secondary-color);
+}
+
+.step:first-child::after {
+    display: block;
 }
 
 .step:last-child::after {
