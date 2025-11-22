@@ -4,6 +4,13 @@
   # No build step required for static site
   command = "echo 'No build step required - static site'"
 
+# Ensure index.html is served for root path
+[[redirects]]
+  from = "/"
+  to = "/index.html"
+  status = 200
+  force = false
+
 # Headers for security and CORS
 [[headers]]
   for = "/*"

@@ -1,3 +1,6 @@
 # API routes
 /api/* /.netlify/functions/api/:splat 200
 
+# Ensure root path serves index.html
+/ /index.html 200
+
