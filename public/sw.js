@@ -42,11 +42,37 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  
+  // Skip caching for external resources (CDNs, fonts, etc.)
+  const isExternalResource = 
+    url.origin.includes('fonts.googleapis.com') ||
+    url.origin.includes('fonts.gstatic.com') ||
+    url.origin.includes('cdnjs.cloudflare.com') ||
+    url.origin.includes('cdn.jsdelivr.net') ||
+    url.origin.includes('supabase.co');
+  
+  // For external resources, just fetch from network
+  if (isExternalResource) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  
+  // For local resources, use cache-first strategy
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
         // Return cached version or fetch from network
-        return response || fetch(event.request);
+        return response || fetch(event.request).then((fetchResponse) => {
+          // Cache the response for future use (only for successful responses)
+          if (fetchResponse && fetchResponse.status === 200) {
+            const responseToCache = fetchResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return fetchResponse;
+        });
       })
   );
 });
