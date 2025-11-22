@@ -742,26 +742,29 @@
 .footer {
     background-color: var(--bg-dark);
     color: white;
-    padding: var(--spacing-2xl) 0 var(--spacing-lg);
-    margin-top: var(--spacing-2xl);
+    padding: var(--spacing-xl) 0 var(--spacing-md);
+    margin-top: var(--spacing-xl);
 }
 
 .footer-content {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: var(--spacing-xl);
-    margin-bottom: var(--spacing-xl);
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
 }
 
 .footer-section h3,
 .footer-section h4 {
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
     color: white;
+    font-size: var(--font-size-lg);
 }
 
 .footer-section p {
     color: rgba(255, 255, 255, 0.7);
-    line-height: 1.8;
+    line-height: 1.6;
+    font-size: var(--font-size-sm);
+    margin-bottom: 0;
 }
 
 .footer-section ul {
@@ -769,7 +772,7 @@
 }
 
 .footer-section ul li {
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
 }
 
 .footer-section ul li a {
@@ -789,19 +792,20 @@
 
 .social-links {
     display: flex;
-    gap: var(--spacing-md);
-    margin-top: var(--spacing-lg);
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
 }
 
 .social-links a {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all var(--transition-base);
+    font-size: 0.875rem;
 }
 
 .social-links a:hover {
@@ -811,7 +815,7 @@
 
 .footer-bottom {
     text-align: center;
-    padding-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -820,12 +824,13 @@
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
 }
 
 .footer-bottom p {
     margin: 0;
     color: rgba(255, 255, 255, 0.5);
+    font-size: var(--font-size-sm);
 }
 
 .developer-credit-inline {
@@ -1127,19 +1132,39 @@
         font-size: var(--font-size-base);
     }
     
+    .footer {
+        padding: var(--spacing-lg) 0 var(--spacing-md);
+        margin-top: var(--spacing-lg);
+    }
+    
     .footer-content {
         grid-template-columns: 1fr;
-        gap: var(--spacing-lg);
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
     }
     
     .footer-section {
         text-align: center;
     }
     
+    .footer-section h4 {
+        font-size: var(--font-size-base);
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .footer-section p {
+        font-size: var(--font-size-xs);
+        line-height: 1.5;
+    }
+    
+    .footer-bottom {
+        padding-top: var(--spacing-sm);
+    }
+    
     .footer-bottom-content {
         flex-direction: column;
         text-align: center;
-        gap: var(--spacing-sm);
+        gap: var(--spacing-xs);
     }
     
     .developer-credit-inline {
@@ -1233,22 +1258,49 @@
     }
     
     .footer {
-        padding: var(--spacing-xl) 0 var(--spacing-md);
+        padding: var(--spacing-md) 0 var(--spacing-sm);
+        margin-top: var(--spacing-md);
+    }
+    
+    .footer-content {
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-sm);
     }
     
     .footer-section h4 {
-        font-size: var(--font-size-lg);
-        margin-bottom: var(--spacing-md);
+        font-size: var(--font-size-sm);
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .footer-section p {
+        font-size: 0.7rem;
     }
     
     .footer-section ul li {
         margin-bottom: var(--spacing-xs);
     }
     
+    .footer-section ul li a {
+        font-size: var(--font-size-xs);
+    }
+    
+    .social-links {
+        margin-top: var(--spacing-sm);
+        gap: var(--spacing-xs);
+    }
+    
     .social-links a {
-        width: 36px;
-        height: 36px;
-        font-size: 0.875rem;
+        width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+    }
+    
+    .footer-bottom {
+        padding-top: var(--spacing-xs);
+    }
+    
+    .footer-bottom p {
+        font-size: var(--font-size-xs);
     }
 }
 
