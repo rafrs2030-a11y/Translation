@@ -880,14 +880,8 @@ html {
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: var(--spacing-sm);
-}
-
-.footer-bottom-content > p {
-    margin: 0;
-    width: 100%;
-    text-align: center;
 }
 
 .footer-bottom p {
@@ -895,15 +889,14 @@ html {
     color: rgba(255, 255, 255, 0.5);
     font-size: var(--font-size-xs);
     line-height: 1.4;
+    text-align: center;
 }
 
 .developer-credit-inline {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-xs);
-    flex: 0 0 100%;
-    margin-top: var(--spacing-xs);
+    gap: var(--spacing-sm);
 }
 
 .developer-credit-inline .developer-credit-content {
