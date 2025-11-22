@@ -64,7 +64,7 @@ html {
     align-items: center;
     justify-content: space-between;
     gap: var(--spacing-lg);
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .nav-brand {
@@ -100,7 +100,7 @@ html {
     gap: var(--spacing-md);
     margin: 0;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .nav-menu li {
@@ -207,7 +207,7 @@ html {
     display: flex;
     gap: var(--spacing-sm);
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .nav-actions .btn {
