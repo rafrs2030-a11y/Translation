@@ -654,8 +654,10 @@ html {
     display: none;
 }
 
+/* إخفاء جميع الأسهم افتراضياً */
 .step::after {
-    content: '←';
+    display: none;
+    content: '';
     position: absolute;
     top: 20px;
     right: -20px;
@@ -666,16 +668,21 @@ html {
     transition: all var(--transition-base);
 }
 
+/* إظهار الأسهم بعد الخطوات 1، 2، 3 فقط (بين 1-2، 2-3، 3-4) */
+.step:nth-child(1)::after,
+.step:nth-child(2)::after,
+.step:nth-child(3)::after {
+    display: block !important;
+    content: '←' !important;
+}
+
 .step:hover::after {
     opacity: 1;
     transform: translateX(5px);
     color: var(--secondary-color);
 }
 
-.step:first-child::after {
-    display: block;
-}
-
+/* إخفاء السهم بعد الخطوة الرابعة (الأخيرة) - التأكد من عدم الظهور */
 .step:nth-child(4)::after,
 .step:last-child::after {
     display: none !important;
@@ -683,8 +690,6 @@ html {
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
-    position: absolute !important;
-    left: -9999px !important;
 }
 
 .step:nth-child(4):hover::after,
