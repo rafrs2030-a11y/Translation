@@ -878,10 +878,16 @@ html {
 
 .footer-bottom-content {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    flex-wrap: wrap;
-    gap: var(--spacing-xs);
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.footer-bottom-content > p {
+    margin: 0;
+    width: 100%;
+    text-align: center;
 }
 
 .footer-bottom p {
@@ -894,7 +900,10 @@ html {
 .developer-credit-inline {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
+    justify-content: center;
+    gap: var(--spacing-xs);
+    flex: 0 0 100%;
+    margin-top: var(--spacing-xs);
 }
 
 .developer-credit-inline .developer-credit-content {
