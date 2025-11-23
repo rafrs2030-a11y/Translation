@@ -107,6 +107,14 @@ function initEventListeners() {
         // Initialize on load
         handleCategoryChange();
     }
+    
+    // Handle submitter type change to show/hide fields
+    const submitterTypeSelect = document.getElementById('submitter_type');
+    if (submitterTypeSelect) {
+        submitterTypeSelect.addEventListener('change', handleSubmitterTypeChange);
+        // Initialize on load
+        handleSubmitterTypeChange();
+    }
 }
 
 /**
@@ -197,6 +205,109 @@ function handleCategoryChange() {
 }
 
 /**
+ * Handle submitter type change
+ */
+function handleSubmitterTypeChange() {
+    const submitterTypeSelect = document.getElementById('submitter_type');
+    const individualFields = document.getElementById('individual-fields');
+    const organizationFields = document.getElementById('organization-fields');
+    const genderField = document.getElementById('gender-field');
+    const idNumberField = document.getElementById('id-number-field');
+    const fullNameInput = document.getElementById('full_name');
+    const emailInput = document.getElementById('email');
+    const emailOrgInput = document.getElementById('email_org');
+    
+    if (!submitterTypeSelect) return;
+    
+    const submitterType = submitterTypeSelect.value;
+    
+    if (submitterType === 'فرد') {
+        // Show individual fields
+        if (individualFields) individualFields.style.display = 'block';
+        if (organizationFields) organizationFields.style.display = 'none';
+        if (genderField) genderField.style.display = 'block';
+        if (idNumberField) idNumberField.style.display = 'block';
+        
+        // Set required attributes for individual fields
+        if (fullNameInput) {
+            fullNameInput.setAttribute('required', 'required');
+            fullNameInput.closest('.form-group').querySelector('.form-label').classList.add('required');
+        }
+        if (emailInput) {
+            emailInput.setAttribute('required', 'required');
+            emailInput.closest('.form-group').querySelector('.form-label').classList.add('required');
+        }
+        if (emailOrgInput) {
+            emailOrgInput.removeAttribute('required');
+            emailOrgInput.closest('.form-group').querySelector('.form-label').classList.remove('required');
+        }
+        
+        // Remove required from organization fields
+        const orgNameInput = document.getElementById('organization_name');
+        const orgTypeSelect = document.getElementById('organization_type');
+        const commercialRegInput = document.getElementById('commercial_registration_number');
+        
+        if (orgNameInput) {
+            orgNameInput.removeAttribute('required');
+            orgNameInput.closest('.form-group').querySelector('.form-label').classList.remove('required');
+        }
+        if (orgTypeSelect) {
+            orgTypeSelect.removeAttribute('required');
+            orgTypeSelect.closest('.form-group').querySelector('.form-label').classList.remove('required');
+        }
+        if (commercialRegInput) {
+            commercialRegInput.removeAttribute('required');
+            commercialRegInput.closest('.form-group').querySelector('.form-label').classList.remove('required');
+        }
+        
+    } else if (submitterType === 'مؤسسة') {
+        // Show organization fields
+        if (individualFields) individualFields.style.display = 'none';
+        if (organizationFields) organizationFields.style.display = 'block';
+        if (genderField) genderField.style.display = 'none';
+        if (idNumberField) idNumberField.style.display = 'none';
+        
+        // Remove required from individual fields
+        if (fullNameInput) {
+            fullNameInput.removeAttribute('required');
+            fullNameInput.closest('.form-group').querySelector('.form-label').classList.remove('required');
+        }
+        if (emailInput) {
+            emailInput.removeAttribute('required');
+            emailInput.closest('.form-group').querySelector('.form-label').classList.remove('required');
+        }
+        
+        // Set required attributes for organization fields
+        const orgNameInput = document.getElementById('organization_name');
+        const orgTypeSelect = document.getElementById('organization_type');
+        const commercialRegInput = document.getElementById('commercial_registration_number');
+        
+        if (orgNameInput) {
+            orgNameInput.setAttribute('required', 'required');
+            orgNameInput.closest('.form-group').querySelector('.form-label').classList.add('required');
+        }
+        if (orgTypeSelect) {
+            orgTypeSelect.setAttribute('required', 'required');
+            orgTypeSelect.closest('.form-group').querySelector('.form-label').classList.add('required');
+        }
+        if (commercialRegInput) {
+            commercialRegInput.setAttribute('required', 'required');
+            commercialRegInput.closest('.form-group').querySelector('.form-label').classList.add('required');
+        }
+        if (emailOrgInput) {
+            emailOrgInput.setAttribute('required', 'required');
+            emailOrgInput.closest('.form-group').querySelector('.form-label').classList.add('required');
+        }
+    } else {
+        // Hide all conditional fields
+        if (individualFields) individualFields.style.display = 'none';
+        if (organizationFields) organizationFields.style.display = 'none';
+        if (genderField) genderField.style.display = 'none';
+        if (idNumberField) idNumberField.style.display = 'none';
+    }
+}
+
+/**
  * Validate current step
  */
 function validateCurrentStep() {
@@ -224,6 +335,49 @@ function validateCurrentStep() {
         }
     }
     
+    // Special validation for submitter type on step 1
+    if (currentStep === 1) {
+        const submitterTypeSelect = document.getElementById('submitter_type');
+        if (submitterTypeSelect && submitterTypeSelect.value) {
+            const submitterType = submitterTypeSelect.value;
+            
+            if (submitterType === 'فرد') {
+                const fullNameInput = document.getElementById('full_name');
+                const emailInput = document.getElementById('email');
+                if (!fullNameInput || !fullNameInput.value.trim()) {
+                    showFieldError(fullNameInput, 'الاسم الكامل مطلوب للأفراد');
+                    isValid = false;
+                }
+                if (!emailInput || !emailInput.value.trim()) {
+                    showFieldError(emailInput, 'البريد الإلكتروني مطلوب');
+                    isValid = false;
+                }
+            } else if (submitterType === 'مؤسسة') {
+                const orgNameInput = document.getElementById('organization_name');
+                const orgTypeSelect = document.getElementById('organization_type');
+                const commercialRegInput = document.getElementById('commercial_registration_number');
+                const emailOrgInput = document.getElementById('email_org');
+                
+                if (!orgNameInput || !orgNameInput.value.trim()) {
+                    showFieldError(orgNameInput, 'اسم المؤسسة مطلوب');
+                    isValid = false;
+                }
+                if (!orgTypeSelect || !orgTypeSelect.value) {
+                    showFieldError(orgTypeSelect, 'نوع المؤسسة مطلوب');
+                    isValid = false;
+                }
+                if (!commercialRegInput || !commercialRegInput.value.trim()) {
+                    showFieldError(commercialRegInput, 'السجل التجاري مطلوب');
+                    isValid = false;
+                }
+                if (!emailOrgInput || !emailOrgInput.value.trim()) {
+                    showFieldError(emailOrgInput, 'البريد الإلكتروني مطلوب');
+                    isValid = false;
+                }
+            }
+        }
+    }
+    
     // Special validation for file upload on step 3
     if (currentStep === 3 && !uploadedFile) {
         showAlert('يرجى رفع ملف البحث', 'error');
@@ -238,12 +392,26 @@ function validateCurrentStep() {
  */
 function saveFormData() {
     const inputs = form.querySelectorAll('input, select, textarea');
+    const submitterType = document.getElementById('submitter_type')?.value;
     
     inputs.forEach(input => {
         if (input.type === 'checkbox') {
             formData[input.name] = input.checked;
         } else if (input.type !== 'file') {
-            formData[input.name] = input.value;
+            // Handle email field - use the appropriate one based on submitter type
+            if (input.id === 'email_org') {
+                // Organization email
+                if (submitterType === 'مؤسسة') {
+                    formData.email = input.value;
+                }
+            } else if (input.id === 'email') {
+                // Individual email
+                if (submitterType === 'فرد') {
+                    formData.email = input.value;
+                }
+            } else {
+                formData[input.name] = input.value;
+            }
         }
     });
 }
@@ -306,13 +474,28 @@ function updateReviewContent() {
     const reviewContent = document.getElementById('review-content');
     const declarationName = document.getElementById('declaration-name');
     
-    // Set declaration name
-    declarationName.textContent = formData.full_name || '[الاسم]';
+    // Set declaration name based on submitter type
+    const submitterType = formData.submitter_type || 'فرد';
+    if (submitterType === 'فرد') {
+        declarationName.textContent = formData.full_name || '[الاسم]';
+    } else {
+        declarationName.textContent = formData.organization_name || '[اسم المؤسسة]';
+    }
     
     // Build review HTML
-    reviewContent.innerHTML = `
+    const isIndividual = submitterType === 'فرد';
+    
+    let basicInfoHTML = `
         <div class="review-section">
             <h4>المعلومات الأساسية</h4>
+            <div class="review-item">
+                <span class="review-label">نوع مقدم البحث:</span>
+                <span class="review-value">${submitterType || '-'}</span>
+            </div>
+    `;
+    
+    if (isIndividual) {
+        basicInfoHTML += `
             <div class="review-item">
                 <span class="review-label">الاسم الكامل:</span>
                 <span class="review-value">${formData.full_name || '-'}</span>
@@ -322,16 +505,39 @@ function updateReviewContent() {
                 <span class="review-value">${formData.email || '-'}</span>
             </div>
             <div class="review-item">
-                <span class="review-label">الدولة:</span>
-                <span class="review-value">${formData.country || '-'}</span>
-            </div>
-            <div class="review-item">
                 <span class="review-label">الجنس:</span>
                 <span class="review-value">${formData.gender || '-'}</span>
             </div>
             <div class="review-item">
                 <span class="review-label">رقم الهوية:</span>
                 <span class="review-value">${formData.id_number || '-'}</span>
+            </div>
+        `;
+    } else {
+        basicInfoHTML += `
+            <div class="review-item">
+                <span class="review-label">اسم المؤسسة:</span>
+                <span class="review-value">${formData.organization_name || '-'}</span>
+            </div>
+            <div class="review-item">
+                <span class="review-label">نوع المؤسسة:</span>
+                <span class="review-value">${formData.organization_type || '-'}</span>
+            </div>
+            <div class="review-item">
+                <span class="review-label">السجل التجاري:</span>
+                <span class="review-value">${formData.commercial_registration_number || '-'}</span>
+            </div>
+            <div class="review-item">
+                <span class="review-label">البريد الإلكتروني:</span>
+                <span class="review-value">${formData.email || '-'}</span>
+            </div>
+        `;
+    }
+    
+    basicInfoHTML += `
+            <div class="review-item">
+                <span class="review-label">الدولة:</span>
+                <span class="review-value">${formData.country || '-'}</span>
             </div>
         </div>
         
@@ -371,6 +577,8 @@ function updateReviewContent() {
             </div>
         </div>
     `;
+    
+    reviewContent.innerHTML = basicInfoHTML;
 }
 
 /**
@@ -418,12 +626,13 @@ async function handleSubmit(e) {
             ? (formData.other_category || 'أخرى')
             : formData.category;
         
+        const submitterType = formData.submitter_type || 'فرد';
+        const isIndividual = submitterType === 'فرد';
+        
         const submissionData = {
-            full_name: formData.full_name,
+            submitter_type: submitterType,
             country: formData.country,
             email: formData.email,
-            gender: formData.gender,
-            id_number: formData.id_number,
             research_type: formData.research_type,
             category: categoryValue,
             main_researcher: formData.main_researcher,
@@ -436,6 +645,17 @@ async function handleSubmit(e) {
             declaration_timestamp: new Date().toISOString(),
             status: 'pending'
         };
+        
+        // Add fields based on submitter type
+        if (isIndividual) {
+            submissionData.full_name = formData.full_name;
+            submissionData.gender = formData.gender;
+            submissionData.id_number = formData.id_number;
+        } else {
+            submissionData.organization_name = formData.organization_name;
+            submissionData.organization_type = formData.organization_type;
+            submissionData.commercial_registration_number = formData.commercial_registration_number;
+        }
         
         // Create submission
         const result = await submissionsStore.createSubmission(submissionData);
@@ -540,29 +760,34 @@ async function prefillUserData(user) {
         // Pre-fill basic information fields
         const fullNameInput = document.getElementById('full_name');
         const emailInput = document.getElementById('email');
+        const emailOrgInput = document.getElementById('email_org');
         const idNumberInput = document.getElementById('id_number');
         const genderInput = document.getElementById('gender');
         const countryInput = document.getElementById('country');
         
-        // Fill username/full_name
+        // Fill username/full_name (for individual)
         if (fullNameInput && currentUser.username && !fullNameInput.value) {
             fullNameInput.value = currentUser.username;
             formData.full_name = currentUser.username;
         }
         
-        // Fill email
+        // Fill email (for both individual and organization)
         if (emailInput && currentUser.email && !emailInput.value) {
             emailInput.value = currentUser.email;
             formData.email = currentUser.email;
         }
+        if (emailOrgInput && currentUser.email && !emailOrgInput.value) {
+            emailOrgInput.value = currentUser.email;
+            formData.email = currentUser.email;
+        }
         
-        // Fill national_id
+        // Fill national_id (for individual)
         if (idNumberInput && currentUser.national_id && !idNumberInput.value) {
             idNumberInput.value = currentUser.national_id;
             formData.id_number = currentUser.national_id;
         }
         
-        // Fill gender if available
+        // Fill gender if available (for individual)
         if (genderInput && currentUser.gender && !genderInput.value) {
             genderInput.value = currentUser.gender;
             formData.gender = currentUser.gender;

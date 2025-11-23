@@ -69,11 +69,12 @@ PROJECT_ID=your_project_id
 PORT=3000
 NODE_ENV=development
 
-# Email Configuration (optional)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@gmail.com
-SMTP_PASSWORD=your_app_password
+# Email Configuration (for Edge Functions)
+# إعداد البريد الإلكتروني في Supabase Dashboard > Edge Functions > Secrets
+# RESEND_API_KEY=re_xxxxxxxxxxxxx (للإنتاج - راجع docs/EMAIL_SETUP_GUIDE.md)
+# EMAIL_PROVIDER=resend
+# FROM_EMAIL=noreply@yourdomain.com
+# FROM_NAME=منصة نشر الأبحاث العربية
 ```
 
 ### 4. إعداد قاعدة البيانات

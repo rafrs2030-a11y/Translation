@@ -608,16 +608,161 @@ class AdminStore {
    * إرسال بريد تغيير الحالة
    */
   async sendStatusChangeEmail(userId, submissionId, newStatus) {
-    // TODO: تنفيذ إرسال البريد الإلكتروني
-    console.log('Sending status change email...', { userId, submissionId, newStatus });
+    try {
+      // الحصول على بيانات المستخدم والطلب
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('email, username')
+        .eq('id', userId)
+        .single();
+
+      if (userError || !userData) {
+        console.error('Failed to fetch user data:', userError);
+        return;
+      }
+
+      const { data: submissionData, error: submissionError } = await supabase
+        .from('submissions')
+        .select('*')
+        .eq('id', submissionId)
+        .single();
+
+      if (submissionError || !submissionData) {
+        console.error('Failed to fetch submission data:', submissionError);
+        return;
+      }
+
+      // الحصول على تسميات الحالات
+      const oldStatusLabel = this.getStatusLabel(submissionData.status);
+      const newStatusLabel = this.getStatusLabel(newStatus);
+
+      // إعداد بيانات البريد الإلكتروني
+      const emailData = {
+        to: userData.email,
+        subject: `تحديث حالة البحث - ${submissionData.reference_number}`,
+        type: 'status_change',
+        userId: userId,
+        submissionId: submissionId,
+      };
+
+      const statusData = {
+        researcherName: submissionData.main_researcher || userData.username,
+        referenceNumber: submissionData.reference_number,
+        oldStatus: submissionData.status,
+        newStatus: newStatus,
+        oldStatusLabel: oldStatusLabel,
+        newStatusLabel: newStatusLabel,
+        researchTitle: submissionData.main_researcher,
+        researchType: submissionData.research_type,
+        submissionDate: new Date(submissionData.created_at).toLocaleDateString('ar-SA'),
+        comment: submissionData.admin_comment || null,
+        submissionLink: `${window.location.origin}/researcher/submissions/${submissionId}`,
+      };
+
+      // إرسال البريد عبر Supabase Edge Function
+      const supabaseUrl = 'https://rzenhmmwocctvonwhnrj.supabase.co';
+      const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6ZW5obW13b2NjdHZvbndobnJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxOTAwODYsImV4cCI6MjA3ODc2NjA4Nn0.wGQZ4osd-MrQudrt6lBhHaumbFjYT26-hoNR4TnjEQM';
+      const { data: session } = await supabase.auth.getSession();
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.session?.access_token || supabaseAnonKey}`,
+          'apikey': supabaseAnonKey,
+        },
+        body: JSON.stringify({
+          emailData,
+          statusData,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to send email:', errorData);
+      } else {
+        console.log('Status change email sent successfully');
+      }
+    } catch (error) {
+      console.error('Error sending status change email:', error);
+    }
   }
 
   /**
    * إرسال بريد التعليق
    */
   async sendCommentEmail(userId, submissionId, comment) {
-    // TODO: تنفيذ إرسال البريد الإلكتروني
-    console.log('Sending comment email...', { userId, submissionId, comment });
+    try {
+      // الحصول على بيانات المستخدم والطلب
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('email, username')
+        .eq('id', userId)
+        .single();
+
+      if (userError || !userData) {
+        console.error('Failed to fetch user data:', userError);
+        return;
+      }
+
+      const { data: submissionData, error: submissionError } = await supabase
+        .from('submissions')
+        .select('*')
+        .eq('id', submissionId)
+        .single();
+
+      if (submissionError || !submissionData) {
+        console.error('Failed to fetch submission data:', submissionError);
+        return;
+      }
+
+      // إعداد بيانات البريد الإلكتروني
+      const emailData = {
+        to: userData.email,
+        subject: `تعليق جديد على بحثك - ${submissionData.reference_number}`,
+        type: 'comment_added',
+        userId: userId,
+        submissionId: submissionId,
+        html: `
+          <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2>عزيزي ${submissionData.main_researcher || userData.username}،</h2>
+            <p>تم إضافة تعليق جديد على بحثك (رقم المرجع: <strong>${submissionData.reference_number}</strong>)</p>
+            <div style="background-color: #f8f9fa; padding: 15px; border-right: 4px solid #007BFF; margin: 20px 0;">
+              <h3>💬 التعليق:</h3>
+              <p>${comment}</p>
+            </div>
+            <p><a href="${window.location.origin}/researcher/submissions/${submissionId}" style="background-color: #007BFF; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">عرض التفاصيل</a></p>
+            <p>مع أطيب التحيات،<br><strong>فريق منصة نشر الأبحاث العربية</strong></p>
+          </div>
+        `,
+      };
+
+      // إرسال البريد عبر Supabase Edge Function
+      const supabaseUrl = 'https://rzenhmmwocctvonwhnrj.supabase.co';
+      const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6ZW5obW13b2NjdHZvbndobnJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxOTAwODYsImV4cCI6MjA3ODc2NjA4Nn0.wGQZ4osd-MrQudrt6lBhHaumbFjYT26-hoNR4TnjEQM';
+      const { data: session } = await supabase.auth.getSession();
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.session?.access_token || supabaseAnonKey}`,
+          'apikey': supabaseAnonKey,
+        },
+        body: JSON.stringify({
+          emailData,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to send email:', errorData);
+      } else {
+        console.log('Comment email sent successfully');
+      }
+    } catch (error) {
+      console.error('Error sending comment email:', error);
+    }
   }
 
   /**
