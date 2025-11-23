@@ -225,12 +225,47 @@ function populateSubmissionData(submission) {
         if (researcherName) researcherName.textContent = submission.full_name || '-';
     }
     
-    fullName.textContent = submission.full_name || '-';
-    email.textContent = submission.email || '-';
-    country.textContent = submission.country || '-';
-    gender.textContent = submission.gender || '-';
-    idNumber.textContent = submission.id_number || '-';
-    createdAt.textContent = formatDate(submission.created_at);
+    // Submitter type
+    const submitterType = submission.submitter_type || 'فرد';
+    const submitterTypeEl = document.getElementById('submitter-type');
+    if (submitterTypeEl) {
+        submitterTypeEl.textContent = submitterType;
+    }
+    
+    // Show/hide fields based on submitter type
+    const individualFields = document.getElementById('individual-info-fields');
+    const organizationFields = document.getElementById('organization-info-fields');
+    
+    if (submitterType === 'فرد') {
+        // Show individual fields
+        if (individualFields) individualFields.style.display = 'block';
+        if (organizationFields) organizationFields.style.display = 'none';
+        
+        fullName.textContent = submission.full_name || '-';
+        email.textContent = submission.email || '-';
+        country.textContent = submission.country || '-';
+        gender.textContent = submission.gender || '-';
+        idNumber.textContent = submission.id_number || '-';
+        createdAt.textContent = formatDate(submission.created_at);
+    } else {
+        // Show organization fields
+        if (individualFields) individualFields.style.display = 'none';
+        if (organizationFields) organizationFields.style.display = 'block';
+        
+        const orgNameEl = document.getElementById('organization-name');
+        const orgTypeEl = document.getElementById('organization-type');
+        const commercialRegEl = document.getElementById('commercial-registration-number');
+        const emailOrgEl = document.getElementById('email-org');
+        const countryOrgEl = document.getElementById('country-org');
+        const createdAtOrgEl = document.getElementById('created-at-org');
+        
+        if (orgNameEl) orgNameEl.textContent = submission.organization_name || '-';
+        if (orgTypeEl) orgTypeEl.textContent = submission.organization_type || '-';
+        if (commercialRegEl) commercialRegEl.textContent = submission.commercial_registration_number || '-';
+        if (emailOrgEl) emailOrgEl.textContent = submission.email || '-';
+        if (countryOrgEl) countryOrgEl.textContent = submission.country || '-';
+        if (createdAtOrgEl) createdAtOrgEl.textContent = formatDate(submission.created_at);
+    }
     
     // Research info
     researchType.textContent = submission.research_type || '-';

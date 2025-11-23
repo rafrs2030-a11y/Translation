@@ -19,6 +19,9 @@ let alertContainer;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
+    // Clear old cache on page load
+    clearOldCache();
+    
     const user = await requireResearcher();
     if (!user) return;
     
@@ -31,6 +34,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load draft after prefilling (draft will override prefilled data if exists)
     loadDraftIfExists();
 });
+
+/**
+ * Clear old cache and localStorage data
+ */
+function clearOldCache() {
+    try {
+        // Clear old submission drafts (older than 7 days)
+        const draftStr = localStorage.getItem('submission_draft');
+        if (draftStr) {
+            try {
+                const draft = JSON.parse(draftStr);
+                if (draft.timestamp) {
+                    const draftDate = new Date(draft.timestamp);
+                    const now = new Date();
+                    const daysDiff = (now - draftDate) / (1000 * 60 * 60 * 24);
+                    
+                    // Remove drafts older than 7 days
+                    if (daysDiff > 7) {
+                        localStorage.removeItem('submission_draft');
+                        console.log('Old draft cache cleared (older than 7 days)');
+                    }
+                }
+            } catch (e) {
+                // If draft is corrupted, remove it
+                localStorage.removeItem('submission_draft');
+                console.log('Corrupted draft cache cleared');
+            }
+        }
+        
+        // Clear any cached form data that might be stale
+        const cacheKeys = Object.keys(localStorage).filter(key => 
+            key.startsWith('form_cache_') || 
+            key.startsWith('submission_cache_')
+        );
+        cacheKeys.forEach(key => localStorage.removeItem(key));
+        
+        if (cacheKeys.length > 0) {
+            console.log(`Cleared ${cacheKeys.length} old cache entries`);
+        }
+    } catch (error) {
+        console.error('Error clearing cache:', error);
+    }
+}
 
 /**
  * Initialize DOM elements
@@ -700,6 +746,9 @@ async function handleSubmit(e) {
         if (result.success) {
             showAlert('تم تقديم البحث بنجاح! رقم المرجع: ' + result.data.reference_number, 'success');
             
+            // Clear all form data
+            clearFormData();
+            
             // Clear draft
             localStorage.removeItem('submission_draft');
             
@@ -716,6 +765,78 @@ async function handleSubmit(e) {
     } finally {
         setLoading(false);
     }
+}
+
+/**
+ * Clear all form data
+ */
+function clearFormData() {
+    // Reset form state
+    formData = {};
+    uploadedFile = null;
+    currentStep = 1;
+    
+    // Reset form inputs
+    if (form) {
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            if (input.type === 'checkbox') {
+                input.checked = false;
+            } else if (input.type !== 'file') {
+                input.value = '';
+                input.removeAttribute('required');
+            }
+        });
+    }
+    
+    // Reset file upload
+    const fileInput = document.getElementById('research_file');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+    
+    const filePreview = document.getElementById('file-preview');
+    const uploadArea = document.getElementById('file-upload-area');
+    if (filePreview) filePreview.style.display = 'none';
+    if (uploadArea) uploadArea.style.display = 'block';
+    
+    // Reset submitter type fields visibility
+    const individualFields = document.getElementById('individual-fields');
+    const organizationFields = document.getElementById('organization-fields');
+    const genderField = document.getElementById('gender-field');
+    const idNumberField = document.getElementById('id-number-field');
+    
+    if (individualFields) individualFields.style.display = 'none';
+    if (organizationFields) organizationFields.style.display = 'none';
+    if (genderField) genderField.style.display = 'none';
+    if (idNumberField) idNumberField.style.display = 'none';
+    
+    // Reset other category field
+    const otherCategoryGroup = document.getElementById('other-category-group');
+    if (otherCategoryGroup) otherCategoryGroup.style.display = 'none';
+    
+    // Reset submitter type select
+    const submitterTypeSelect = document.getElementById('submitter_type');
+    if (submitterTypeSelect) {
+        submitterTypeSelect.value = '';
+    }
+    
+    // Reset step display
+    updateStepDisplay();
+    
+    // Clear any error messages
+    if (form) {
+        const errorMessages = form.querySelectorAll('.form-error');
+        errorMessages.forEach(error => error.remove());
+        
+        const errorInputs = form.querySelectorAll('.error');
+        errorInputs.forEach(input => input.classList.remove('error'));
+    }
+    
+    // Clear localStorage draft
+    localStorage.removeItem('submission_draft');
+    
+    console.log('Form data and cache cleared');
 }
 
 /**
