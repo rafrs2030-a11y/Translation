@@ -49,20 +49,21 @@ html {
     position: sticky;
     top: 0;
     z-index: 1000;
-    padding: 0.25rem 0;
+    padding: 0.15rem 0;
     transition: all var(--transition-base);
     border-bottom: 1px solid transparent;
+    min-height: auto;
 }
 
 .navbar.scrolled {
     background-color: rgba(255, 255, 255, 0.98);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    padding: 0.15rem 0;
+    padding: 0.1rem 0;
     border-bottom-color: rgba(61, 90, 148, 0.1);
 }
 
 .navbar.scrolled .brand-logo {
-    height: 28px;
+    height: 26px;
 }
 
 .navbar .container {
@@ -71,6 +72,9 @@ html {
     justify-content: space-between;
     gap: var(--spacing-lg);
     flex-wrap: nowrap;
+    padding-top: 0;
+    padding-bottom: 0;
+    min-height: auto;
 }
 
 .nav-brand {
@@ -84,6 +88,7 @@ html {
     cursor: pointer;
     padding: 0;
     margin: 0;
+    line-height: 1;
 }
 
 .nav-brand:hover {
@@ -91,7 +96,7 @@ html {
 }
 
 .brand-logo {
-    height: 32px;
+    height: 28px;
     width: auto;
     object-fit: contain;
     transition: all var(--transition-base);
@@ -123,15 +128,16 @@ html {
     font-weight: 600;
     transition: all var(--transition-base);
     position: relative;
-    padding: var(--spacing-xs) var(--spacing-md);
+    padding: 0.25rem var(--spacing-md);
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
     border-radius: var(--radius-md);
     font-size: var(--font-size-base);
-    min-height: 38px;
+    min-height: auto;
     -webkit-tap-highlight-color: rgba(61, 90, 148, 0.2);
     touch-action: manipulation;
+    line-height: 1.2;
 }
 
 .nav-menu a i {
@@ -224,11 +230,12 @@ html {
 .nav-actions .btn {
     white-space: nowrap;
     font-size: var(--font-size-sm);
-    padding: 0.5rem 1rem;
+    padding: 0.35rem 1rem;
     min-width: fit-content;
-    min-height: 38px;
+    min-height: auto;
     -webkit-tap-highlight-color: rgba(61, 90, 148, 0.2);
     touch-action: manipulation;
+    line-height: 1.2;
 }
 
 .nav-actions .btn-outline {
@@ -1303,11 +1310,11 @@ html {
 /* Mobile Portrait (up to 767px) */
 @media (max-width: 767px) {
     .navbar {
-        padding: 0.2rem 0;
+        padding: 0.1rem 0;
     }
     
     .navbar.scrolled {
-        padding: 0.15rem 0;
+        padding: 0.08rem 0;
     }
     
     .navbar .container {
@@ -1323,13 +1330,13 @@ html {
     }
     
     .brand-logo {
-        height: 32px;
+        height: 28px;
         max-width: 120px;
         width: auto;
     }
     
     .navbar.scrolled .brand-logo {
-        height: 28px;
+        height: 24px;
     }
     
     .nav-menu,
@@ -2739,8 +2746,8 @@ html {
 @supports (padding: max(0px)) {
     @media (max-width: 767px) {
         .navbar {
-            padding-top: max(0.2rem, env(safe-area-inset-top));
-            padding-bottom: max(0.2rem, env(safe-area-inset-bottom));
+            padding-top: max(0.1rem, env(safe-area-inset-top));
+            padding-bottom: max(0.1rem, env(safe-area-inset-bottom));
         }
         
         .hero {
