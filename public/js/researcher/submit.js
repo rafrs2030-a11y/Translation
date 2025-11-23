@@ -143,6 +143,13 @@ function initEventListeners() {
     form.querySelectorAll('input, select, textarea').forEach(input => {
         input.addEventListener('change', () => {
             saveFormData();
+            // Update declaration text if we're on review step and relevant fields changed
+            if (currentStep === 4) {
+                const relevantFields = ['submitter_type', 'full_name', 'organization_name', 'main_researcher'];
+                if (relevantFields.includes(input.id) || relevantFields.includes(input.name)) {
+                    updateReviewContent();
+                }
+            }
         });
     });
     
@@ -388,6 +395,11 @@ function handleSubmitterTypeChange() {
         if (genderField) genderField.style.display = 'none';
         if (idNumberField) idNumberField.style.display = 'none';
     }
+    
+    // Update declaration text if we're on the review step (step 4)
+    if (currentStep === 4) {
+        updateReviewContent();
+    }
 }
 
 /**
@@ -556,18 +568,26 @@ function updateReviewContent() {
     
     const reviewContent = document.getElementById('review-content');
     const declarationName = document.getElementById('declaration-name');
+    const declarationText = document.getElementById('declaration-text');
     
-    // Set declaration name based on submitter type
+    // Set declaration text and name based on submitter type
     const submitterType = formData.submitter_type || 'فرد';
-    if (submitterType === 'فرد') {
-        declarationName.textContent = formData.full_name || '[الاسم]';
+    const isIndividual = submitterType === 'فرد';
+    
+    if (isIndividual) {
+        // For individuals: standard declaration
+        const fullName = formData.full_name || '[الاسم]';
+        declarationName.textContent = fullName;
+        declarationText.innerHTML = `أنا <strong>${fullName}</strong> أقر بأن جميع المعلومات المقدمة دقيقة وأن هذا البحث/الكتاب هو من عملي الأصلي. وفي حالة ثبوت خلاف ذلك، أتحمل كامل المسؤولية.`;
     } else {
-        declarationName.textContent = formData.organization_name || '[اسم المؤسسة]';
+        // For organizations (universities, institutions): different declaration text
+        const orgName = formData.organization_name || '[اسم المؤسسة]';
+        const mainResearcher = formData.main_researcher || '[اسم الباحث]';
+        declarationName.textContent = orgName;
+        declarationText.innerHTML = `نحن <strong>${orgName}</strong> نقر بأن جميع المعلومات المقدمة دقيقة وأن هذا البحث/الكتاب هو من عمل الباحث <strong>${mainResearcher}</strong> الذي تم ذكره سابقاً في هذا الطلب. وفي حالة ثبوت خلاف ذلك، نتحمل كامل المسؤولية.`;
     }
     
     // Build review HTML
-    const isIndividual = submitterType === 'فرد';
-    
     let basicInfoHTML = `
         <div class="review-section">
             <h4>المعلومات الأساسية</h4>
@@ -712,8 +732,28 @@ async function handleSubmit(e) {
         const submitterType = formData.submitter_type || 'فرد';
         const isIndividual = submitterType === 'فرد';
         
+        // Validate required fields before submission
+        if (isIndividual) {
+            if (!formData.full_name || !formData.full_name.trim()) {
+                throw new Error('الاسم الكامل مطلوب');
+            }
+            if (!formData.gender) {
+                throw new Error('الجنس مطلوب');
+            }
+            if (!formData.id_number || !formData.id_number.trim()) {
+                throw new Error('رقم الهوية مطلوب');
+            }
+        } else {
+            // For organizations, validate organization fields
+            if (!formData.organization_name || !formData.organization_name.trim()) {
+                throw new Error('اسم المؤسسة مطلوب');
+            }
+            if (!formData.commercial_registration_number || !formData.commercial_registration_number.trim()) {
+                throw new Error('السجل التجاري مطلوب');
+            }
+        }
+        
         const submissionData = {
-            submitter_type: submitterType,
             country: formData.country,
             email: formData.email,
             research_type: formData.research_type,
@@ -730,14 +770,17 @@ async function handleSubmit(e) {
         };
         
         // Add fields based on submitter type
+        // Note: full_name, gender, and id_number are required by database schema
         if (isIndividual) {
-            submissionData.full_name = formData.full_name;
+            submissionData.full_name = formData.full_name.trim();
             submissionData.gender = formData.gender;
-            submissionData.id_number = formData.id_number;
+            submissionData.id_number = formData.id_number.trim();
         } else {
-            submissionData.organization_name = formData.organization_name;
-            submissionData.organization_type = formData.organization_type;
-            submissionData.commercial_registration_number = formData.commercial_registration_number;
+            // For organizations, use organization name as full_name (required by database)
+            // Since database doesn't have organization-specific fields, we map organization data to required fields
+            submissionData.full_name = formData.organization_name.trim();
+            submissionData.gender = 'ذكر'; // Default value for organizations (required field)
+            submissionData.id_number = formData.commercial_registration_number.trim(); // Use commercial reg as id_number (required field)
         }
         
         // Create submission
