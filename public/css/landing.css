@@ -20,6 +20,12 @@ html {
     text-size-adjust: 100%;
 }
 
+/* Prevent breaking of specific text like ISI- Scopus (Q1-Q2-Q3-Q4) */
+.no-break-text {
+    white-space: nowrap;
+    display: inline-block;
+}
+
 /* Safe area insets for iPhone X and newer */
 @supports (padding: max(0px)) {
     .navbar,
