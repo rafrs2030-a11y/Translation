@@ -62,12 +62,12 @@ html {
 }
 
 .navbar.scrolled .brand-logo {
-    height: 28px !important;
-    max-height: 28px;
+    height: 32px !important;
+    max-height: 32px;
 }
 
 .navbar.scrolled .nav-brand {
-    height: 28px;
+    height: 32px;
 }
 
 .navbar .container {
@@ -90,7 +90,7 @@ html {
     padding: 0;
     margin: 0;
     line-height: 1;
-    height: 32px;
+    height: 38px;
 }
 
 .nav-brand:hover {
@@ -98,9 +98,9 @@ html {
 }
 
 .brand-logo {
-    height: 32px !important;
+    height: 38px !important;
     width: auto;
-    max-height: 32px;
+    max-height: 38px;
     object-fit: cover;
     object-position: center;
     transition: all var(--transition-base);
@@ -1333,13 +1333,13 @@ html {
     }
     
     .brand-logo {
-        height: 32px;
+        height: 36px;
         max-width: 120px;
         width: auto;
     }
     
     .navbar.scrolled .brand-logo {
-        height: 28px;
+        height: 30px;
     }
     
     .nav-menu,
@@ -1733,12 +1733,12 @@ html {
     }
     
     .brand-logo {
-        height: 30px;
+        height: 34px;
         max-width: 110px;
     }
     
     .navbar.scrolled .brand-logo {
-        height: 26px;
+        height: 28px;
     }
     
     .mobile-menu-toggle {
@@ -2008,12 +2008,12 @@ html {
     }
     
     .brand-logo {
-        height: 28px;
+        height: 32px;
         max-width: 100px;
     }
     
     .navbar.scrolled .brand-logo {
-        height: 24px;
+        height: 26px;
     }
     
     .mobile-menu-toggle {
@@ -2285,7 +2285,7 @@ html {
     }
     
     .brand-logo {
-        height: 30px;
+        height: 34px;
     }
     
     .hero {
