@@ -112,8 +112,10 @@ function initEventListeners() {
     const submitterTypeSelect = document.getElementById('submitter_type');
     if (submitterTypeSelect) {
         submitterTypeSelect.addEventListener('change', handleSubmitterTypeChange);
-        // Initialize on load
-        handleSubmitterTypeChange();
+        // Initialize on load - use setTimeout to ensure DOM is ready
+        setTimeout(() => {
+            handleSubmitterTypeChange();
+        }, 100);
     }
 }
 
@@ -209,6 +211,11 @@ function handleCategoryChange() {
  */
 function handleSubmitterTypeChange() {
     const submitterTypeSelect = document.getElementById('submitter_type');
+    if (!submitterTypeSelect) {
+        console.warn('submitter_type element not found');
+        return;
+    }
+    
     const individualFields = document.getElementById('individual-fields');
     const organizationFields = document.getElementById('organization-fields');
     const genderField = document.getElementById('gender-field');
@@ -217,29 +224,41 @@ function handleSubmitterTypeChange() {
     const emailInput = document.getElementById('email');
     const emailOrgInput = document.getElementById('email_org');
     
-    if (!submitterTypeSelect) return;
-    
     const submitterType = submitterTypeSelect.value;
+    
+    console.log('Submitter type changed to:', submitterType);
     
     if (submitterType === 'فرد') {
         // Show individual fields
-        if (individualFields) individualFields.style.display = 'block';
-        if (organizationFields) organizationFields.style.display = 'none';
-        if (genderField) genderField.style.display = 'block';
-        if (idNumberField) idNumberField.style.display = 'block';
+        if (individualFields) {
+            individualFields.style.display = 'block';
+            console.log('Showing individual fields');
+        }
+        if (organizationFields) {
+            organizationFields.style.display = 'none';
+        }
+        if (genderField) {
+            genderField.style.display = 'block';
+        }
+        if (idNumberField) {
+            idNumberField.style.display = 'block';
+        }
         
         // Set required attributes for individual fields
         if (fullNameInput) {
             fullNameInput.setAttribute('required', 'required');
-            fullNameInput.closest('.form-group').querySelector('.form-label').classList.add('required');
+            const fullNameLabel = fullNameInput.closest('.form-group')?.querySelector('.form-label');
+            if (fullNameLabel) fullNameLabel.classList.add('required');
         }
         if (emailInput) {
             emailInput.setAttribute('required', 'required');
-            emailInput.closest('.form-group').querySelector('.form-label').classList.add('required');
+            const emailLabel = emailInput.closest('.form-group')?.querySelector('.form-label');
+            if (emailLabel) emailLabel.classList.add('required');
         }
         if (emailOrgInput) {
             emailOrgInput.removeAttribute('required');
-            emailOrgInput.closest('.form-group').querySelector('.form-label').classList.remove('required');
+            const emailOrgLabel = emailOrgInput.closest('.form-group')?.querySelector('.form-label');
+            if (emailOrgLabel) emailOrgLabel.classList.remove('required');
         }
         
         // Remove required from organization fields
@@ -249,32 +268,46 @@ function handleSubmitterTypeChange() {
         
         if (orgNameInput) {
             orgNameInput.removeAttribute('required');
-            orgNameInput.closest('.form-group').querySelector('.form-label').classList.remove('required');
+            const orgNameLabel = orgNameInput.closest('.form-group')?.querySelector('.form-label');
+            if (orgNameLabel) orgNameLabel.classList.remove('required');
         }
         if (orgTypeSelect) {
             orgTypeSelect.removeAttribute('required');
-            orgTypeSelect.closest('.form-group').querySelector('.form-label').classList.remove('required');
+            const orgTypeLabel = orgTypeSelect.closest('.form-group')?.querySelector('.form-label');
+            if (orgTypeLabel) orgTypeLabel.classList.remove('required');
         }
         if (commercialRegInput) {
             commercialRegInput.removeAttribute('required');
-            commercialRegInput.closest('.form-group').querySelector('.form-label').classList.remove('required');
+            const commercialRegLabel = commercialRegInput.closest('.form-group')?.querySelector('.form-label');
+            if (commercialRegLabel) commercialRegLabel.classList.remove('required');
         }
         
     } else if (submitterType === 'مؤسسة') {
         // Show organization fields
-        if (individualFields) individualFields.style.display = 'none';
-        if (organizationFields) organizationFields.style.display = 'block';
-        if (genderField) genderField.style.display = 'none';
-        if (idNumberField) idNumberField.style.display = 'none';
+        if (individualFields) {
+            individualFields.style.display = 'none';
+        }
+        if (organizationFields) {
+            organizationFields.style.display = 'block';
+            console.log('Showing organization fields');
+        }
+        if (genderField) {
+            genderField.style.display = 'none';
+        }
+        if (idNumberField) {
+            idNumberField.style.display = 'none';
+        }
         
         // Remove required from individual fields
         if (fullNameInput) {
             fullNameInput.removeAttribute('required');
-            fullNameInput.closest('.form-group').querySelector('.form-label').classList.remove('required');
+            const fullNameLabel = fullNameInput.closest('.form-group')?.querySelector('.form-label');
+            if (fullNameLabel) fullNameLabel.classList.remove('required');
         }
         if (emailInput) {
             emailInput.removeAttribute('required');
-            emailInput.closest('.form-group').querySelector('.form-label').classList.remove('required');
+            const emailLabel = emailInput.closest('.form-group')?.querySelector('.form-label');
+            if (emailLabel) emailLabel.classList.remove('required');
         }
         
         // Set required attributes for organization fields
@@ -284,19 +317,23 @@ function handleSubmitterTypeChange() {
         
         if (orgNameInput) {
             orgNameInput.setAttribute('required', 'required');
-            orgNameInput.closest('.form-group').querySelector('.form-label').classList.add('required');
+            const orgNameLabel = orgNameInput.closest('.form-group')?.querySelector('.form-label');
+            if (orgNameLabel) orgNameLabel.classList.add('required');
         }
         if (orgTypeSelect) {
             orgTypeSelect.setAttribute('required', 'required');
-            orgTypeSelect.closest('.form-group').querySelector('.form-label').classList.add('required');
+            const orgTypeLabel = orgTypeSelect.closest('.form-group')?.querySelector('.form-label');
+            if (orgTypeLabel) orgTypeLabel.classList.add('required');
         }
         if (commercialRegInput) {
             commercialRegInput.setAttribute('required', 'required');
-            commercialRegInput.closest('.form-group').querySelector('.form-label').classList.add('required');
+            const commercialRegLabel = commercialRegInput.closest('.form-group')?.querySelector('.form-label');
+            if (commercialRegLabel) commercialRegLabel.classList.add('required');
         }
         if (emailOrgInput) {
             emailOrgInput.setAttribute('required', 'required');
-            emailOrgInput.closest('.form-group').querySelector('.form-label').classList.add('required');
+            const emailOrgLabel = emailOrgInput.closest('.form-group')?.querySelector('.form-label');
+            if (emailOrgLabel) emailOrgLabel.classList.add('required');
         }
     } else {
         // Hide all conditional fields
