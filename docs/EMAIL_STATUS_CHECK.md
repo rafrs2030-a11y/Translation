@@ -22,19 +22,20 @@
 
 ## ❌ ما لم يتم تفعيله بعد
 
-### 1. Edge Function غير منشورة ❌
-- **المشكلة:** Edge Function لم يتم نشرها على Supabase
-- **النتيجة:** محاولات إرسال البريد تفشل
-- **الحل:** نحتاج إلى نشر Edge Function
+### 1. ✅ Edge Function منشورة ومفعّلة ✅
+- **الحالة:** Edge Function `send-notification-email` منشورة ومفعّلة
+- **التحقق:** تم التحقق عبر MCP - الحالة: ACTIVE
+- **الملاحظة:** الكود يعمل ويستقبل الطلبات
 
-### 2. Resend API Key غير مضاف ❌
-- **المشكلة:** لا توجد متغيرات بيئة في Supabase
-- **النتيجة:** حتى لو تم نشر Edge Function، لن يتم إرسال البريد
-- **الحل:** نحتاج إلى إضافة Resend API Key في Supabase Secrets
+### 2. ❌ Resend/SendGrid API Key غير مضاف ❌
+- **المشكلة:** لا توجد متغيرات بيئة (Secrets) في Supabase
+- **النتيجة:** البريد يُسجل في `email_log` بحالة `queued` لكن لا يُرسل
+- **الحل:** نحتاج إلى إضافة API Key في Supabase Secrets
+- **الدليل:** راجع `docs/EMAIL_ACTIVATION_WITH_MCP.md`
 
-### 3. لا توجد سجلات في email_log ❌
-- **المشكلة:** لا توجد محاولات إرسال بريد مسجلة
-- **السبب:** Edge Function غير منشورة، لذا لا يتم استدعاؤها
+### 3. ✅ يوجد سجلات في email_log ✅
+- **الحالة:** يوجد بريد واحد في قائمة الانتظار (queued)
+- **السبب:** Edge Function تعمل لكن API Key غير مضاف
 
 ---
 
@@ -49,39 +50,28 @@ SELECT * FROM notifications WHERE type = 'status_change';
 
 ### البريد الإلكتروني:
 ```sql
--- لا توجد سجلات بريد
+-- يوجد سجلات بريد
 SELECT * FROM email_log;
--- النتيجة: ❌ فارغ (لا توجد محاولات)
+-- النتيجة: ✅ يوجد بريد واحد في قائمة الانتظار (queued)
+-- آخر بريد: oooomar124466@gmail.com - حالة: queued
 ```
 
 ### Edge Functions:
 ```bash
 # قائمة Edge Functions
 supabase functions list
-# النتيجة: ❌ فارغة (لا توجد functions منشورة)
+# النتيجة: ✅ send-notification-email منشورة ومفعّلة
 ```
 
 ---
 
 ## 🚀 خطوات التفعيل
 
-### الخطوة 1: نشر Edge Function
+### ✅ الخطوة 1: Edge Function منشورة (مكتملة)
 
-```bash
-# تثبيت Supabase CLI (إذا لم يكن مثبتاً)
-npm install -g supabase
+Edge Function `send-notification-email` منشورة ومفعّلة بالفعل.
 
-# تسجيل الدخول
-supabase login
-
-# ربط المشروع
-supabase link --project-ref rzenhmmwocctvonwhnrj
-
-# نشر الدالة
-supabase functions deploy send-notification-email
-```
-
-### الخطوة 2: إضافة Resend API Key
+### الخطوة 2: إضافة Resend/SendGrid API Key (مطلوبة)
 
 1. اذهب إلى [Supabase Dashboard](https://supabase.com/dashboard)
 2. اختر مشروعك
@@ -138,9 +128,9 @@ supabase functions list
 | الإشعارات داخل المنصة | ✅ يعمل | Realtime مفعّل |
 | Database Triggers | ✅ يعمل | تنشئ إشعارات تلقائياً |
 | الكود البرمجي | ✅ جاهز | موجود في adminStore.js |
-| Edge Function | ❌ غير منشورة | يحتاج نشر |
-| Resend API Key | ❌ غير مضاف | يحتاج إعداد |
-| إرسال البريد | ❌ غير مفعّل | يحتاج الخطوتين أعلاه |
+| Edge Function | ✅ منشورة ومفعّلة | تم التحقق via MCP |
+| Resend/SendGrid API Key | ❌ غير مضاف | يحتاج إعداد (راجع EMAIL_ACTIVATION_WITH_MCP.md) |
+| إرسال البريد | ⚠️ في قائمة الانتظار | يحتاج إضافة API Key |
 
 ---
 
@@ -149,16 +139,20 @@ supabase functions list
 **حالياً:** عند تغيير حالة الطلب:
 - ✅ يتم إنشاء إشعار داخل المنصة (يعمل)
 - ✅ يتم استدعاء `sendStatusChangeEmail()` (الكود موجود)
-- ❌ لكن Edge Function غير موجودة، لذا يفشل الإرسال بصمت
-- ❌ لا يتم تسجيل في `email_log` لأن Edge Function غير منشورة
+- ✅ يتم استدعاء Edge Function (تعمل)
+- ✅ يتم تسجيل في `email_log` بحالة `queued`
+- ❌ لكن البريد لا يُرسل لأن API Key غير مضاف
 
 **بعد التفعيل:** عند تغيير حالة الطلب:
 - ✅ يتم إنشاء إشعار داخل المنصة
 - ✅ يتم استدعاء Edge Function
-- ✅ يتم إرسال البريد عبر Resend
-- ✅ يتم تسجيل في `email_log`
+- ✅ يتم إرسال البريد عبر Resend/SendGrid
+- ✅ يتم تسجيل في `email_log` بحالة `sent`
+- ✅ البريد في قائمة الانتظار سيتم إرساله تلقائياً
 
 ---
 
 **آخر تحديث:** 2025-01-27
+**الحالة الحالية:** Edge Function منشورة - يحتاج إضافة Secrets فقط
+**الدليل الكامل:** راجع `docs/EMAIL_ACTIVATION_WITH_MCP.md`
 

@@ -754,6 +754,7 @@ async function handleSubmit(e) {
         }
         
         const submissionData = {
+            submitter_type: submitterType,
             country: formData.country,
             email: formData.email,
             research_type: formData.research_type,
@@ -770,14 +771,19 @@ async function handleSubmit(e) {
         };
         
         // Add fields based on submitter type
-        // Note: full_name, gender, and id_number are required by database schema
         if (isIndividual) {
+            // Individual fields
             submissionData.full_name = formData.full_name.trim();
             submissionData.gender = formData.gender;
             submissionData.id_number = formData.id_number.trim();
         } else {
-            // For organizations, use organization name as full_name (required by database)
-            // Since database doesn't have organization-specific fields, we map organization data to required fields
+            // Organization fields
+            submissionData.organization_name = formData.organization_name.trim();
+            submissionData.organization_type = formData.organization_type;
+            submissionData.commercial_registration_number = formData.commercial_registration_number.trim();
+            
+            // For backward compatibility with database schema, also set required fields
+            // These are required by the database but we use organization data
             submissionData.full_name = formData.organization_name.trim();
             submissionData.gender = 'ذكر'; // Default value for organizations (required field)
             submissionData.id_number = formData.commercial_registration_number.trim(); // Use commercial reg as id_number (required field)

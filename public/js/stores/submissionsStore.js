@@ -142,6 +142,12 @@ class SubmissionsStore {
         loading: false,
       });
 
+      // إرسال إيميل تأكيد (غير متزامن - لا ننتظر النتيجة)
+      this.sendSubmissionConfirmationEmail(data, user).catch(err => {
+        console.error('Failed to send confirmation email:', err);
+        // لا نرمي خطأ هنا لأن الإيميل ليس ضرورياً لعملية التقديم
+      });
+
       return { success: true, data };
 
     } catch (error) {
@@ -561,6 +567,262 @@ class SubmissionsStore {
     return () => {
       this.listeners = this.listeners.filter(l => l !== listener);
     };
+  }
+
+  /**
+   * إرسال إيميل تأكيد تقديم البحث
+   */
+  async sendSubmissionConfirmationEmail(submission, user) {
+    try {
+      // التحقق من وجود البريد الإلكتروني
+      const recipientEmail = submission.email || user.email;
+      if (!recipientEmail) {
+        console.warn('No email address found for submission confirmation');
+        return { success: false, error: 'No email address found' };
+      }
+
+      // الحصول على معلومات البحث
+      const researcherName = submission.full_name || user.username || 'عزيزي الباحث';
+      const referenceNumber = submission.reference_number;
+      const researchType = this.getResearchTypeLabel(submission.research_type);
+      const category = submission.category;
+      const specialization = `${submission.general_specialization || ''} - ${submission.detailed_specialization || ''}`.trim();
+      const submissionDate = new Date(submission.created_at).toLocaleDateString('ar-SA', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      // إنشاء محتوى الإيميل
+      const emailHtml = this.generateSubmissionConfirmationEmail({
+        researcherName,
+        referenceNumber,
+        researchType,
+        category,
+        specialization,
+        submissionDate
+      });
+
+      // التحقق من أن محتوى الإيميل تم إنشاؤه بشكل صحيح
+      if (!emailHtml || emailHtml.trim().length === 0) {
+        console.error('Email HTML content is empty');
+        throw new Error('Failed to generate email content');
+      }
+
+      console.log('Sending confirmation email to:', recipientEmail);
+
+      // استدعاء Edge Function لإرسال الإيميل
+      const { data, error } = await supabase.functions.invoke('send-notification-email', {
+        body: {
+          emailData: {
+            to: recipientEmail,
+            subject: `تم تقديم بحثك بنجاح - ${referenceNumber}`,
+            html: emailHtml,
+            type: 'new_submission',
+            userId: user.id,
+            submissionId: submission.id,
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Error invoking email function:', error);
+        throw error;
+      }
+
+      // التحقق من استجابة Edge Function
+      if (data && data.success) {
+        console.log('Confirmation email sent successfully:', data);
+        return { success: true, data };
+      } else if (data && data.message) {
+        // Edge Function قد يعيد رسالة حتى لو لم يتم الإرسال (مثل: Email queued)
+        console.log('Email function response:', data.message);
+        return { success: true, data, message: data.message };
+      } else {
+        console.warn('Unexpected response from email function:', data);
+        return { success: false, error: 'Unexpected response from email function' };
+      }
+
+    } catch (error) {
+      console.error('Error sending confirmation email:', error);
+      // لا نرمي الخطأ هنا لأن الإيميل ليس ضرورياً لعملية التقديم
+      return { success: false, error: error.message || 'Failed to send email' };
+    }
+  }
+
+  /**
+   * توليد محتوى إيميل تأكيد التقديم
+   */
+  generateSubmissionConfirmationEmail(data) {
+    return `
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تأكيد تقديم البحث</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+      direction: rtl;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .success-icon {
+      font-size: 60px;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .ref-number {
+      background-color: #e7f5e9;
+      border: 2px dashed #28a745;
+      padding: 20px;
+      text-align: center;
+      margin: 20px 0;
+      border-radius: 5px;
+    }
+    .ref-number strong {
+      font-size: 24px;
+      color: #28a745;
+    }
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    .details-table td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .details-table td:first-child {
+      font-weight: bold;
+      color: #666;
+      width: 40%;
+    }
+    .button {
+      display: inline-block;
+      background-color: #28a745;
+      color: white;
+      text-decoration: none;
+      padding: 15px 40px;
+      border-radius: 5px;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+    .footer {
+      background-color: #f8f9fa;
+      padding: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>✅ تم تقديم بحثك بنجاح!</h1>
+    </div>
+    
+    <div class="content">
+      <div class="success-icon">🎉</div>
+      
+      <h2>عزيزي ${data.researcherName}،</h2>
+      
+      <p>تم استلام طلب تقديم بحثك بنجاح. شكراً لثقتك في منصتنا!</p>
+      
+      <div class="ref-number">
+        <p style="margin: 0; color: #666;">رقم المرجع الخاص بك</p>
+        <strong>${data.referenceNumber}</strong>
+        <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">احتفظ بهذا الرقم للمتابعة</p>
+      </div>
+      
+      <h3>📋 تفاصيل الطلب:</h3>
+      <table class="details-table">
+        <tr>
+          <td>نوع البحث:</td>
+          <td>${data.researchType}</td>
+        </tr>
+        <tr>
+          <td>الفئة:</td>
+          <td>${data.category}</td>
+        </tr>
+        <tr>
+          <td>التخصص:</td>
+          <td>${data.specialization || '-'}</td>
+        </tr>
+        <tr>
+          <td>تاريخ التقديم:</td>
+          <td>${data.submissionDate}</td>
+        </tr>
+        <tr>
+          <td>الحالة:</td>
+          <td><strong style="color: #ff9800;">قيد المراجعة</strong></td>
+        </tr>
+      </table>
+      
+      <h3>📬 ماذا بعد؟</h3>
+      <ul>
+        <li>سيتم مراجعة بحثك من قبل فريقنا المختص</li>
+        <li>ستصلك إشعارات عبر البريد الإلكتروني عند أي تحديث</li>
+        <li>يمكنك متابعة حالة الطلب في أي وقت من لوحة التحكم</li>
+        <li>مدة المراجعة المتوقعة: 5-7 أيام عمل</li>
+      </ul>
+      
+      <div style="text-align: center;">
+        <a href="/pages/researcher/dashboard.html" class="button">عرض لوحة التحكم</a>
+      </div>
+      
+      <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+      
+      <p>إذا كان لديك أي استفسارات، لا تتردد في التواصل معنا.</p>
+      
+      <p>مع أطيب التحيات،<br><strong>فريق منصة نشر الأبحاث العربية</strong></p>
+    </div>
+    
+    <div class="footer">
+      <p>© 2025 منصة نشر الأبحاث العربية. جميع الحقوق محفوظة.</p>
+      <p>support@arabresearch.com | www.arabresearch.com</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+  }
+
+  /**
+   * الحصول على تسمية نوع البحث
+   */
+  getResearchTypeLabel(type) {
+    const labels = {
+      'scientific_paper': 'ورقة علمية',
+      'masters_thesis': 'رسالة ماجستير',
+      'phd_dissertation': 'أطروحة دكتوراه',
+      'book': 'كتاب'
+    };
+    return labels[type] || type;
   }
 
   /**
