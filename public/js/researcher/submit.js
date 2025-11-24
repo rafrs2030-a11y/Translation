@@ -33,6 +33,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load draft after prefilling (draft will override prefilled data if exists)
     loadDraftIfExists();
+    
+    // Ensure submitter type fields are shown/hidden correctly after all data is loaded
+    setTimeout(() => {
+        handleSubmitterTypeChange();
+    }, 200);
 });
 
 /**
@@ -168,7 +173,11 @@ function initEventListeners() {
         // Initialize on load - use setTimeout to ensure DOM is ready
         setTimeout(() => {
             handleSubmitterTypeChange();
-        }, 100);
+        }, 150);
+        // Also trigger after a longer delay to ensure all elements are ready
+        setTimeout(() => {
+            handleSubmitterTypeChange();
+        }, 500);
     }
 }
 
@@ -280,6 +289,7 @@ function handleSubmitterTypeChange() {
     const submitterType = submitterTypeSelect.value;
     
     console.log('Submitter type changed to:', submitterType);
+    console.log('Organization fields element:', organizationFields);
     
     if (submitterType === 'فرد') {
         // Show individual fields
@@ -337,12 +347,15 @@ function handleSubmitterTypeChange() {
         
     } else if (submitterType === 'أعمال') {
         // Show organization fields
+        console.log('Processing أعمال submitter type');
         if (individualFields) {
             individualFields.style.display = 'none';
         }
         if (organizationFields) {
             organizationFields.style.display = 'block';
-            console.log('Showing organization fields');
+            console.log('Showing organization fields - display set to block');
+        } else {
+            console.error('organizationFields element not found!');
         }
         if (genderField) {
             genderField.style.display = 'none';
@@ -941,6 +954,7 @@ function loadDraftIfExists() {
                 // Use setTimeout to ensure DOM is ready
                 setTimeout(() => {
                     handleCategoryChange();
+                    handleSubmitterTypeChange();
                 }, 0);
                 
                 updateStepDisplay();
