@@ -454,11 +454,11 @@ function validateCurrentStep() {
                 const emailOrgInput = document.getElementById('email_org');
                 
                 if (!orgNameInput || !orgNameInput.value.trim()) {
-                    showFieldError(orgNameInput, 'اسم المؤسسة مطلوب');
+                    showFieldError(orgNameInput, 'اسم الأعمال مطلوب');
                     isValid = false;
                 }
                 if (!orgTypeSelect || !orgTypeSelect.value) {
-                    showFieldError(orgTypeSelect, 'نوع المؤسسة مطلوب');
+                    showFieldError(orgTypeSelect, 'نوع الأعمال مطلوب');
                     isValid = false;
                 }
                 if (!commercialRegInput || !commercialRegInput.value.trim()) {
@@ -581,7 +581,7 @@ function updateReviewContent() {
         declarationText.innerHTML = `أنا <strong>${fullName}</strong> أقر بأن جميع المعلومات المقدمة دقيقة وأن هذا البحث/الكتاب هو من عملي الأصلي. وفي حالة ثبوت خلاف ذلك، أتحمل كامل المسؤولية.`;
     } else {
         // For organizations (universities, institutions): different declaration text
-        const orgName = formData.organization_name || '[اسم المؤسسة]';
+        const orgName = formData.organization_name || '[اسم الأعمال]';
         const mainResearcher = formData.main_researcher || '[اسم الباحث]';
         declarationName.textContent = orgName;
         declarationText.innerHTML = `نحن <strong>${orgName}</strong> نقر بأن جميع المعلومات المقدمة دقيقة وأن هذا البحث/الكتاب هو من عمل الباحث <strong>${mainResearcher}</strong> الذي تم ذكره سابقاً في هذا الطلب. وفي حالة ثبوت خلاف ذلك، نتحمل كامل المسؤولية.`;
@@ -619,11 +619,11 @@ function updateReviewContent() {
     } else {
         basicInfoHTML += `
             <div class="review-item">
-                <span class="review-label">اسم المؤسسة:</span>
+                <span class="review-label">اسم الأعمال:</span>
                 <span class="review-value">${formData.organization_name || '-'}</span>
             </div>
             <div class="review-item">
-                <span class="review-label">نوع المؤسسة:</span>
+                <span class="review-label">نوع الأعمال:</span>
                 <span class="review-value">${formData.organization_type || '-'}</span>
             </div>
             <div class="review-item">
@@ -746,7 +746,7 @@ async function handleSubmit(e) {
         } else {
             // For organizations, validate organization fields
             if (!formData.organization_name || !formData.organization_name.trim()) {
-                throw new Error('اسم المؤسسة مطلوب');
+                throw new Error('اسم الأعمال مطلوب');
             }
             if (!formData.commercial_registration_number || !formData.commercial_registration_number.trim()) {
                 throw new Error('السجل التجاري مطلوب');
