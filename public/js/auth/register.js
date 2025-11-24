@@ -31,19 +31,40 @@ function initElements() {
     strengthBar = document.querySelector('.strength-bar');
     strengthText = document.querySelector('.strength-text');
     accountTypeSelection = document.getElementById('account-type-selection');
-    accountTypeOptions = document.querySelectorAll('.account-type-option');
     accountTypeInput = document.getElementById('account_type');
+    
+    // Re-query account type options to ensure they're available
+    accountTypeOptions = document.querySelectorAll('.account-type-option');
+    
+    console.log('Account type options found:', accountTypeOptions.length);
 }
 
 /**
  * Initialize event listeners
  */
 function initEventListeners() {
-    // Account type selection
+    // Account type selection - use event delegation to ensure it works
+    if (accountTypeSelection) {
+        accountTypeSelection.addEventListener('click', (e) => {
+            const option = e.target.closest('.account-type-option');
+            if (option) {
+                const selectedType = option.dataset.type;
+                if (selectedType) {
+                    selectAccountType(selectedType);
+                }
+            }
+        });
+    }
+    
+    // Also add direct listeners as backup
     accountTypeOptions.forEach(option => {
-        option.addEventListener('click', () => {
+        option.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             const selectedType = option.dataset.type;
-            selectAccountType(selectedType);
+            if (selectedType) {
+                selectAccountType(selectedType);
+            }
         });
     });
     
@@ -72,6 +93,11 @@ function initEventListeners() {
  * Select account type
  */
 function selectAccountType(type) {
+    console.log('Selecting account type:', type);
+    
+    // Re-query options to ensure we have the latest DOM
+    accountTypeOptions = document.querySelectorAll('.account-type-option');
+    
     // Update visual selection
     accountTypeOptions.forEach(option => {
         if (option.dataset.type === type) {
@@ -82,13 +108,23 @@ function selectAccountType(type) {
     });
     
     // Update hidden input
-    accountTypeInput.value = type;
+    if (accountTypeInput) {
+        accountTypeInput.value = type;
+        console.log('Account type set to:', accountTypeInput.value);
+    }
     
     // Show form with animation
-    setTimeout(() => {
-        form.style.display = 'block';
-        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 300);
+    if (form) {
+        setTimeout(() => {
+            form.style.display = 'block';
+            form.style.opacity = '0';
+            form.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => {
+                form.style.opacity = '1';
+            }, 10);
+            form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 300);
+    }
 }
 
 /**

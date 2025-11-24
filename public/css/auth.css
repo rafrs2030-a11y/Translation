@@ -746,17 +746,19 @@
 
 .account-type-options {
     display: flex;
+    flex-direction: row;
     gap: var(--spacing-lg);
     justify-content: center;
-    flex-wrap: wrap;
+    align-items: center;
+    flex-wrap: nowrap;
 }
 
 .account-type-option {
     flex: 1;
     min-width: 150px;
-    max-width: 200px;
+    max-width: 220px;
     padding: var(--spacing-xl);
-    background: var(--bg-secondary);
+    background: var(--bg-primary);
     border: 2px solid var(--border-color);
     border-radius: var(--radius-lg);
     cursor: pointer;
@@ -765,25 +767,29 @@
     flex-direction: column;
     align-items: center;
     gap: var(--spacing-md);
+    user-select: none;
+    box-shadow: var(--shadow-sm);
 }
 
 .account-type-option:hover {
     border-color: var(--primary-color);
-    background: var(--primary-light);
+    background: linear-gradient(135deg, rgba(61, 90, 148, 0.05), rgba(81, 118, 184, 0.05));
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(61, 90, 148, 0.2);
+    box-shadow: 0 4px 12px rgba(61, 90, 148, 0.15);
 }
 
 .account-type-option.selected {
     border-color: var(--primary-color);
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    background: linear-gradient(135deg, #3D5A94 0%, #5176B8 100%);
     color: white;
-    box-shadow: 0 4px 16px rgba(61, 90, 148, 0.3);
+    box-shadow: 0 4px 16px rgba(61, 90, 148, 0.4);
+    transform: translateY(-2px);
 }
 
 .account-type-option.selected .account-type-icon {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.25);
     color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .account-type-option.selected .account-type-label {
@@ -794,14 +800,20 @@
 .account-type-icon {
     width: 80px;
     height: 80px;
-    background: var(--bg-primary);
+    background: linear-gradient(135deg, #3D5A94 0%, #5176B8 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 2.5rem;
-    color: var(--primary-color);
+    color: white;
     transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(61, 90, 148, 0.2);
+}
+
+.account-type-option:hover .account-type-icon {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(61, 90, 148, 0.3);
 }
 
 .account-type-label {
@@ -813,18 +825,24 @@
 
 @media (max-width: 480px) {
     .account-type-options {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        gap: var(--spacing-md);
     }
     
     .account-type-option {
-        max-width: 100%;
+        min-width: 120px;
+        max-width: 150px;
+        padding: var(--spacing-lg);
     }
     
     .account-type-icon {
         width: 60px;
         height: 60px;
         font-size: 2rem;
+    }
+    
+    .account-type-label {
+        font-size: var(--font-size-base);
     }
 }
 
