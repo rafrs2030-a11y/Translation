@@ -45,27 +45,10 @@ document.addEventListener('DOMContentLoaded', async () => {
  */
 function clearOldCache() {
     try {
-        // Clear old submission drafts (older than 7 days)
-        const draftStr = localStorage.getItem('submission_draft');
-        if (draftStr) {
-            try {
-                const draft = JSON.parse(draftStr);
-                if (draft.timestamp) {
-                    const draftDate = new Date(draft.timestamp);
-                    const now = new Date();
-                    const daysDiff = (now - draftDate) / (1000 * 60 * 60 * 24);
-                    
-                    // Remove drafts older than 7 days
-                    if (daysDiff > 7) {
-                        localStorage.removeItem('submission_draft');
-                        console.log('Old draft cache cleared (older than 7 days)');
-                    }
-                }
-            } catch (e) {
-                // If draft is corrupted, remove it
-                localStorage.removeItem('submission_draft');
-                console.log('Corrupted draft cache cleared');
-            }
+        // Clear all submission drafts
+        if (localStorage.getItem('submission_draft')) {
+            localStorage.removeItem('submission_draft');
+            console.log('Old draft cache cleared');
         }
         
         // Clear any cached form data that might be stale
