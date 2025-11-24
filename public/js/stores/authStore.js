@@ -86,7 +86,7 @@ class AuthStore {
     this.setState({ loading: true, error: null });
 
     try {
-      const { username, email, national_id, phone, password, gender, country } = userData;
+      const { username, email, national_id, phone, password, gender, country, account_type } = userData;
 
       // التحقق من الحقول المطلوبة
       if (!username || !email || !password) {
@@ -106,6 +106,7 @@ class AuthStore {
             phone: phone || null,
             gender: gender || null,
             country: country || null,
+            account_type: account_type || 'تجريبي',
           }
         }
       });

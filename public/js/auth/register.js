@@ -9,6 +9,7 @@ import { guestOnly } from '../utils/auth-guard.js';
 // DOM Elements
 let form, submitBtn, alertContainer, passwordInput, confirmPasswordInput;
 let strengthBar, strengthText;
+let accountTypeSelection, accountTypeOptions, accountTypeInput;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -29,12 +30,23 @@ function initElements() {
     confirmPasswordInput = document.getElementById('confirm_password');
     strengthBar = document.querySelector('.strength-bar');
     strengthText = document.querySelector('.strength-text');
+    accountTypeSelection = document.getElementById('account-type-selection');
+    accountTypeOptions = document.querySelectorAll('.account-type-option');
+    accountTypeInput = document.getElementById('account_type');
 }
 
 /**
  * Initialize event listeners
  */
 function initEventListeners() {
+    // Account type selection
+    accountTypeOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            const selectedType = option.dataset.type;
+            selectAccountType(selectedType);
+        });
+    });
+    
     // Form submission
     form.addEventListener('submit', handleSubmit);
     
@@ -54,6 +66,29 @@ function initEventListeners() {
             if (errorDiv) errorDiv.remove();
         });
     });
+}
+
+/**
+ * Select account type
+ */
+function selectAccountType(type) {
+    // Update visual selection
+    accountTypeOptions.forEach(option => {
+        if (option.dataset.type === type) {
+            option.classList.add('selected');
+        } else {
+            option.classList.remove('selected');
+        }
+    });
+    
+    // Update hidden input
+    accountTypeInput.value = type;
+    
+    // Show form with animation
+    setTimeout(() => {
+        form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 300);
 }
 
 /**
@@ -88,6 +123,14 @@ async function handleSubmit(e) {
         }
     });
     
+    // Check if account type is selected
+    const accountType = accountTypeInput.value;
+    if (!accountType) {
+        showAlert('يرجى اختيار نوع الحساب', 'error');
+        accountTypeSelection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+    
     const formData = {
         full_name: document.getElementById('full_name').value.trim(),
         email: email,
@@ -97,6 +140,7 @@ async function handleSubmit(e) {
         country: document.getElementById('country').value.trim(),
         password: document.getElementById('password').value,
         confirm_password: document.getElementById('confirm_password').value,
+        account_type: accountType,
         terms: document.getElementById('terms').checked
     };
     
@@ -117,7 +161,8 @@ async function handleSubmit(e) {
             phone: formData.phone,
             national_id: formData.national_id,
             gender: formData.gender,
-            country: formData.country
+            country: formData.country,
+            account_type: formData.account_type
         });
         
         if (result.success) {

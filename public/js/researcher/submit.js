@@ -961,6 +961,29 @@ async function prefillUserData(user) {
             return;
         }
         
+        // Get account type from user profile, default to 'تجريبي' if not set
+        const accountType = currentUser.account_type || 'تجريبي';
+        
+        // Set submitter type based on account type
+        const submitterTypeSelect = document.getElementById('submitter_type');
+        if (submitterTypeSelect && !submitterTypeSelect.value) {
+            // Map account_type to submitter_type
+            if (accountType === 'فرد') {
+                submitterTypeSelect.value = 'فرد';
+            } else if (accountType === 'أعمال') {
+                submitterTypeSelect.value = 'أعمال';
+            } else {
+                // For 'تجريبي' or unknown, default to 'فرد'
+                submitterTypeSelect.value = 'فرد';
+            }
+            formData.submitter_type = submitterTypeSelect.value;
+            
+            // Trigger change event to show/hide appropriate fields
+            setTimeout(() => {
+                handleSubmitterTypeChange();
+            }, 100);
+        }
+        
         // Pre-fill basic information fields
         const fullNameInput = document.getElementById('full_name');
         const emailInput = document.getElementById('email');
@@ -1003,7 +1026,7 @@ async function prefillUserData(user) {
             formData.country = currentUser.country;
         }
         
-        console.log('User data prefilled successfully');
+        console.log('User data prefilled successfully with account_type:', accountType);
     } catch (error) {
         console.error('Error prefilling user data:', error);
         // Don't show error to user, just log it
