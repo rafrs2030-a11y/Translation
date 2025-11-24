@@ -393,6 +393,35 @@
                 </div>
             </div>
 
+            <!-- Cache Management -->
+            <div class="settings-section">
+                <h3>
+                    <i class="fas fa-trash-alt"></i>
+                    إدارة الكاش
+                </h3>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>مسح الكاش القديم</h4>
+                        <p>مسح جميع أنواع الكاش (Service Worker، localStorage، sessionStorage)</p>
+                    </div>
+                    <button class="btn btn-warning" id="clear-cache-btn">
+                        <i class="fas fa-broom"></i>
+                        مسح الكاش الآن
+                    </button>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>حالة الكاش</h4>
+                        <p id="cache-status">جاهز للمسح</p>
+                    </div>
+                    <div id="cache-info" style="color: var(--text-secondary); font-size: 0.875rem;">
+                        <span id="cache-count">-</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Developer Credit -->
             <div class="developer-credit">
                 <a href="https://wa.me/966533189111" target="_blank" rel="noopener noreferrer" class="developer-credit-content">

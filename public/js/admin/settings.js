@@ -6,6 +6,7 @@
 import { supabase } from '../config/supabase.js';
 import authStore from '../stores/authStore.js';
 import { requireAdmin } from '../utils/auth-guard.js';
+import { clearAllCache } from '../utils/clear-cache.js';
 
 // Settings object
 const settings = {};
@@ -44,6 +45,12 @@ function initEventListeners() {
     
     // Create backup button
     document.getElementById('create-backup-btn')?.addEventListener('click', createBackup);
+    
+    // Clear cache button
+    document.getElementById('clear-cache-btn')?.addEventListener('click', handleClearCache);
+    
+    // Update cache info on load
+    updateCacheInfo();
     
     // Track changes to toggle switches
     document.querySelectorAll('.toggle-switch input').forEach(toggle => {
@@ -204,5 +211,106 @@ function showSuccess(message) {
 function showError(message) {
     // TODO: Implement toast notification
     alert(message);
+}
+
+/**
+ * Handle clear cache
+ */
+async function handleClearCache() {
+    try {
+        // Confirm action
+        if (!confirm('هل أنت متأكد من مسح جميع أنواع الكاش؟\n\nسيتم مسح:\n- كاش Service Worker\n- localStorage\n- sessionStorage')) {
+            return;
+        }
+        
+        const btn = document.getElementById('clear-cache-btn');
+        const statusEl = document.getElementById('cache-status');
+        
+        // Show loading
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المسح...';
+        if (statusEl) statusEl.textContent = 'جاري مسح الكاش...';
+        
+        // Clear cache
+        const result = await clearAllCache();
+        
+        if (result.success) {
+            // Update status
+            if (statusEl) {
+                statusEl.textContent = 'تم مسح الكاش بنجاح';
+                statusEl.style.color = 'var(--success-color)';
+            }
+            
+            // Update cache info
+            updateCacheInfo();
+            
+            // Show success message
+            showSuccess(`تم مسح الكاش بنجاح!\n\nتم مسح:\n- كاش Service Worker\n- ${result.cleared.localStorage} عنصر من localStorage\n- sessionStorage`);
+            
+            // Reset status color after 3 seconds
+            setTimeout(() => {
+                if (statusEl) {
+                    statusEl.textContent = 'جاهز للمسح';
+                    statusEl.style.color = '';
+                }
+            }, 3000);
+        } else {
+            throw new Error(result.error || 'فشل مسح الكاش');
+        }
+        
+        // Reset button
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-broom"></i> مسح الكاش الآن';
+        
+    } catch (error) {
+        console.error('Error clearing cache:', error);
+        showError('حدث خطأ أثناء مسح الكاش: ' + error.message);
+        
+        // Reset button
+        const btn = document.getElementById('clear-cache-btn');
+        const statusEl = document.getElementById('cache-status');
+        
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-broom"></i> مسح الكاش الآن';
+        if (statusEl) {
+            statusEl.textContent = 'حدث خطأ';
+            statusEl.style.color = 'var(--error-color)';
+        }
+    }
+}
+
+/**
+ * Update cache info display
+ */
+function updateCacheInfo() {
+    try {
+        const cacheInfoEl = document.getElementById('cache-info');
+        const cacheCountEl = document.getElementById('cache-count');
+        
+        if (!cacheInfoEl || !cacheCountEl) return;
+        
+        // Count localStorage items (excluding important keys)
+        const importantKeys = ['supabase.auth.token', 'sb-'];
+        const localStorageKeys = Object.keys(localStorage).filter(
+            key => !importantKeys.some(important => key.includes(important))
+        );
+        
+        // Count sessionStorage items
+        const sessionStorageKeys = Object.keys(sessionStorage);
+        
+        // Count Service Worker caches (async)
+        if ('caches' in window) {
+            caches.keys().then(cacheNames => {
+                const totalItems = localStorageKeys.length + sessionStorageKeys.length + cacheNames.length;
+                cacheCountEl.textContent = `${totalItems} عنصر في الكاش (${localStorageKeys.length} localStorage، ${sessionStorageKeys.length} sessionStorage، ${cacheNames.length} Service Worker)`;
+            });
+        } else {
+            const totalItems = localStorageKeys.length + sessionStorageKeys.length;
+            cacheCountEl.textContent = `${totalItems} عنصر في الكاش (${localStorageKeys.length} localStorage، ${sessionStorageKeys.length} sessionStorage)`;
+        }
+        
+    } catch (error) {
+        console.error('Error updating cache info:', error);
+    }
 }
 
