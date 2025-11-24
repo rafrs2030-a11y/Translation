@@ -27,43 +27,106 @@ document.addEventListener('DOMContentLoaded', async () => {
  */
 function clearOldCache() {
     try {
+        console.log('Starting cache cleanup...');
+        
+        // Clear all Supabase-related cache
+        const supabaseKeys = Object.keys(localStorage).filter(key => 
+            key.startsWith('sb-') || 
+            key.startsWith('supabase.') ||
+            key.includes('supabase')
+        );
+        supabaseKeys.forEach(key => {
+            localStorage.removeItem(key);
+            console.log('Removed Supabase key:', key);
+        });
+        
         // Clear any registration-related cache
-        const cacheKeys = Object.keys(localStorage).filter(key => 
+        const registrationKeys = Object.keys(localStorage).filter(key => 
             key.startsWith('register_') || 
             key.startsWith('registration_') ||
             key.startsWith('form_cache_') ||
-            key.startsWith('account_type_')
+            key.startsWith('account_type_') ||
+            key.startsWith('auth_') ||
+            key.includes('register') ||
+            key.includes('registration')
         );
-        cacheKeys.forEach(key => localStorage.removeItem(key));
+        registrationKeys.forEach(key => {
+            localStorage.removeItem(key);
+            console.log('Removed registration key:', key);
+        });
         
-        if (cacheKeys.length > 0) {
-            console.log(`Cleared ${cacheKeys.length} old cache entries`);
+        // Clear sessionStorage completely
+        try {
+            sessionStorage.clear();
+            console.log('SessionStorage cleared');
+        } catch (e) {
+            console.warn('Could not clear sessionStorage:', e);
         }
         
-        // Clear sessionStorage
-        sessionStorage.clear();
+        // Clear all form-related cache
+        const formKeys = Object.keys(localStorage).filter(key => 
+            key.includes('form') || 
+            key.includes('cache') ||
+            key.includes('draft')
+        );
+        formKeys.forEach(key => {
+            localStorage.removeItem(key);
+            console.log('Removed form key:', key);
+        });
+        
+        const totalCleared = supabaseKeys.length + registrationKeys.length + formKeys.length;
+        if (totalCleared > 0) {
+            console.log(`✅ Cleared ${totalCleared} cache entries total`);
+        } else {
+            console.log('✅ No cache entries found to clear');
+        }
         
         // Force reload CSS/JS files by adding cache busting
+        const timestamp = Date.now();
+        
+        // Reload CSS files
         const links = document.querySelectorAll('link[rel="stylesheet"]');
         links.forEach(link => {
-            if (link.href.includes('auth.css')) {
-                const url = new URL(link.href);
-                url.searchParams.set('v', Date.now());
-                link.href = url.toString();
+            if (link.href.includes('auth.css') || link.href.includes('main.css')) {
+                try {
+                    const url = new URL(link.href);
+                    url.searchParams.set('v', timestamp);
+                    link.href = url.toString();
+                    console.log('Updated CSS cache bust:', link.href);
+                } catch (e) {
+                    console.warn('Could not update CSS URL:', e);
+                }
             }
         });
         
-        const scripts = document.querySelectorAll('script[src]');
-        scripts.forEach(script => {
-            if (script.src.includes('register.js')) {
-                const url = new URL(script.src);
-                url.searchParams.set('v', Date.now());
-                script.src = url.toString();
-            }
-        });
+        // Note: Cannot reload script files that are already loaded
+        // But we can add cache busting to the HTML if needed
+        
+        // Clear browser cache for this page
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => {
+                    if (name.includes('register') || name.includes('auth')) {
+                        caches.delete(name).then(() => {
+                            console.log('Deleted cache:', name);
+                        });
+                    }
+                });
+            });
+        }
+        
+        console.log('Cache cleanup completed');
         
     } catch (error) {
         console.error('Error clearing cache:', error);
+        // Try to clear at least the basic localStorage
+        try {
+            localStorage.clear();
+            sessionStorage.clear();
+            console.log('Emergency cache clear completed');
+        } catch (e) {
+            console.error('Could not perform emergency cache clear:', e);
+        }
     }
 }
 
