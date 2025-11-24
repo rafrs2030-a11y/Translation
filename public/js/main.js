@@ -360,6 +360,48 @@ function removeFromStorage(key) {
     }
 }
 
+/**
+ * Clear all cache (Service Worker, localStorage, sessionStorage)
+ */
+async function clearAllCache() {
+    try {
+        // Clear Service Worker cache
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(
+                cacheNames.map(cacheName => caches.delete(cacheName))
+            );
+            console.log('Service Worker cache cleared');
+        }
+        
+        // Clear localStorage (except important keys)
+        const importantKeys = ['supabase.auth.token']; // Keep auth token if needed
+        const keysToRemove = Object.keys(localStorage).filter(
+            key => !importantKeys.some(important => key.includes(important))
+        );
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        console.log('LocalStorage cleared');
+        
+        // Clear sessionStorage
+        sessionStorage.clear();
+        console.log('SessionStorage cleared');
+        
+        // Unregister Service Worker if exists
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(
+                registrations.map(registration => registration.unregister())
+            );
+            console.log('Service Worker unregistered');
+        }
+        
+        return { success: true, message: 'تم مسح الكاش بنجاح' };
+    } catch (error) {
+        console.error('Error clearing cache:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 // ========================================
 // Export globals
 // ========================================
@@ -382,6 +424,7 @@ window.formatRelativeTime = formatRelativeTime;
 window.saveToStorage = saveToStorage;
 window.getFromStorage = getFromStorage;
 window.removeFromStorage = removeFromStorage;
+window.clearAllCache = clearAllCache;
 
 // ========================================
 // Initialize

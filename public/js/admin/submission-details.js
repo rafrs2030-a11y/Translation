@@ -22,6 +22,10 @@ let currentStatusBadge, daysPending, statusChanges;
 let statusChangeForm, adminComment;
 let historyTimeline;
 let researcherAvatar, researcherName;
+let applicantAvatar, applicantUsername, applicantEmail, applicantPhone, applicantNationalId, applicantUserId;
+let applicantHeaderLabel, applicantIndividualFields, applicantOrganizationFields;
+let applicantOrganizationName, applicantOrganizationType, applicantCommercialRegistration;
+let applicantEmailOrg, applicantPhoneOrg, applicantUserIdOrg;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -78,6 +82,23 @@ function initElements() {
     gender = document.getElementById('gender');
     idNumber = document.getElementById('id-number');
     createdAt = document.getElementById('created-at');
+    
+    // Applicant info
+    applicantAvatar = document.getElementById('applicant-avatar');
+    applicantUsername = document.getElementById('applicant-username');
+    applicantEmail = document.getElementById('applicant-email');
+    applicantPhone = document.getElementById('applicant-phone');
+    applicantNationalId = document.getElementById('applicant-national-id');
+    applicantUserId = document.getElementById('applicant-user-id');
+    applicantHeaderLabel = document.getElementById('applicant-header-label');
+    applicantIndividualFields = document.getElementById('applicant-individual-fields');
+    applicantOrganizationFields = document.getElementById('applicant-organization-fields');
+    applicantOrganizationName = document.getElementById('applicant-organization-name');
+    applicantOrganizationType = document.getElementById('applicant-organization-type');
+    applicantCommercialRegistration = document.getElementById('applicant-commercial-registration');
+    applicantEmailOrg = document.getElementById('applicant-email-org');
+    applicantPhoneOrg = document.getElementById('applicant-phone-org');
+    applicantUserIdOrg = document.getElementById('applicant-user-id-org');
     
     // Research info
     researchType = document.getElementById('research-type');
@@ -225,8 +246,90 @@ function populateSubmissionData(submission) {
         if (researcherName) researcherName.textContent = submission.full_name || '-';
     }
     
-    // Submitter type
+    // Applicant info (user account information)
     const submitterType = submission.submitter_type || 'فرد';
+    const isOrganization = submitterType !== 'فرد';
+    
+    if (submission.user) {
+        const user = submission.user;
+        
+        // Update applicant avatar
+        if (applicantAvatar) {
+            updateAvatarDisplay(applicantAvatar, user, { size: 60, fontSize: '1.5rem' });
+        }
+        
+        if (isOrganization) {
+            // Show organization fields for applicant
+            if (applicantIndividualFields) applicantIndividualFields.style.display = 'none';
+            if (applicantOrganizationFields) applicantOrganizationFields.style.display = 'block';
+            
+            // Update header label and icon
+            if (applicantHeaderLabel) applicantHeaderLabel.textContent = 'اسم المؤسسة';
+            if (applicantAvatar) {
+                const icon = applicantAvatar.querySelector('i');
+                if (icon) icon.className = 'fas fa-building';
+            }
+            
+            // Populate organization information
+            if (applicantUsername) applicantUsername.textContent = submission.organization_name || user.username || '-';
+            if (applicantOrganizationName) applicantOrganizationName.textContent = submission.organization_name || '-';
+            if (applicantOrganizationType) applicantOrganizationType.textContent = submission.organization_type || '-';
+            if (applicantCommercialRegistration) applicantCommercialRegistration.textContent = submission.commercial_registration_number || '-';
+            if (applicantEmailOrg) applicantEmailOrg.textContent = submission.email || user.email || '-';
+            if (applicantPhoneOrg) applicantPhoneOrg.textContent = user.phone || '-';
+            if (applicantUserIdOrg) applicantUserIdOrg.textContent = user.id || '-';
+        } else {
+            // Show individual fields for applicant
+            if (applicantIndividualFields) applicantIndividualFields.style.display = 'block';
+            if (applicantOrganizationFields) applicantOrganizationFields.style.display = 'none';
+            
+            // Update header label and icon
+            if (applicantHeaderLabel) applicantHeaderLabel.textContent = 'اسم المستخدم';
+            if (applicantAvatar) {
+                const icon = applicantAvatar.querySelector('i');
+                if (icon) icon.className = 'fas fa-user';
+            }
+            
+            // Populate individual information
+            if (applicantUsername) applicantUsername.textContent = user.username || '-';
+            if (applicantEmail) applicantEmail.textContent = user.email || '-';
+            if (applicantPhone) applicantPhone.textContent = user.phone || '-';
+            if (applicantNationalId) applicantNationalId.textContent = user.national_id || '-';
+            if (applicantUserId) applicantUserId.textContent = user.id || '-';
+        }
+    } else {
+        // If no user data, show placeholder
+        if (applicantIndividualFields) applicantIndividualFields.style.display = isOrganization ? 'none' : 'block';
+        if (applicantOrganizationFields) applicantOrganizationFields.style.display = isOrganization ? 'block' : 'none';
+        
+        if (isOrganization) {
+            if (applicantHeaderLabel) applicantHeaderLabel.textContent = 'اسم المؤسسة';
+            if (applicantAvatar) {
+                const icon = applicantAvatar.querySelector('i');
+                if (icon) icon.className = 'fas fa-building';
+            }
+            if (applicantUsername) applicantUsername.textContent = submission.organization_name || 'غير متوفر';
+            if (applicantOrganizationName) applicantOrganizationName.textContent = submission.organization_name || '-';
+            if (applicantOrganizationType) applicantOrganizationType.textContent = submission.organization_type || '-';
+            if (applicantCommercialRegistration) applicantCommercialRegistration.textContent = submission.commercial_registration_number || '-';
+            if (applicantEmailOrg) applicantEmailOrg.textContent = submission.email || '-';
+            if (applicantPhoneOrg) applicantPhoneOrg.textContent = '-';
+            if (applicantUserIdOrg) applicantUserIdOrg.textContent = '-';
+        } else {
+            if (applicantHeaderLabel) applicantHeaderLabel.textContent = 'اسم المستخدم';
+            if (applicantAvatar) {
+                const icon = applicantAvatar.querySelector('i');
+                if (icon) icon.className = 'fas fa-user';
+            }
+            if (applicantUsername) applicantUsername.textContent = 'غير متوفر';
+            if (applicantEmail) applicantEmail.textContent = '-';
+            if (applicantPhone) applicantPhone.textContent = '-';
+            if (applicantNationalId) applicantNationalId.textContent = '-';
+            if (applicantUserId) applicantUserId.textContent = '-';
+        }
+    }
+    
+    // Submitter type (reuse the variable defined above)
     const submitterTypeEl = document.getElementById('submitter-type');
     if (submitterTypeEl) {
         submitterTypeEl.textContent = submitterType;

@@ -45,24 +45,105 @@ document.addEventListener('DOMContentLoaded', async () => {
  */
 function clearOldCache() {
     try {
+        console.log('Starting cache cleanup for submission page...');
+        
         // Clear all submission drafts
-        if (localStorage.getItem('submission_draft')) {
-            localStorage.removeItem('submission_draft');
-            console.log('Old draft cache cleared');
-        }
+        const draftKeys = Object.keys(localStorage).filter(key => 
+            key.includes('submission_draft') || 
+            key.includes('draft') ||
+            key.includes('submission')
+        );
+        draftKeys.forEach(key => {
+            localStorage.removeItem(key);
+            console.log('Removed draft key:', key);
+        });
         
         // Clear any cached form data that might be stale
-        const cacheKeys = Object.keys(localStorage).filter(key => 
+        const formCacheKeys = Object.keys(localStorage).filter(key => 
             key.startsWith('form_cache_') || 
-            key.startsWith('submission_cache_')
+            key.startsWith('submission_cache_') ||
+            key.includes('form_cache') ||
+            key.includes('submission_cache')
         );
-        cacheKeys.forEach(key => localStorage.removeItem(key));
+        formCacheKeys.forEach(key => {
+            localStorage.removeItem(key);
+            console.log('Removed form cache key:', key);
+        });
         
-        if (cacheKeys.length > 0) {
-            console.log(`Cleared ${cacheKeys.length} old cache entries`);
+        // Clear Supabase-related cache
+        const supabaseKeys = Object.keys(localStorage).filter(key => 
+            key.startsWith('sb-') || 
+            key.startsWith('supabase.') ||
+            key.includes('supabase')
+        );
+        supabaseKeys.forEach(key => {
+            localStorage.removeItem(key);
+            console.log('Removed Supabase key:', key);
+        });
+        
+        // Clear sessionStorage completely
+        try {
+            sessionStorage.clear();
+            console.log('SessionStorage cleared');
+        } catch (e) {
+            console.warn('Could not clear sessionStorage:', e);
         }
+        
+        // Clear browser cache for this page
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => {
+                    if (name.includes('submit') || name.includes('submission') || name.includes('form')) {
+                        caches.delete(name).then(() => {
+                            console.log('Deleted cache:', name);
+                        });
+                    }
+                });
+            });
+        }
+        
+        const totalCleared = draftKeys.length + formCacheKeys.length + supabaseKeys.length;
+        if (totalCleared > 0) {
+            console.log(`✅ Cleared ${totalCleared} cache entries total`);
+        } else {
+            console.log('✅ No cache entries found to clear');
+        }
+        
+        // Force reload CSS/JS files by adding cache busting
+        const timestamp = Date.now();
+        
+        // Reload CSS files
+        const links = document.querySelectorAll('link[rel="stylesheet"]');
+        links.forEach(link => {
+            if (link.href.includes('forms.css') || link.href.includes('dashboard.css') || link.href.includes('main.css')) {
+                try {
+                    const url = new URL(link.href);
+                    url.searchParams.set('v', timestamp);
+                    link.href = url.toString();
+                    console.log('Updated CSS cache bust:', link.href);
+                } catch (e) {
+                    console.warn('Could not update CSS URL:', e);
+                }
+            }
+        });
+        
+        console.log('Cache cleanup completed for submission page');
+        
     } catch (error) {
         console.error('Error clearing cache:', error);
+        // Try to clear at least the basic localStorage
+        try {
+            const allKeys = Object.keys(localStorage);
+            allKeys.forEach(key => {
+                if (key.includes('submission') || key.includes('draft') || key.includes('form')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            sessionStorage.clear();
+            console.log('Emergency cache clear completed');
+        } catch (e) {
+            console.error('Could not perform emergency cache clear:', e);
+        }
     }
 }
 
