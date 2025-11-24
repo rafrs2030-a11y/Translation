@@ -964,24 +964,58 @@ async function prefillUserData(user) {
         // Get account type from user profile, default to 'تجريبي' if not set
         const accountType = currentUser.account_type || 'تجريبي';
         
-        // Set submitter type based on account type
+        // Hide submitter type field - it will be set automatically
+        const submitterTypeGroup = document.getElementById('submitter-type-group');
+        if (submitterTypeGroup) {
+            submitterTypeGroup.style.display = 'none';
+        }
+        
+        // Set submitter type based on account type automatically
         const submitterTypeSelect = document.getElementById('submitter_type');
-        if (submitterTypeSelect && !submitterTypeSelect.value) {
-            // Map account_type to submitter_type
-            if (accountType === 'فرد') {
-                submitterTypeSelect.value = 'فرد';
-            } else if (accountType === 'أعمال') {
-                submitterTypeSelect.value = 'أعمال';
-            } else {
-                // For 'تجريبي' or unknown, default to 'فرد'
-                submitterTypeSelect.value = 'فرد';
-            }
-            formData.submitter_type = submitterTypeSelect.value;
+        let submitterType = 'فرد'; // default
+        
+        if (accountType === 'فرد') {
+            submitterType = 'فرد';
+        } else if (accountType === 'أعمال') {
+            submitterType = 'أعمال';
+            // Show account owner info for business accounts
+            showAccountOwnerInfo(currentUser);
+        } else {
+            // For 'تجريبي' or unknown, default to 'فرد'
+            submitterType = 'فرد';
+        }
+        
+        if (submitterTypeSelect) {
+            submitterTypeSelect.value = submitterType;
+            submitterTypeSelect.removeAttribute('required'); // Not required since it's auto-set
+        }
+        formData.submitter_type = submitterType;
+        
+        // Trigger change event to show/hide appropriate fields
+        setTimeout(() => {
+            handleSubmitterTypeChange();
+        }, 100);
+        
+        // Pre-fill business fields if account type is 'أعمال'
+        if (accountType === 'أعمال') {
+            const orgNameInput = document.getElementById('organization_name');
+            const orgTypeSelect = document.getElementById('organization_type');
+            const commercialRegInput = document.getElementById('commercial_registration_number');
             
-            // Trigger change event to show/hide appropriate fields
-            setTimeout(() => {
-                handleSubmitterTypeChange();
-            }, 100);
+            if (orgNameInput && currentUser.organization_name && !orgNameInput.value) {
+                orgNameInput.value = currentUser.organization_name;
+                formData.organization_name = currentUser.organization_name;
+            }
+            
+            if (orgTypeSelect && currentUser.organization_type && !orgTypeSelect.value) {
+                orgTypeSelect.value = currentUser.organization_type;
+                formData.organization_type = currentUser.organization_type;
+            }
+            
+            if (commercialRegInput && currentUser.commercial_registration_number && !commercialRegInput.value) {
+                commercialRegInput.value = currentUser.commercial_registration_number;
+                formData.commercial_registration_number = currentUser.commercial_registration_number;
+            }
         }
         
         // Pre-fill basic information fields
@@ -1031,6 +1065,41 @@ async function prefillUserData(user) {
         console.error('Error prefilling user data:', error);
         // Don't show error to user, just log it
         // The form will remain empty and user can fill it manually
+    }
+}
+
+/**
+ * Show account owner information for business accounts
+ */
+function showAccountOwnerInfo(user) {
+    const accountOwnerInfo = document.getElementById('account-owner-info');
+    const displayAccountType = document.getElementById('display-account-type');
+    const displayOrgName = document.getElementById('display-organization-name');
+    const displayOrgType = document.getElementById('display-organization-type');
+    const displayOrgNameItem = document.getElementById('display-organization-name-item');
+    const displayOrgTypeItem = document.getElementById('display-organization-type-item');
+    
+    if (!accountOwnerInfo) return;
+    
+    // Show the info box
+    accountOwnerInfo.style.display = 'block';
+    
+    // Set account type
+    if (displayAccountType) {
+        displayAccountType.textContent = user.account_type || 'غير محدد';
+    }
+    
+    // Set organization info if available
+    if (user.account_type === 'أعمال') {
+        if (user.organization_name && displayOrgName) {
+            displayOrgName.textContent = user.organization_name;
+            if (displayOrgNameItem) displayOrgNameItem.style.display = 'flex';
+        }
+        
+        if (user.organization_type && displayOrgType) {
+            displayOrgType.textContent = user.organization_type;
+            if (displayOrgTypeItem) displayOrgTypeItem.style.display = 'flex';
+        }
     }
 }
 

@@ -117,13 +117,25 @@
                             <h3>المعلومات الأساسية</h3>
                         </div>
                         <div class="card-body">
-                            <div class="form-group">
-                                <label for="submitter_type" class="form-label required">نوع مقدم البحث</label>
-                                <select id="submitter_type" name="submitter_type" class="form-select" required>
-                                    <option value="">اختر نوع مقدم البحث</option>
-                                    <option value="فرد">فرد</option>
-                                    <option value="أعمال">أعمال</option>
-                                </select>
+
+                            
+                            <!-- Account Owner Info Display (for business accounts) -->
+                            <div id="account-owner-info" style="display: none;">
+                                <div class="info-box">
+                                    <h4>معلومات صاحب الحساب</h4>
+                                    <div class="info-item">
+                                        <span class="info-label"> نوع مقدم البحث </span>
+                                        <span class="info-value" id="display-account-type"></span>
+                                    </div>
+                                    <div class="info-item" id="display-organization-name-item" style="display: none;">
+                                        <span class="info-label">اسم الأعمال:</span>
+                                        <span class="info-value" id="display-organization-name"></span>
+                                    </div>
+                                    <div class="info-item" id="display-organization-type-item" style="display: none;">
+                                        <span class="info-label">نوع الأعمال:</span>
+                                        <span class="info-value" id="display-organization-type"></span>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Individual Fields -->
