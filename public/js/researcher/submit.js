@@ -335,7 +335,7 @@ function handleSubmitterTypeChange() {
             if (commercialRegLabel) commercialRegLabel.classList.remove('required');
         }
         
-    } else if (submitterType === 'مؤسسة') {
+    } else if (submitterType === 'أعمال') {
         // Show organization fields
         if (individualFields) {
             individualFields.style.display = 'none';
@@ -447,7 +447,7 @@ function validateCurrentStep() {
                     showFieldError(emailInput, 'البريد الإلكتروني مطلوب');
                     isValid = false;
                 }
-            } else if (submitterType === 'مؤسسة') {
+            } else if (submitterType === 'أعمال') {
                 const orgNameInput = document.getElementById('organization_name');
                 const orgTypeSelect = document.getElementById('organization_type');
                 const commercialRegInput = document.getElementById('commercial_registration_number');
@@ -496,7 +496,7 @@ function saveFormData() {
             // Handle email field - use the appropriate one based on submitter type
             if (input.id === 'email_org') {
                 // Organization email
-                if (submitterType === 'مؤسسة') {
+                if (submitterType === 'أعمال') {
                     formData.email = input.value;
                 }
             } else if (input.id === 'email') {
