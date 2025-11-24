@@ -15,9 +15,57 @@ let accountTypeSelection, accountTypeOptions, accountTypeInput;
 document.addEventListener('DOMContentLoaded', async () => {
     await guestOnly(); // Redirect if already logged in
     
+    // Clear old cache
+    clearOldCache();
+    
     initElements();
     initEventListeners();
 });
+
+/**
+ * Clear old cache and localStorage data
+ */
+function clearOldCache() {
+    try {
+        // Clear any registration-related cache
+        const cacheKeys = Object.keys(localStorage).filter(key => 
+            key.startsWith('register_') || 
+            key.startsWith('registration_') ||
+            key.startsWith('form_cache_') ||
+            key.startsWith('account_type_')
+        );
+        cacheKeys.forEach(key => localStorage.removeItem(key));
+        
+        if (cacheKeys.length > 0) {
+            console.log(`Cleared ${cacheKeys.length} old cache entries`);
+        }
+        
+        // Clear sessionStorage
+        sessionStorage.clear();
+        
+        // Force reload CSS/JS files by adding cache busting
+        const links = document.querySelectorAll('link[rel="stylesheet"]');
+        links.forEach(link => {
+            if (link.href.includes('auth.css')) {
+                const url = new URL(link.href);
+                url.searchParams.set('v', Date.now());
+                link.href = url.toString();
+            }
+        });
+        
+        const scripts = document.querySelectorAll('script[src]');
+        scripts.forEach(script => {
+            if (script.src.includes('register.js')) {
+                const url = new URL(script.src);
+                url.searchParams.set('v', Date.now());
+                script.src = url.toString();
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error clearing cache:', error);
+    }
+}
 
 /**
  * Initialize DOM elements
@@ -113,6 +161,113 @@ function selectAccountType(type) {
         console.log('Account type set to:', accountTypeInput.value);
     }
     
+    // Show/hide fields based on account type
+    const individualFields = document.getElementById('individual-fields');
+    const businessFields = document.getElementById('business-fields');
+    
+    if (type === 'فرد') {
+        // Show individual fields, hide business fields
+        if (individualFields) {
+            individualFields.style.display = 'block';
+        }
+        if (businessFields) {
+            businessFields.style.display = 'none';
+        }
+        
+        // Set required attributes for individual fields
+        const fullNameInput = document.getElementById('full_name');
+        const nationalIdInput = document.getElementById('national_id');
+        const genderSelect = document.getElementById('gender');
+        
+        if (fullNameInput) {
+            fullNameInput.setAttribute('required', 'required');
+            const label = fullNameInput.closest('.form-group')?.querySelector('.form-label');
+            if (label) label.classList.add('required');
+        }
+        if (nationalIdInput) {
+            nationalIdInput.setAttribute('required', 'required');
+            const label = nationalIdInput.closest('.form-group')?.querySelector('.form-label');
+            if (label) label.classList.add('required');
+        }
+        if (genderSelect) {
+            genderSelect.setAttribute('required', 'required');
+            const label = genderSelect.closest('.form-group')?.querySelector('.form-label');
+            if (label) label.classList.add('required');
+        }
+        
+        // Remove required from business fields
+        const orgNameInput = document.getElementById('organization_name');
+        const orgTypeSelect = document.getElementById('organization_type');
+        const commercialRegInput = document.getElementById('commercial_registration_number');
+        
+        if (orgNameInput) {
+            orgNameInput.removeAttribute('required');
+            const label = orgNameInput.closest('.form-group')?.querySelector('.form-label');
+            if (label) label.classList.remove('required');
+        }
+        if (orgTypeSelect) {
+            orgTypeSelect.removeAttribute('required');
+            const label = orgTypeSelect.closest('.form-group')?.querySelector('.form-label');
+            if (label) label.classList.remove('required');
+        }
+        if (commercialRegInput) {
+            commercialRegInput.removeAttribute('required');
+            const label = commercialRegInput.closest('.form-group')?.querySelector('.form-label');
+            if (label) label.classList.remove('required');
+        }
+        
+    } else if (type === 'أعمال') {
+        // Show business fields, hide individual fields
+        if (individualFields) {
+            individualFields.style.display = 'none';
+        }
+        if (businessFields) {
+            businessFields.style.display = 'block';
+        }
+        
+        // Set required attributes for business fields
+        const orgNameInput = document.getElementById('organization_name');
+        const orgTypeSelect = document.getElementById('organization_type');
+        const commercialRegInput = document.getElementById('commercial_registration_number');
+        
+        if (orgNameInput) {
+            orgNameInput.setAttribute('required', 'required');
+            const label = orgNameInput.closest('.form-group')?.querySelector('.form-label');
+            if (label) label.classList.add('required');
+        }
+        if (orgTypeSelect) {
+            orgTypeSelect.setAttribute('required', 'required');
+            const label = orgTypeSelect.closest('.form-group')?.querySelector('.form-label');
+            if (label) label.classList.add('required');
+        }
+        if (commercialRegInput) {
+            commercialRegInput.setAttribute('required', 'required');
+            const label = commercialRegInput.closest('.form-group')?.querySelector('.form-label');
+            if (label) label.classList.add('required');
+        }
+        
+        // Remove required from individual fields
+        const fullNameInput = document.getElementById('full_name');
+        const nationalIdInput = document.getElementById('national_id');
+        const genderSelect = document.getElementById('gender');
+        
+        if (fullNameInput) {
+            fullNameInput.removeAttribute('required');
+            const label = fullNameInput.closest('.form-group')?.querySelector('.form-label');
+            if (label) label.classList.remove('required');
+        }
+        if (nationalIdInput) {
+            nationalIdInput.removeAttribute('required');
+            const label = nationalIdInput.closest('.form-group')?.querySelector('.form-label');
+            if (label) label.classList.remove('required');
+        }
+        if (genderSelect) {
+            genderSelect.removeAttribute('required');
+            const label = genderSelect.closest('.form-group')?.querySelector('.form-label');
+            if (label) label.classList.remove('required');
+        }
+    }
+    
     // Show form with animation
     if (form) {
         setTimeout(() => {
@@ -167,18 +322,27 @@ async function handleSubmit(e) {
         return;
     }
     
+    // Get form data based on account type
     const formData = {
-        full_name: document.getElementById('full_name').value.trim(),
         email: email,
         phone: document.getElementById('phone').value.trim().replace(/\s+/g, ''),
-        national_id: document.getElementById('national_id').value.trim().replace(/\s+/g, ''),
-        gender: document.getElementById('gender').value.trim(),
         country: document.getElementById('country').value.trim(),
         password: document.getElementById('password').value,
         confirm_password: document.getElementById('confirm_password').value,
         account_type: accountType,
         terms: document.getElementById('terms').checked
     };
+    
+    // Add fields based on account type
+    if (accountType === 'فرد') {
+        formData.full_name = document.getElementById('full_name').value.trim();
+        formData.national_id = document.getElementById('national_id').value.trim().replace(/\s+/g, '');
+        formData.gender = document.getElementById('gender').value.trim();
+    } else if (accountType === 'أعمال') {
+        formData.organization_name = document.getElementById('organization_name').value.trim();
+        formData.organization_type = document.getElementById('organization_type').value.trim();
+        formData.commercial_registration_number = document.getElementById('commercial_registration_number').value.trim().replace(/\s+/g, '');
+    }
     
     // Validate
     if (!validateForm(formData)) {
@@ -190,16 +354,28 @@ async function handleSubmit(e) {
     
     try {
         // Register
-        const result = await authStore.register({
-            username: formData.full_name, // استخدام الاسم الكامل كاسم مستخدم
+        const registerData = {
+            username: formData.account_type === 'أعمال' 
+                ? formData.organization_name 
+                : formData.full_name,
             email: formData.email,
             password: formData.password,
             phone: formData.phone,
-            national_id: formData.national_id,
-            gender: formData.gender,
             country: formData.country,
             account_type: formData.account_type
-        });
+        };
+        
+        // Add fields based on account type
+        if (formData.account_type === 'فرد') {
+            registerData.national_id = formData.national_id;
+            registerData.gender = formData.gender;
+        } else if (formData.account_type === 'أعمال') {
+            registerData.organization_name = formData.organization_name;
+            registerData.organization_type = formData.organization_type;
+            registerData.commercial_registration_number = formData.commercial_registration_number;
+        }
+        
+        const result = await authStore.register(registerData);
         
         if (result.success) {
             // Show success message
@@ -229,10 +405,39 @@ async function handleSubmit(e) {
 function validateForm(data) {
     let isValid = true;
     
-    // Validate full name
-    if (!data.full_name || data.full_name.length < 3) {
-        showFieldError('full_name', 'الاسم الكامل مطلوب (3 أحرف على الأقل)');
-        isValid = false;
+    // Validate based on account type
+    if (data.account_type === 'فرد') {
+        // Validate individual fields
+        if (!data.full_name || data.full_name.length < 3) {
+            showFieldError('full_name', 'الاسم الكامل مطلوب (3 أحرف على الأقل)');
+            isValid = false;
+        }
+        
+        if (!data.gender) {
+            showFieldError('gender', 'يرجى اختيار الجنس');
+            isValid = false;
+        }
+        
+        if (!data.national_id || data.national_id.length < 5) {
+            showFieldError('national_id', 'رقم الهوية مطلوب');
+            isValid = false;
+        }
+    } else if (data.account_type === 'أعمال') {
+        // Validate business fields
+        if (!data.organization_name || data.organization_name.length < 3) {
+            showFieldError('organization_name', 'الاسم التجاري مطلوب (3 أحرف على الأقل)');
+            isValid = false;
+        }
+        
+        if (!data.organization_type) {
+            showFieldError('organization_type', 'يرجى اختيار نوع المؤسسة');
+            isValid = false;
+        }
+        
+        if (!data.commercial_registration_number || data.commercial_registration_number.length < 3) {
+            showFieldError('commercial_registration_number', 'رقم السجل التجاري مطلوب');
+            isValid = false;
+        }
     }
     
     // Validate email
@@ -249,17 +454,13 @@ function validateForm(data) {
         isValid = false;
     }
     
-    // Validate national ID
-    const idValidation = validateNationalId(data.national_id);
-    if (!idValidation.valid) {
-        showFieldError('national_id', idValidation.error);
-        isValid = false;
-    }
-    
-    // Validate gender
-    if (!data.gender) {
-        showFieldError('gender', 'يرجى اختيار الجنس');
-        isValid = false;
+    // Validate national ID (only for individuals)
+    if (data.account_type === 'فرد' && data.national_id) {
+        const idValidation = validateNationalId(data.national_id);
+        if (!idValidation.valid) {
+            showFieldError('national_id', idValidation.error);
+            isValid = false;
+        }
     }
     
     // Validate country

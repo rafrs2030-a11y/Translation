@@ -57,22 +57,109 @@
 
             <!-- Register Form -->
             <form id="register-form" class="auth-form" style="display: none;">
-                <!-- Full Name -->
-                <div class="form-group">
-                    <label for="full_name" class="form-label required">الاسم الكامل</label>
-                    <div class="input-with-icon">
-                        <i class="fas fa-user"></i>
-                        <input 
-                            type="text" 
-                            id="full_name" 
-                            name="full_name" 
-                            class="form-input"
-                            placeholder="أدخل اسمك الكامل"
-                            required
-                        >
+                <!-- Individual Fields (فرد) -->
+                <div id="individual-fields">
+                    <!-- Full Name -->
+                    <div class="form-group">
+                        <label for="full_name" class="form-label required">الاسم الكامل</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user"></i>
+                            <input 
+                                type="text" 
+                                id="full_name" 
+                                name="full_name" 
+                                class="form-input"
+                                placeholder="أدخل اسمك الكامل"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- National ID -->
+                    <div class="form-group">
+                        <label for="national_id" class="form-label required">رقم الهوية / الإقامة / الجواز</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-id-card"></i>
+                            <input 
+                                type="text" 
+                                id="national_id" 
+                                name="national_id" 
+                                class="form-input"
+                                placeholder="1234567890"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Gender -->
+                    <div class="form-group">
+                        <label for="gender" class="form-label required">الجنس</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-venus-mars"></i>
+                            <select 
+                                id="gender" 
+                                name="gender" 
+                                class="form-select"
+                            >
+                                <option value="">اختر...</option>
+                                <option value="ذكر">ذكر</option>
+                                <option value="أنثى">أنثى</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
+                <!-- Business Fields (أعمال) -->
+                <div id="business-fields" style="display: none;">
+                    <!-- Organization Name -->
+                    <div class="form-group">
+                        <label for="organization_name" class="form-label required">الاسم التجاري</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-building"></i>
+                            <input 
+                                type="text" 
+                                id="organization_name" 
+                                name="organization_name" 
+                                class="form-input"
+                                placeholder="أدخل الاسم التجاري للمؤسسة"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Organization Type -->
+                    <div class="form-group">
+                        <label for="organization_type" class="form-label required">نوع المؤسسة</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-briefcase"></i>
+                            <select 
+                                id="organization_type" 
+                                name="organization_type" 
+                                class="form-select"
+                            >
+                                <option value="">اختر نوع المؤسسة</option>
+                                <option value="جامعة">جامعة</option>
+                                <option value="هيئة">هيئة</option>
+                                <option value="أعمال حكومية">أعمال حكومية</option>
+                                <option value="أعمال خاصة">أعمال خاصة</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Commercial Registration Number -->
+                    <div class="form-group">
+                        <label for="commercial_registration_number" class="form-label required">السجل التجاري</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-file-contract"></i>
+                            <input 
+                                type="text" 
+                                id="commercial_registration_number" 
+                                name="commercial_registration_number" 
+                                class="form-input"
+                                placeholder="أدخل رقم السجل التجاري"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Common Fields (for both types) -->
                 <!-- Email -->
                 <div class="form-group">
                     <label for="email" class="form-label required">البريد الإلكتروني</label>
@@ -104,40 +191,6 @@
                             placeholder="+966 50 123 4567"
                             required
                         >
-                    </div>
-                </div>
-
-                <!-- National ID -->
-                <div class="form-group">
-                    <label for="national_id" class="form-label required">رقم الهوية / الإقامة / الجواز</label>
-                    <div class="input-with-icon">
-                        <i class="fas fa-id-card"></i>
-                        <input 
-                            type="text" 
-                            id="national_id" 
-                            name="national_id" 
-                            class="form-input"
-                            placeholder="1234567890"
-                            required
-                        >
-                    </div>
-                </div>
-
-                <!-- Gender -->
-                <div class="form-group">
-                    <label for="gender" class="form-label required">الجنس</label>
-                    <div class="input-with-icon">
-                        <i class="fas fa-venus-mars"></i>
-                        <select 
-                            id="gender" 
-                            name="gender" 
-                            class="form-select"
-                            required
-                        >
-                            <option value="">اختر...</option>
-                            <option value="ذكر">ذكر</option>
-                            <option value="أنثى">أنثى</option>
-                        </select>
                     </div>
                 </div>
 

@@ -86,7 +86,19 @@ class AuthStore {
     this.setState({ loading: true, error: null });
 
     try {
-      const { username, email, national_id, phone, password, gender, country, account_type } = userData;
+      const { 
+        username, 
+        email, 
+        national_id, 
+        phone, 
+        password, 
+        gender, 
+        country, 
+        account_type,
+        organization_name,
+        organization_type,
+        commercial_registration_number
+      } = userData;
 
       // التحقق من الحقول المطلوبة
       if (!username || !email || !password) {
@@ -95,19 +107,29 @@ class AuthStore {
 
       // إنشاء حساب في Supabase Auth
       // تعطيل التحقق من البريد الإلكتروني (emailRedirectTo: null)
+      const metadata = {
+        username: username || (account_type === 'أعمال' ? organization_name : username),
+        phone: phone || null,
+        country: country || null,
+        account_type: account_type || 'تجريبي',
+      };
+      
+      // Add fields based on account type
+      if (account_type === 'فرد') {
+        metadata.national_id = national_id || null;
+        metadata.gender = gender || null;
+      } else if (account_type === 'أعمال') {
+        metadata.organization_name = organization_name || null;
+        metadata.organization_type = organization_type || null;
+        metadata.commercial_registration_number = commercial_registration_number || null;
+      }
+      
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: null, // تعطيل إعادة التوجيه للتحقق
-          data: {
-            username,
-            national_id: national_id || null,
-            phone: phone || null,
-            gender: gender || null,
-            country: country || null,
-            account_type: account_type || 'تجريبي',
-          }
+          data: metadata
         }
       });
 
