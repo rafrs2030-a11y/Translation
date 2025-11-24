@@ -493,7 +493,7 @@ function validateForm(data) {
         }
         
         if (!data.organization_type) {
-            showFieldError('organization_type', 'يرجى اختيار نوع المؤسسة');
+            showFieldError('organization_type', 'يرجى اختيار نوع الأعمال');
             isValid = false;
         }
         
