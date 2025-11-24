@@ -270,12 +270,14 @@ function populateSubmissionData(submission) {
                 if (icon) icon.className = 'fas fa-building';
             }
             
-            // Populate organization information
-            if (applicantUsername) applicantUsername.textContent = submission.organization_name || user.username || '-';
-            if (applicantOrganizationName) applicantOrganizationName.textContent = submission.organization_name || '-';
-            if (applicantOrganizationType) applicantOrganizationType.textContent = submission.organization_type || '-';
-            if (applicantCommercialRegistration) applicantCommercialRegistration.textContent = submission.commercial_registration_number || '-';
-            if (applicantEmailOrg) applicantEmailOrg.textContent = submission.email || user.email || '-';
+            // Populate organization information from user account (dynamic)
+            // استخدام بيانات المؤسسة من حساب المستخدم (ديناميكي)
+            if (applicantUsername) applicantUsername.textContent = user.organization_name || submission.organization_name || user.username || '-';
+            if (applicantOrganizationName) applicantOrganizationName.textContent = user.organization_name || submission.organization_name || '-';
+            if (applicantOrganizationType) applicantOrganizationType.textContent = user.organization_type || submission.organization_type || '-';
+            // السجل التجاري من حساب المستخدم (ديناميكي)
+            if (applicantCommercialRegistration) applicantCommercialRegistration.textContent = user.commercial_registration_number || submission.commercial_registration_number || '-';
+            if (applicantEmailOrg) applicantEmailOrg.textContent = user.email || submission.email || '-';
             if (applicantPhoneOrg) applicantPhoneOrg.textContent = user.phone || '-';
             if (applicantUserIdOrg) applicantUserIdOrg.textContent = user.id || '-';
         } else {
@@ -308,9 +310,11 @@ function populateSubmissionData(submission) {
                 const icon = applicantAvatar.querySelector('i');
                 if (icon) icon.className = 'fas fa-building';
             }
+            // استخدام بيانات المؤسسة من submission (إذا لم تكن متوفرة في user)
             if (applicantUsername) applicantUsername.textContent = submission.organization_name || 'غير متوفر';
             if (applicantOrganizationName) applicantOrganizationName.textContent = submission.organization_name || '-';
             if (applicantOrganizationType) applicantOrganizationType.textContent = submission.organization_type || '-';
+            // السجل التجاري من submission (لأن user غير متوفر)
             if (applicantCommercialRegistration) applicantCommercialRegistration.textContent = submission.commercial_registration_number || '-';
             if (applicantEmailOrg) applicantEmailOrg.textContent = submission.email || '-';
             if (applicantPhoneOrg) applicantPhoneOrg.textContent = '-';
