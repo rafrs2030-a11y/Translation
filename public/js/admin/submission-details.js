@@ -247,12 +247,15 @@ function populateSubmissionData(submission) {
     }
     
     // Applicant info (user account information)
-    const submitterType = submission.submitter_type || 'فرد';
-    const isOrganization = submitterType !== 'فرد';
+    // التحقق من نوع الحساب من بيانات المستخدم أولاً (account_type)
+    const user = submission.user;
+    const userAccountType = user?.account_type;
+    const submitterType = submission.submitter_type || userAccountType || 'فرد';
     
-    if (submission.user) {
-        const user = submission.user;
-        
+    // تحديد نوع الحساب: إذا كان حساب المستخدم "أعمال" أو نوع مقدم الطلب "أعمال"
+    const isOrganization = userAccountType === 'أعمال' || submitterType === 'أعمال' || submitterType !== 'فرد';
+    
+    if (user) {
         // Update applicant avatar
         if (applicantAvatar) {
             updateAvatarDisplay(applicantAvatar, user, { size: 60, fontSize: '1.5rem' });
@@ -271,11 +274,12 @@ function populateSubmissionData(submission) {
             }
             
             // Populate organization information from user account (dynamic)
-            // استخدام بيانات المؤسسة من حساب المستخدم (ديناميكي)
+            // استخدام بيانات المؤسسة من حساب المستخدم أولاً (ديناميكي) - اعتماد بيانات مسجل الدخول
+            // Priority: user account data > submission data
             if (applicantUsername) applicantUsername.textContent = user.organization_name || submission.organization_name || user.username || '-';
             if (applicantOrganizationName) applicantOrganizationName.textContent = user.organization_name || submission.organization_name || '-';
             if (applicantOrganizationType) applicantOrganizationType.textContent = user.organization_type || submission.organization_type || '-';
-            // السجل التجاري من حساب المستخدم (ديناميكي)
+            // السجل التجاري من حساب المستخدم أولاً (ديناميكي) - اعتماد بيانات مسجل الدخول
             if (applicantCommercialRegistration) applicantCommercialRegistration.textContent = user.commercial_registration_number || submission.commercial_registration_number || '-';
             if (applicantEmailOrg) applicantEmailOrg.textContent = user.email || submission.email || '-';
             if (applicantPhoneOrg) applicantPhoneOrg.textContent = user.phone || '-';

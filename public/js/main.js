@@ -362,42 +362,111 @@ function removeFromStorage(key) {
 
 /**
  * Clear all cache (Service Worker, localStorage, sessionStorage)
+ * مسح جميع أنواع الكاش (بما في ذلك الإصدارات القديمة)
  */
 async function clearAllCache() {
     try {
-        // Clear Service Worker cache
+        console.log('بدء مسح الكاش...');
+        
+        let cacheNamesDeleted = [];
+        let localStorageItemsDeleted = 0;
+        let serviceWorkersUnregistered = 0;
+        
+        // Clear ALL Service Worker caches (including old versions)
         if ('caches' in window) {
             const cacheNames = await caches.keys();
+            console.log('تم العثور على', cacheNames.length, 'كاش:', cacheNames);
+            
+            // Delete all caches (including old versions)
             await Promise.all(
-                cacheNames.map(cacheName => caches.delete(cacheName))
+                cacheNames.map(async (cacheName) => {
+                    try {
+                        console.log('مسح كاش:', cacheName);
+                        const deleted = await caches.delete(cacheName);
+                        if (deleted) {
+                            cacheNamesDeleted.push(cacheName);
+                        }
+                        return deleted;
+                    } catch (err) {
+                        console.error('خطأ في مسح كاش:', cacheName, err);
+                        return false;
+                    }
+                })
             );
-            console.log('Service Worker cache cleared');
+            console.log('✓ تم مسح', cacheNamesDeleted.length, 'كاش من Service Worker');
         }
         
-        // Clear localStorage (except important keys)
-        const importantKeys = ['supabase.auth.token']; // Keep auth token if needed
-        const keysToRemove = Object.keys(localStorage).filter(
+        // Clear localStorage (keep auth tokens only)
+        const importantKeys = ['supabase.auth.token', 'sb-'];
+        const allKeys = Object.keys(localStorage);
+        const keysToRemove = allKeys.filter(
             key => !importantKeys.some(important => key.includes(important))
         );
-        keysToRemove.forEach(key => localStorage.removeItem(key));
-        console.log('LocalStorage cleared');
         
-        // Clear sessionStorage
-        sessionStorage.clear();
-        console.log('SessionStorage cleared');
+        keysToRemove.forEach(key => {
+            try {
+                console.log('مسح من localStorage:', key);
+                localStorage.removeItem(key);
+                localStorageItemsDeleted++;
+            } catch (err) {
+                console.error('خطأ في مسح:', key, err);
+            }
+        });
+        console.log('✓ تم مسح', localStorageItemsDeleted, 'عنصر من localStorage');
         
-        // Unregister Service Worker if exists
-        if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(
-                registrations.map(registration => registration.unregister())
-            );
-            console.log('Service Worker unregistered');
+        // Clear ALL sessionStorage
+        try {
+            const sessionKeys = Object.keys(sessionStorage);
+            sessionStorage.clear();
+            console.log('✓ تم مسح', sessionKeys.length, 'عنصر من sessionStorage');
+        } catch (err) {
+            console.error('خطأ في مسح sessionStorage:', err);
         }
         
-        return { success: true, message: 'تم مسح الكاش بنجاح' };
+        // Unregister ALL Service Workers (including old versions)
+        if ('serviceWorker' in navigator) {
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                console.log('تم العثور على', registrations.length, 'Service Worker مسجل');
+                
+                await Promise.all(
+                    registrations.map(async (registration) => {
+                        try {
+                            console.log('إلغاء تسجيل Service Worker:', registration.scope);
+                            const unregistered = await registration.unregister();
+                            if (unregistered) {
+                                serviceWorkersUnregistered++;
+                            }
+                            return unregistered;
+                        } catch (err) {
+                            console.error('خطأ في إلغاء تسجيل Service Worker:', err);
+                            return false;
+                        }
+                    })
+                );
+                console.log('✓ تم إلغاء تسجيل', serviceWorkersUnregistered, 'Service Worker');
+            } catch (err) {
+                console.error('خطأ في جلب Service Workers:', err);
+            }
+        }
+        
+        console.log('✓ تم مسح الكاش بنجاح');
+        
+        return { 
+            success: true, 
+            message: 'تم مسح الكاش بنجاح',
+            cleared: {
+                serviceWorker: cacheNamesDeleted.length,
+                localStorage: localStorageItemsDeleted,
+                sessionStorage: true,
+                serviceWorkersUnregistered: serviceWorkersUnregistered
+            },
+            details: {
+                cacheNames: cacheNamesDeleted
+            }
+        };
     } catch (error) {
-        console.error('Error clearing cache:', error);
+        console.error('خطأ في مسح الكاش:', error);
         return { success: false, error: error.message };
     }
 }

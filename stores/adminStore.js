@@ -124,7 +124,7 @@ class AdminStore {
         .from('submissions')
         .select(`
           *,
-          user:users(id, username, email, phone, national_id, organization_name, organization_type, commercial_registration_number)
+          user:users(id, username, email, phone, national_id, account_type, organization_name, organization_type, commercial_registration_number)
         `)
         .eq('id', id)
         .single();
