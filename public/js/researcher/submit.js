@@ -70,21 +70,23 @@ function clearOldCache() {
             console.log('Removed form cache key:', key);
         });
         
-        // Clear Supabase-related cache
-        const supabaseKeys = Object.keys(localStorage).filter(key => 
-            key.startsWith('sb-') || 
-            key.startsWith('supabase.') ||
-            key.includes('supabase')
-        );
-        supabaseKeys.forEach(key => {
-            localStorage.removeItem(key);
-            console.log('Removed Supabase key:', key);
-        });
+        // DO NOT clear Supabase auth tokens - this would log the user out!
+        // Only clear non-auth related Supabase cache if needed
+        // Supabase auth tokens are critical for maintaining the session
         
-        // Clear sessionStorage completely
+        // Clear sessionStorage completely (but keep auth tokens safe)
         try {
-            sessionStorage.clear();
-            console.log('SessionStorage cleared');
+            // Get all sessionStorage keys
+            const sessionKeys = Object.keys(sessionStorage);
+            // Only clear non-auth related keys
+            sessionKeys.forEach(key => {
+                // Don't clear auth-related keys
+                if (!key.includes('auth') && !key.startsWith('sb-')) {
+                    sessionStorage.removeItem(key);
+                    console.log('Removed sessionStorage key:', key);
+                }
+            });
+            console.log('SessionStorage cleared (auth keys preserved)');
         } catch (e) {
             console.warn('Could not clear sessionStorage:', e);
         }
@@ -102,9 +104,9 @@ function clearOldCache() {
             });
         }
         
-        const totalCleared = draftKeys.length + formCacheKeys.length + supabaseKeys.length;
+        const totalCleared = draftKeys.length + formCacheKeys.length;
         if (totalCleared > 0) {
-            console.log(`✅ Cleared ${totalCleared} cache entries total`);
+            console.log(`✅ Cleared ${totalCleared} cache entries total (auth tokens preserved)`);
         } else {
             console.log('✅ No cache entries found to clear');
         }
@@ -131,16 +133,24 @@ function clearOldCache() {
         
     } catch (error) {
         console.error('Error clearing cache:', error);
-        // Try to clear at least the basic localStorage
+        // Try to clear at least the basic localStorage (but preserve auth tokens)
         try {
             const allKeys = Object.keys(localStorage);
             allKeys.forEach(key => {
-                if (key.includes('submission') || key.includes('draft') || key.includes('form')) {
+                // Only clear submission/draft/form related keys, NOT auth tokens
+                if ((key.includes('submission') || key.includes('draft') || key.includes('form')) 
+                    && !key.includes('auth') && !key.startsWith('sb-')) {
                     localStorage.removeItem(key);
                 }
             });
-            sessionStorage.clear();
-            console.log('Emergency cache clear completed');
+            // Clear sessionStorage but preserve auth keys
+            const sessionKeys = Object.keys(sessionStorage);
+            sessionKeys.forEach(key => {
+                if (!key.includes('auth') && !key.startsWith('sb-')) {
+                    sessionStorage.removeItem(key);
+                }
+            });
+            console.log('Emergency cache clear completed (auth tokens preserved)');
         } catch (e) {
             console.error('Could not perform emergency cache clear:', e);
         }
