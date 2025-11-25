@@ -266,7 +266,7 @@ function populateSubmissionData(submission) {
             if (applicantOrganizationFields) applicantOrganizationFields.style.display = 'block';
             
             // Update header label and icon
-            if (applicantHeaderLabel) applicantHeaderLabel.textContent = 'اسم المؤسسة';
+            if (applicantHeaderLabel) applicantHeaderLabel.textContent = 'اسم الجهة';
             if (applicantAvatar) {
                 const icon = applicantAvatar.querySelector('i');
                 if (icon) icon.className = 'fas fa-building';
@@ -306,7 +306,7 @@ function populateSubmissionData(submission) {
         if (applicantOrganizationFields) applicantOrganizationFields.style.display = isOrganization ? 'block' : 'none';
         
         if (isOrganization) {
-            if (applicantHeaderLabel) applicantHeaderLabel.textContent = 'اسم المؤسسة';
+            if (applicantHeaderLabel) applicantHeaderLabel.textContent = 'اسم الجهة';
             if (applicantAvatar) {
                 const icon = applicantAvatar.querySelector('i');
                 if (icon) icon.className = 'fas fa-building';

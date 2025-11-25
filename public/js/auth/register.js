@@ -474,12 +474,12 @@ function validateForm(data) {
     } else if (data.account_type === 'أعمال') {
         // Validate business fields
         if (!data.organization_name || data.organization_name.length < 3) {
-            showFieldError('organization_name', 'الاسم التجاري مطلوب (3 أحرف على الأقل)');
+            showFieldError('organization_name', 'اسم الجهة مطلوب (3 أحرف على الأقل)');
             isValid = false;
         }
         
         if (!data.organization_type) {
-            showFieldError('organization_type', 'يرجى اختيار نوع الأعمال');
+            showFieldError('organization_type', 'يرجى اختيار نوع الجهة');
             isValid = false;
         }
     }

@@ -528,11 +528,11 @@ function validateCurrentStep() {
                 const emailOrgInput = document.getElementById('email_org');
                 
                 if (!orgNameInput || !orgNameInput.value.trim()) {
-                    showFieldError(orgNameInput, 'اسم الأعمال مطلوب');
+                    showFieldError(orgNameInput, 'اسم الجهة مطلوب');
                     isValid = false;
                 }
                 if (!orgTypeSelect || !orgTypeSelect.value) {
-                    showFieldError(orgTypeSelect, 'نوع الأعمال مطلوب');
+                    showFieldError(orgTypeSelect, 'نوع الجهة مطلوب');
                     isValid = false;
                 }
                 if (!emailOrgInput || !emailOrgInput.value.trim()) {
@@ -660,7 +660,7 @@ function updateReviewContent() {
         declarationText.innerHTML = `أنا <strong>${fullName}</strong> أقر بأن جميع المعلومات المقدمة دقيقة وأن هذا البحث/الكتاب هو من عملي الأصلي. وفي حالة ثبوت خلاف ذلك، أتحمل كامل المسؤولية.`;
     } else {
         // For organizations (universities, institutions): different declaration text
-        const orgName = formData.organization_name || '[اسم الأعمال]';
+        const orgName = formData.organization_name || '[اسم الجهة]';
         const mainResearcher = formData.main_researcher || '[اسم الباحث]';
         declarationName.textContent = orgName;
         declarationText.innerHTML = `نحن <strong>${orgName}</strong> نقر بأن جميع المعلومات المقدمة دقيقة وأن هذا البحث/الكتاب هو من عمل الباحث <strong>${mainResearcher}</strong> الذي تم ذكره سابقاً في هذا الطلب. وفي حالة ثبوت خلاف ذلك، نتحمل كامل المسؤولية.`;
@@ -683,12 +683,12 @@ function updateReviewContent() {
                 <span class="review-label" style="font-weight: 600;">معلومات صاحب الحساب (مقدم البحث):</span>
                 <div style="margin-top: 0.5rem;">
                     <div style="margin: 0.25rem 0;">
-                        <span class="review-label">اسم الأعمال:</span>
+                        <span class="review-label">اسم الجهة:</span>
                         <span class="review-value">${formData.organization_name || '-'}</span>
                     </div>
                     ${formData.organization_type ? `
                     <div style="margin: 0.25rem 0;">
-                        <span class="review-label">نوع الأعمال:</span>
+                        <span class="review-label">نوع الجهة:</span>
                         <span class="review-value">${formData.organization_type}</span>
                     </div>
                     ` : ''}
@@ -719,11 +719,11 @@ function updateReviewContent() {
     } else {
         basicInfoHTML += `
             <div class="review-item">
-                <span class="review-label">اسم الأعمال:</span>
+                <span class="review-label">اسم الجهة:</span>
                 <span class="review-value">${formData.organization_name || '-'}</span>
             </div>
             <div class="review-item">
-                <span class="review-label">نوع الأعمال:</span>
+                <span class="review-label">نوع الجهة:</span>
                 <span class="review-value">${formData.organization_type || '-'}</span>
             </div>
             <div class="review-item">
@@ -842,7 +842,7 @@ async function handleSubmit(e) {
         } else {
             // For organizations, validate organization fields
             if (!formData.organization_name || !formData.organization_name.trim()) {
-                throw new Error('اسم الأعمال مطلوب');
+                throw new Error('اسم الجهة مطلوب');
             }
         }
         
