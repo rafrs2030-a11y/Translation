@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="سياسة الخصوصية - منصة نشر الأبحاث العربية">
+    <title>سياسة الخصوصية - منصة نشر الأبحاث العربية</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/main.css?v=2.0">
+    <link rel="stylesheet" href="/css/landing.css?v=2.0">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/images/logo.png">
+    <link rel="apple-touch-icon" href="/images/logo.png">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .legal-page {
+            padding: var(--spacing-2xl) 0;
+            background-color: var(--bg-secondary);
+            min-height: calc(100vh - 200px);
+        }
+        
+        .legal-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: var(--spacing-xl);
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .legal-header {
+            text-align: center;
+            margin-bottom: var(--spacing-2xl);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .legal-header h1 {
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .legal-header .company-info {
+            color: var(--text-secondary);
+            font-size: var(--font-size-lg);
+            margin-top: var(--spacing-md);
+        }
+        
+        .legal-header .company-info strong {
+            color: var(--text-primary);
+        }
+        
+        .legal-content {
+            line-height: 1.8;
+            color: var(--text-primary);
+        }
+        
+        .legal-content h2 {
+            color: var(--primary-color);
+            margin-top: var(--spacing-xl);
+            margin-bottom: var(--spacing-md);
+            padding-top: var(--spacing-lg);
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .legal-content h2:first-of-type {
+            border-top: none;
+            padding-top: 0;
+        }
+        
+        .legal-content h3 {
+            color: var(--primary-dark);
+            margin-top: var(--spacing-lg);
+            margin-bottom: var(--spacing-sm);
+            font-size: var(--font-size-xl);
+        }
+        
+        .legal-content p {
+            margin-bottom: var(--spacing-md);
+            text-align: justify;
+        }
+        
+        .legal-content ul {
+            margin: var(--spacing-md) 0;
+            padding-right: var(--spacing-xl);
+        }
+        
+        .legal-content li {
+            margin-bottom: var(--spacing-sm);
+            line-height: 1.8;
+        }
+        
+        .legal-content hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: var(--spacing-xl) 0;
+        }
+        
+        .legal-content strong {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+        
+        .legal-content a {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+        
+        .legal-content a:hover {
+            color: var(--primary-dark);
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-xl);
+            padding: var(--spacing-sm) var(--spacing-md);
+            color: var(--primary-color);
+            text-decoration: none;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-base);
+        }
+        
+        .back-link:hover {
+            background-color: var(--bg-secondary);
+            border-color: var(--primary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .legal-container {
+                padding: var(--spacing-md);
+                margin: var(--spacing-md);
+            }
+            
+            .legal-content h2 {
+                font-size: var(--font-size-2xl);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <a href="/">
+                    <img src="/images/logo.png" alt="Research Assistant Logo" class="brand-logo" width="120" height="42" loading="eager">
+                </a>
+            </div>
+            <ul class="nav-menu" role="navigation" aria-label="القائمة الرئيسية">
+                <li><a href="/#features" aria-label="انتقل إلى قسم الميزات"><i class="fas fa-star" aria-hidden="true"></i> <span>الميزات</span></a></li>
+                <li><a href="/#how-it-works" aria-label="انتقل إلى قسم كيف يعمل"><i class="fas fa-cogs" aria-hidden="true"></i> <span>كيف يعمل</span></a></li>
+                <li><a href="/#contact" aria-label="انتقل إلى قسم التواصل معنا"><i class="fas fa-envelope" aria-hidden="true"></i> <span>تواصل معنا</span></a></li>
+            </ul>
+            <div class="nav-actions">
+                <a href="/pages/login.html" class="btn btn-outline" aria-label="تسجيل الدخول إلى حسابك">تسجيل الدخول</a>
+                <a href="/pages/register.html" class="btn btn-primary" aria-label="إنشاء حساب جديد">حساب جديد</a>
+            </div>
+            <button class="mobile-menu-toggle" aria-label="فتح القائمة">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Legal Content -->
+    <section class="legal-page">
+        <div class="container">
+            <div class="legal-container">
+                <div class="legal-header">
+                    <h1>سياسة الخصوصية</h1>
+                    <div class="company-info">
+                        <p><strong>شركة مساعد البحث للبحوث والدراسات (RAFRS)</strong></p>
+                        <p><strong>الموقع:</strong> com.rafrs</p>
+                        <p><strong>البريد:</strong> <a href="mailto:info@rafrs.com">info@rafrs.com</a></p>
+                    </div>
+                </div>
+                
+                <div class="legal-content">
+                    <p>تلتزم شركة مساعد البحث للبحوث والدراسات ("RAFRS") بحماية خصوصية مستخدميها والحفاظ على سرية بياناتهم. تهدف هذه السياسة إلى توضيح نوع البيانات التي نقوم بجمعها عند استخدامك للموقع أو الخدمات، وكيفية استخدامها ومعالجتها وحمايتها، والتصرف فيها بسرّية.</p>
+                    
+                    <p>باستخدامك موقع com.rafrs أو خدماتنا، فإنك توافق على مضمون هذه السياسة. إذا لم توافق على أي من بنودها، يرجى التوقف عن استخدام الموقع أو الخدمات.</p>
+                    
+                    <hr>
+                    
+                    <h2>نطاق السياسة</h2>
+                    <p>لا تنطبق هذه السياسة على المواقع أو الخدمات الخارجية المرتبطة بنا من خلال روابط أو جهات خارجية، إذ تخضع تلك الكيانات لسياسات خصوصيتها الخاصة.</p>
+                    
+                    <h2>أولًا: البيانات التي نجمعها</h2>
+                    
+                    <h3>1) بيانات التعريف الشخصية</h3>
+                    <p>مثل الاسم، البريد الإلكتروني، موقع الدراسة أو العمل، رقم الهاتف، والجهة التي تتبع لها إن وجدت.</p>
+                    
+                    <h3>2) بيانات الدفع</h3>
+                    <p>مثل معلومات الدفع عند شراء خدمات (بطاقة ائتمانية، تحويل بنكي، بيانات الدفع الإلكتروني).<br>
+                    لا نقوم بتخزين أرقام البطاقات الكاملة؛ تتم المعالجة عبر مزود الدفع الموثوق.</p>
+                    
+                    <h3>3) بيانات المحتوى التفاعلي</h3>
+                    <p>مثل مشاركاتك في الأنشطة، مساهماتك البحثية، أو أنشطتك ضمن المنصة.</p>
+                    
+                    <h3>4) بيانات الجهاز والتصفح</h3>
+                    <p>مثل نوع الجهاز، نظام التشغيل، الصفحات التي تمت زيارتها، أوقات الزيارة، الإحالات، عناوين IP، التقارير الإجمالية، التحليلات، والمعرفات غير الشخصية المستخدمة للإعلان وتحسين الأداء.</p>
+                    
+                    <h3>5) بيانات الموقع الجغرافي</h3>
+                    <p>(إن تم السماح بها من طرفك)</p>
+                    
+                    <h3>6) تخزين البيانات خارج بلد المستخدم</h3>
+                    <p>قد تُنقل بياناتك وتخزن خارج بلدك وفقًا للتدابير الأمنية المطبقة لدى RAFRS.</p>
+                    
+                    <h2>ثانيًا: كيف نستخدم البيانات</h2>
+                    <p>نستخدم بياناتك من أجل:</p>
+                    <ul>
+                        <li>إتاحة الخدمات على أجهزتك بأفضل صورة ممكنة.</li>
+                        <li>تلبية الطلبات، تقديم الدعم الفني، ومعالجة الفواتير.</li>
+                        <li>إرسال التحديثات والعروض والرسائل الهامة المتعلقة بالخدمات.</li>
+                        <li>تمكينك من المشاركة في الأنشطة البحثية أو المجتمعية.</li>
+                        <li>تنفيذ العقود المبرمة بيننا وبينك.</li>
+                        <li>حماية النظام من أي إساءة استخدام أو مخاطر أمنية.</li>
+                        <li>جمع إحصاءات وتحسين جودة الخدمات.</li>
+                    </ul>
+                    
+                    <h2>ثالثًا: مشاركة البيانات والإفصاح عنها</h2>
+                    <p>لا نقوم ببيع أو تأجير بياناتك الشخصية.<br>
+                    نشارك البيانات فقط في الحالات التالية:</p>
+                    
+                    <h3>مع مزودي الخدمات الموثوقين</h3>
+                    <p>مثل الدفع الإلكتروني، التحليلات، حلول الأمن. يخضعون لاتفاقيات صارمة لحماية البيانات.</p>
+                    
+                    <h3>جهات حكومية أو قضائية</h3>
+                    <p>عند وجود التزام نظامي أو أمر قضائي.</p>
+                    
+                    <h3>الحماية من الاحتيال أو إساءة الاستخدام</h3>
+                    <p>كتحليل محاولات الدفع أو الأنشطة المشبوهة.</p>
+                    
+                    <h3>عمليات الاندماج أو الاستحواذ</h3>
+                    <p>وفق الالتزام بحماية البيانات واستمرار الامتثال.</p>
+                    
+                    <h3>بموافقتك الصريحة</h3>
+                    <p>عند الحاجة لمشاركة بيانات إضافية.</p>
+                    
+                    <h3>مشاركة بيانات غير شخصية</h3>
+                    <p>مثل الإحصاءات دون أي معلومات تحدد الهوية.</p>
+                    
+                    <h2>رابعًا: الوصول إلى البيانات وتصحيحها وحذفها</h2>
+                    <p>يمكنك طلب الوصول إلى بياناتك الشخصية أو تعديلها أو حذفها عبر التواصل معنا: <strong><a href="mailto:info@rafrs.com">info@rafrs.com</a></strong></p>
+                    <p>قد نحتفظ ببعض البيانات وفق التزامات قانونية أو لأسباب أمنية.</p>
+                    
+                    <h2>خامسًا: معالجة البيانات نيابة عن العملاء</h2>
+                    <p>قد نقوم بمعالجة بيانات تتبع لجهات أو مؤسسات نتعاقد معها، مثل تحليل أو معالجة خدمات.</p>
+                    <p>طلبات الوصول أو الحذف تُوجَّه للمؤسسة المالكة للبيانات، وسنساعد في التنفيذ خلال مدة لا تتجاوز 30 يومًا عادة.</p>
+                    <p>نحتفظ بالبيانات بالمدة اللازمة لتقديم الخدمة وفق الأنظمة الحاكمة.</p>
+                    
+                    <h2>سادسًا: حماية البيانات</h2>
+                    <p>نعمل على تخزين البيانات على خوادم آمنة، ونطبق تدابير تقنية مثل SSL/TLS، وإجراءات أمنية تحمي من الوصول غير المصرح به.</p>
+                    <p>مسؤولية المستخدم تشمل الحفاظ على كلمات المرور وعدم مشاركتها.</p>
+                    <p>نحرص على متابعة أي خرق أمني محتمل، وسيتم إعلامك فورًا عند وجود أي تهديد يمس بياناتك.</p>
+                    
+                    <h2>سابعًا: تحديث سياسة الخصوصية</h2>
+                    <p>قد نقوم بتحديث هذه السياسة، وسيتم نشر النسخة المحدثة على الموقع مع تاريخ التعديل. كما قد يتم إشعارك عبر بريدك الإلكتروني عند وجود تحديثات جوهرية.</p>
+                    
+                    <a href="/" class="back-link">
+                        <i class="fas fa-arrow-right"></i>
+                        العودة إلى الصفحة الرئيسية
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer" id="contact">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <img src="/images/logo.png" alt="Research Assistant Logo" class="footer-logo" style="max-width: 200px; margin-bottom: 1rem; aspect-ratio: 3/1; height: auto; object-fit: contain;" width="200" height="67" loading="lazy">
+                    <h4 style="margin-bottom: 1rem; color: white;">المنصة العالمية لنشر الأبحاث والدراسات العربية إلى الإنجليزية</h4>
+                    <p>تتشرف المنصة العالمية لنشر الأبحاث العربية إلى الإنجليزية الخاصة بشركة مساعد البحث للبحوث والدراسات باستقبال طلباتكم وأبحاثكم لنشرها في مجلات عالمية علمية محكمة <span class="no-break-text">ISI- Scopus (Q1-Q2-Q3-Q4)</span>.<br><br>
+                    وذلك لتمكين الهيئات والجامعات والمؤسسات والباحث الأكاديمي من النشر العالمي لأبحاثهم العلمية العربية عالمياً.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>روابط سريعة</h4>
+                    <ul>
+                        <li><a href="/#features" aria-label="انتقل إلى قسم الميزات">الميزات</a></li>
+                        <li><a href="/#how-it-works" aria-label="انتقل إلى قسم كيف يعمل">كيف يعمل</a></li>
+                        <li><a href="/pages/register.html" aria-label="إنشاء حساب جديد">التسجيل</a></li>
+                        <li><a href="/pages/login.html" aria-label="تسجيل الدخول">تسجيل الدخول</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>الدعم</h4>
+                    <ul>
+                        <li><a href="#">الأسئلة الشائعة</a></li>
+                        <li><a href="#">المساعدة</a></li>
+                        <li><a href="/pages/terms.html">الشروط والأحكام</a></li>
+                        <li><a href="/pages/privacy.html">سياسة الخصوصية</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>تواصل معنا</h4>
+                    <ul class="contact-info">
+                        <li>
+                            <i class="fas fa-envelope" aria-hidden="true"></i>
+                            <a href="mailto:info@rafrs.com" aria-label="أرسل بريد إلكتروني إلى info@rafrs.com">info@rafrs.com</a>
+                        </li>
+                        <li>
+                            <i class="fas fa-phone" aria-hidden="true"></i>
+                            <a href="tel:+966580002284" aria-label="اتصل بنا على +966580002284">+966 58 000 2284</a>
+                        </li>
+                        <li>
+                            <i class="fab fa-whatsapp" aria-hidden="true"></i>
+                            <a href="https://wa.me/966580002284" target="_blank" rel="noopener noreferrer" aria-label="تواصل معنا عبر واتساب">تواصل عبر واتساب</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-bottom-content">
+                    <p>&copy; 2025 منصة نشر الأبحاث العربية. جميع الحقوق محفوظة.</p>
+                    <div class="developer-credit-inline">
+                        <a href="https://wa.me/966533189111" target="_blank" rel="noopener noreferrer" class="developer-credit-content" aria-label="تواصل مع باكورة التقنيات - مطور المنصة">
+                            <span class="developer-text">تم تطوير المنصة بواسطة الحاضنة الرقمية باكورة التقنيات</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script type="module" src="/js/main.js?v=2.0" defer></script>
+    <script src="/js/landing.js?v=2.0" defer></script>
+</body>
+</html>
+
