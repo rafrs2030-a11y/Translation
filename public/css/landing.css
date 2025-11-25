@@ -115,6 +115,45 @@ html {
     filter: drop-shadow(0 4px 8px rgba(61, 90, 148, 0.2));
 }
 
+.commercial-registry {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-color);
+    margin-right: var(--spacing-sm);
+    white-space: nowrap;
+}
+
+.commercial-registry i {
+    color: var(--primary-color);
+    font-size: 0.875rem;
+}
+
+.cr-label {
+    font-weight: 400;
+    color: var(--text-color);
+}
+
+.cr-number {
+    font-weight: 400;
+    color: var(--text-color);
+    direction: ltr;
+    display: inline-block;
+}
+
+@media (max-width: 768px) {
+    .commercial-registry {
+        font-size: 0.65rem;
+        margin-right: var(--spacing-xs);
+    }
+    
+    .commercial-registry i {
+        font-size: 0.75rem;
+    }
+}
+
 .nav-menu {
     display: flex;
     list-style: none;
