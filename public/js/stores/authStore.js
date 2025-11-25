@@ -96,8 +96,7 @@ class AuthStore {
         country, 
         account_type,
         organization_name,
-        organization_type,
-        commercial_registration_number
+        organization_type
       } = userData;
 
       // التحقق من الحقول المطلوبة
@@ -121,7 +120,6 @@ class AuthStore {
       } else if (account_type === 'أعمال') {
         metadata.organization_name = organization_name || null;
         metadata.organization_type = organization_type || null;
-        metadata.commercial_registration_number = commercial_registration_number || null;
       }
       
       const { data: authData, error: authError } = await supabase.auth.signUp({

@@ -24,7 +24,7 @@ let historyTimeline;
 let researcherAvatar, researcherName;
 let applicantAvatar, applicantUsername, applicantEmail, applicantPhone, applicantNationalId, applicantUserId;
 let applicantHeaderLabel, applicantIndividualFields, applicantOrganizationFields;
-let applicantOrganizationName, applicantOrganizationType, applicantCommercialRegistration;
+let applicantOrganizationName, applicantOrganizationType;
 let applicantEmailOrg, applicantPhoneOrg, applicantUserIdOrg;
 
 // Initialize
@@ -95,7 +95,6 @@ function initElements() {
     applicantOrganizationFields = document.getElementById('applicant-organization-fields');
     applicantOrganizationName = document.getElementById('applicant-organization-name');
     applicantOrganizationType = document.getElementById('applicant-organization-type');
-    applicantCommercialRegistration = document.getElementById('applicant-commercial-registration');
     applicantEmailOrg = document.getElementById('applicant-email-org');
     applicantPhoneOrg = document.getElementById('applicant-phone-org');
     applicantUserIdOrg = document.getElementById('applicant-user-id-org');
@@ -279,8 +278,6 @@ function populateSubmissionData(submission) {
             if (applicantUsername) applicantUsername.textContent = user.organization_name || submission.organization_name || user.username || '-';
             if (applicantOrganizationName) applicantOrganizationName.textContent = user.organization_name || submission.organization_name || '-';
             if (applicantOrganizationType) applicantOrganizationType.textContent = user.organization_type || submission.organization_type || '-';
-            // السجل التجاري من حساب المستخدم أولاً (ديناميكي) - اعتماد بيانات مسجل الدخول
-            if (applicantCommercialRegistration) applicantCommercialRegistration.textContent = user.commercial_registration_number || submission.commercial_registration_number || '-';
             if (applicantEmailOrg) applicantEmailOrg.textContent = user.email || submission.email || '-';
             if (applicantPhoneOrg) applicantPhoneOrg.textContent = user.phone || '-';
             if (applicantUserIdOrg) applicantUserIdOrg.textContent = user.id || '-';
@@ -318,8 +315,6 @@ function populateSubmissionData(submission) {
             if (applicantUsername) applicantUsername.textContent = submission.organization_name || 'غير متوفر';
             if (applicantOrganizationName) applicantOrganizationName.textContent = submission.organization_name || '-';
             if (applicantOrganizationType) applicantOrganizationType.textContent = submission.organization_type || '-';
-            // السجل التجاري من submission (لأن user غير متوفر)
-            if (applicantCommercialRegistration) applicantCommercialRegistration.textContent = submission.commercial_registration_number || '-';
             if (applicantEmailOrg) applicantEmailOrg.textContent = submission.email || '-';
             if (applicantPhoneOrg) applicantPhoneOrg.textContent = '-';
             if (applicantUserIdOrg) applicantUserIdOrg.textContent = '-';
@@ -365,14 +360,12 @@ function populateSubmissionData(submission) {
         
         const orgNameEl = document.getElementById('organization-name');
         const orgTypeEl = document.getElementById('organization-type');
-        const commercialRegEl = document.getElementById('commercial-registration-number');
         const emailOrgEl = document.getElementById('email-org');
         const countryOrgEl = document.getElementById('country-org');
         const createdAtOrgEl = document.getElementById('created-at-org');
         
         if (orgNameEl) orgNameEl.textContent = submission.organization_name || '-';
         if (orgTypeEl) orgTypeEl.textContent = submission.organization_type || '-';
-        if (commercialRegEl) commercialRegEl.textContent = submission.commercial_registration_number || '-';
         if (emailOrgEl) emailOrgEl.textContent = submission.email || '-';
         if (countryOrgEl) countryOrgEl.textContent = submission.country || '-';
         if (createdAtOrgEl) createdAtOrgEl.textContent = formatDate(submission.created_at);

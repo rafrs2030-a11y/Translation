@@ -261,7 +261,6 @@ function selectAccountType(type) {
         // Remove required from business fields
         const orgNameInput = document.getElementById('organization_name');
         const orgTypeSelect = document.getElementById('organization_type');
-        const commercialRegInput = document.getElementById('commercial_registration_number');
         
         if (orgNameInput) {
             orgNameInput.removeAttribute('required');
@@ -271,11 +270,6 @@ function selectAccountType(type) {
         if (orgTypeSelect) {
             orgTypeSelect.removeAttribute('required');
             const label = orgTypeSelect.closest('.form-group')?.querySelector('.form-label');
-            if (label) label.classList.remove('required');
-        }
-        if (commercialRegInput) {
-            commercialRegInput.removeAttribute('required');
-            const label = commercialRegInput.closest('.form-group')?.querySelector('.form-label');
             if (label) label.classList.remove('required');
         }
         
@@ -291,7 +285,6 @@ function selectAccountType(type) {
         // Set required attributes for business fields
         const orgNameInput = document.getElementById('organization_name');
         const orgTypeSelect = document.getElementById('organization_type');
-        const commercialRegInput = document.getElementById('commercial_registration_number');
         
         if (orgNameInput) {
             orgNameInput.setAttribute('required', 'required');
@@ -301,11 +294,6 @@ function selectAccountType(type) {
         if (orgTypeSelect) {
             orgTypeSelect.setAttribute('required', 'required');
             const label = orgTypeSelect.closest('.form-group')?.querySelector('.form-label');
-            if (label) label.classList.add('required');
-        }
-        if (commercialRegInput) {
-            commercialRegInput.setAttribute('required', 'required');
-            const label = commercialRegInput.closest('.form-group')?.querySelector('.form-label');
             if (label) label.classList.add('required');
         }
         
@@ -404,7 +392,6 @@ async function handleSubmit(e) {
     } else if (accountType === 'أعمال') {
         formData.organization_name = document.getElementById('organization_name').value.trim();
         formData.organization_type = document.getElementById('organization_type').value.trim();
-        formData.commercial_registration_number = document.getElementById('commercial_registration_number').value.trim().replace(/\s+/g, '');
     }
     
     // Validate
@@ -435,7 +422,6 @@ async function handleSubmit(e) {
         } else if (formData.account_type === 'أعمال') {
             registerData.organization_name = formData.organization_name;
             registerData.organization_type = formData.organization_type;
-            registerData.commercial_registration_number = formData.commercial_registration_number;
         }
         
         const result = await authStore.register(registerData);
@@ -494,11 +480,6 @@ function validateForm(data) {
         
         if (!data.organization_type) {
             showFieldError('organization_type', 'يرجى اختيار نوع الأعمال');
-            isValid = false;
-        }
-        
-        if (!data.commercial_registration_number || data.commercial_registration_number.length < 3) {
-            showFieldError('commercial_registration_number', 'رقم السجل التجاري مطلوب');
             isValid = false;
         }
     }

@@ -391,7 +391,6 @@ function handleSubmitterTypeChange() {
         // Remove required from organization fields
         const orgNameInput = document.getElementById('organization_name');
         const orgTypeSelect = document.getElementById('organization_type');
-        const commercialRegInput = document.getElementById('commercial_registration_number');
         
         if (orgNameInput) {
             orgNameInput.removeAttribute('required');
@@ -402,11 +401,6 @@ function handleSubmitterTypeChange() {
             orgTypeSelect.removeAttribute('required');
             const orgTypeLabel = orgTypeSelect.closest('.form-group')?.querySelector('.form-label');
             if (orgTypeLabel) orgTypeLabel.classList.remove('required');
-        }
-        if (commercialRegInput) {
-            commercialRegInput.removeAttribute('required');
-            const commercialRegLabel = commercialRegInput.closest('.form-group')?.querySelector('.form-label');
-            if (commercialRegLabel) commercialRegLabel.classList.remove('required');
         }
         
     } else if (submitterType === 'أعمال') {
@@ -443,7 +437,6 @@ function handleSubmitterTypeChange() {
         // Set required attributes for organization fields
         const orgNameInput = document.getElementById('organization_name');
         const orgTypeSelect = document.getElementById('organization_type');
-        const commercialRegInput = document.getElementById('commercial_registration_number');
         
         if (orgNameInput) {
             orgNameInput.setAttribute('required', 'required');
@@ -454,11 +447,6 @@ function handleSubmitterTypeChange() {
             orgTypeSelect.setAttribute('required', 'required');
             const orgTypeLabel = orgTypeSelect.closest('.form-group')?.querySelector('.form-label');
             if (orgTypeLabel) orgTypeLabel.classList.add('required');
-        }
-        if (commercialRegInput) {
-            commercialRegInput.setAttribute('required', 'required');
-            const commercialRegLabel = commercialRegInput.closest('.form-group')?.querySelector('.form-label');
-            if (commercialRegLabel) commercialRegLabel.classList.add('required');
         }
         if (emailOrgInput) {
             emailOrgInput.setAttribute('required', 'required');
@@ -527,7 +515,6 @@ function validateCurrentStep() {
             } else if (submitterType === 'أعمال') {
                 const orgNameInput = document.getElementById('organization_name');
                 const orgTypeSelect = document.getElementById('organization_type');
-                const commercialRegInput = document.getElementById('commercial_registration_number');
                 const emailOrgInput = document.getElementById('email_org');
                 
                 if (!orgNameInput || !orgNameInput.value.trim()) {
@@ -536,10 +523,6 @@ function validateCurrentStep() {
                 }
                 if (!orgTypeSelect || !orgTypeSelect.value) {
                     showFieldError(orgTypeSelect, 'نوع الأعمال مطلوب');
-                    isValid = false;
-                }
-                if (!commercialRegInput || !commercialRegInput.value.trim()) {
-                    showFieldError(commercialRegInput, 'السجل التجاري مطلوب');
                     isValid = false;
                 }
                 if (!emailOrgInput || !emailOrgInput.value.trim()) {
@@ -734,10 +717,6 @@ function updateReviewContent() {
                 <span class="review-value">${formData.organization_type || '-'}</span>
             </div>
             <div class="review-item">
-                <span class="review-label">السجل التجاري:</span>
-                <span class="review-value">${formData.commercial_registration_number || '-'}</span>
-            </div>
-            <div class="review-item">
                 <span class="review-label">البريد الإلكتروني:</span>
                 <span class="review-value">${formData.email || '-'}</span>
             </div>
@@ -855,9 +834,6 @@ async function handleSubmit(e) {
             if (!formData.organization_name || !formData.organization_name.trim()) {
                 throw new Error('اسم الأعمال مطلوب');
             }
-            if (!formData.commercial_registration_number || !formData.commercial_registration_number.trim()) {
-                throw new Error('السجل التجاري مطلوب');
-            }
         }
         
         // Ensure submitter_type is saved before creating submission data
@@ -892,11 +868,9 @@ async function handleSubmit(e) {
             // Organization fields - ensure all required fields are present
             const orgName = formData.organization_name?.trim() || '';
             const orgType = formData.organization_type || '';
-            const commercialReg = formData.commercial_registration_number?.trim() || '';
             
             submissionData.organization_name = orgName;
             submissionData.organization_type = orgType;
-            submissionData.commercial_registration_number = commercialReg;
             
             // For backward compatibility with database schema, also set required fields
             // These are required by the database but we use organization data
@@ -1122,7 +1096,6 @@ async function prefillUserData(user) {
         if (accountType === 'أعمال') {
             const orgNameInput = document.getElementById('organization_name');
             const orgTypeSelect = document.getElementById('organization_type');
-            const commercialRegInput = document.getElementById('commercial_registration_number');
             const emailOrgInput = document.getElementById('email_org');
             
             // Pre-fill organization name
@@ -1135,12 +1108,6 @@ async function prefillUserData(user) {
             if (orgTypeSelect && currentUser.organization_type) {
                 orgTypeSelect.value = currentUser.organization_type;
                 formData.organization_type = currentUser.organization_type;
-            }
-            
-            // Pre-fill commercial registration number
-            if (commercialRegInput && currentUser.commercial_registration_number) {
-                commercialRegInput.value = currentUser.commercial_registration_number;
-                formData.commercial_registration_number = currentUser.commercial_registration_number;
             }
             
             // Pre-fill email for organization
