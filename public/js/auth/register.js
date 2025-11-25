@@ -228,7 +228,7 @@ function selectAccountType(type) {
     const individualFields = document.getElementById('individual-fields');
     const businessFields = document.getElementById('business-fields');
     
-    if (type === 'فرد') {
+    if (type === 'أفراد') {
         // Show individual fields, hide business fields
         if (individualFields) {
             individualFields.style.display = 'block';
@@ -385,7 +385,7 @@ async function handleSubmit(e) {
     };
     
     // Add fields based on account type
-    if (accountType === 'فرد') {
+    if (accountType === 'أفراد') {
         formData.full_name = document.getElementById('full_name').value.trim();
         formData.national_id = document.getElementById('national_id').value.trim().replace(/\s+/g, '');
         formData.gender = document.getElementById('gender').value.trim();
@@ -416,7 +416,7 @@ async function handleSubmit(e) {
         };
         
         // Add fields based on account type
-        if (formData.account_type === 'فرد') {
+        if (formData.account_type === 'أفراد') {
             registerData.national_id = formData.national_id;
             registerData.gender = formData.gender;
         } else if (formData.account_type === 'أعمال') {
@@ -455,7 +455,7 @@ function validateForm(data) {
     let isValid = true;
     
     // Validate based on account type
-    if (data.account_type === 'فرد') {
+    if (data.account_type === 'أفراد') {
         // Validate individual fields
         if (!data.full_name || data.full_name.length < 3) {
             showFieldError('full_name', 'الاسم الكامل مطلوب (3 أحرف على الأقل)');
@@ -499,7 +499,7 @@ function validateForm(data) {
     }
     
     // Validate national ID (only for individuals)
-    if (data.account_type === 'فرد' && data.national_id) {
+    if (data.account_type === 'أفراد' && data.national_id) {
         const idValidation = validateNationalId(data.national_id);
         if (!idValidation.valid) {
             showFieldError('national_id', idValidation.error);

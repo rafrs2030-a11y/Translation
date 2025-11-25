@@ -249,10 +249,10 @@ function populateSubmissionData(submission) {
     // التحقق من نوع الحساب من بيانات المستخدم أولاً (account_type)
     const user = submission.user;
     const userAccountType = user?.account_type;
-    const submitterType = submission.submitter_type || userAccountType || 'فرد';
+    const submitterType = submission.submitter_type || userAccountType || 'أفراد';
     
     // تحديد نوع الحساب: إذا كان حساب المستخدم "أعمال" أو نوع مقدم الطلب "أعمال"
-    const isOrganization = userAccountType === 'أعمال' || submitterType === 'أعمال' || submitterType !== 'فرد';
+    const isOrganization = userAccountType === 'أعمال' || submitterType === 'أعمال' || submitterType !== 'أفراد';
     
     if (user) {
         // Update applicant avatar
@@ -342,7 +342,7 @@ function populateSubmissionData(submission) {
     const individualFields = document.getElementById('individual-info-fields');
     const organizationFields = document.getElementById('organization-info-fields');
     
-    if (submitterType === 'فرد') {
+    if (submitterType === 'أفراد') {
         // Show individual fields
         if (individualFields) individualFields.style.display = 'block';
         if (organizationFields) organizationFields.style.display = 'none';

@@ -365,7 +365,7 @@ function handleSubmitterTypeChange() {
     console.log('Submitter type changed to:', submitterType);
     console.log('Organization fields element:', organizationFields);
     
-    if (submitterType === 'فرد') {
+    if (submitterType === 'أفراد') {
         // Show individual fields
         if (individualFields) {
             individualFields.style.display = 'block';
@@ -511,7 +511,7 @@ function validateCurrentStep() {
         if (submitterTypeSelect && submitterTypeSelect.value) {
             const submitterType = submitterTypeSelect.value;
             
-            if (submitterType === 'فرد') {
+            if (submitterType === 'أفراد') {
                 const fullNameInput = document.getElementById('full_name');
                 const emailInput = document.getElementById('email');
                 if (!fullNameInput || !fullNameInput.value.trim()) {
@@ -558,7 +558,7 @@ function validateCurrentStep() {
 function saveFormData() {
     const inputs = form.querySelectorAll('input, select, textarea');
     const submitterTypeSelect = document.getElementById('submitter_type');
-    const submitterType = submitterTypeSelect?.value || formData.submitter_type || 'فرد';
+    const submitterType = submitterTypeSelect?.value || formData.submitter_type || 'أفراد';
     
     // Always save submitter_type
     if (submitterTypeSelect && submitterTypeSelect.value) {
@@ -577,7 +577,7 @@ function saveFormData() {
                 }
             } else if (input.id === 'email') {
                 // Individual email
-                if (submitterType === 'فرد') {
+                if (submitterType === 'أفراد') {
                     formData.email = input.value;
                 }
             } else {
@@ -650,8 +650,8 @@ function updateReviewContent() {
     const declarationText = document.getElementById('declaration-text');
     
     // Set declaration text and name based on submitter type
-    const submitterType = formData.submitter_type || 'فرد';
-    const isIndividual = submitterType === 'فرد';
+    const submitterType = formData.submitter_type || 'أفراد';
+    const isIndividual = submitterType === 'أفراد';
     
     if (isIndividual) {
         // For individuals: standard declaration
@@ -825,8 +825,8 @@ async function handleSubmit(e) {
             ? (formData.other_category || 'أخرى')
             : formData.category;
         
-        const submitterType = formData.submitter_type || 'فرد';
-        const isIndividual = submitterType === 'فرد';
+        const submitterType = formData.submitter_type || 'أفراد';
+        const isIndividual = submitterType === 'أفراد';
         
         // Validate required fields before submission
         if (isIndividual) {
@@ -849,7 +849,7 @@ async function handleSubmit(e) {
         // Ensure submitter_type is saved before creating submission data
         saveFormData();
         const finalSubmitterType = formData.submitter_type || submitterType;
-        const finalIsIndividual = finalSubmitterType === 'فرد';
+        const finalIsIndividual = finalSubmitterType === 'أفراد';
         
         const submissionData = {
             submitter_type: finalSubmitterType,
@@ -886,7 +886,7 @@ async function handleSubmit(e) {
             // These are required by the database but we use organization data
             submissionData.full_name = orgName; // Use organization name as full_name
             submissionData.gender = 'ذكر'; // Default value for organizations (required field)
-            submissionData.id_number = commercialReg; // Use commercial reg as id_number (required field)
+            submissionData.id_number = 'N/A'; // Placeholder for organizations (id_number is required by database but not applicable to organizations)
         }
         
         // Create submission
@@ -1076,10 +1076,10 @@ async function prefillUserData(user) {
         
         // Set submitter type based on account type automatically
         const submitterTypeSelect = document.getElementById('submitter_type');
-        let submitterType = 'فرد'; // default
+        let submitterType = 'أفراد'; // default
         
-        if (accountType === 'فرد') {
-            submitterType = 'فرد';
+        if (accountType === 'أفراد') {
+            submitterType = 'أفراد';
         } else if (accountType === 'أعمال') {
             submitterType = 'أعمال';
             // Show account owner info for business accounts - call after a short delay to ensure DOM is ready
@@ -1087,8 +1087,8 @@ async function prefillUserData(user) {
                 showAccountOwnerInfo(currentUser);
             }, 150);
         } else {
-            // For 'تجريبي' or unknown, default to 'فرد'
-            submitterType = 'فرد';
+            // For 'تجريبي' or unknown, default to 'أفراد'
+            submitterType = 'أفراد';
         }
         
         if (submitterTypeSelect) {

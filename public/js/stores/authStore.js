@@ -131,7 +131,7 @@ class AuthStore {
       };
       
       // Add fields based on account type
-      if (account_type === 'فرد') {
+      if (account_type === 'أفراد') {
         metadata.national_id = national_id || null;
         metadata.gender = gender || null;
       } else if (account_type === 'أعمال') {
