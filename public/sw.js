@@ -80,6 +80,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
+  // Skip caching for unsupported URL schemes (chrome-extension, data, blob, etc.)
+  const unsupportedSchemes = ['chrome-extension:', 'chrome:', 'moz-extension:', 'data:', 'blob:'];
+  const requestScheme = url.protocol;
+  const isUnsupportedScheme = unsupportedSchemes.some(scheme => requestScheme.startsWith(scheme));
+  
+  if (isUnsupportedScheme) {
+    // For unsupported schemes, just fetch from network without caching
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  
   // For local resources, use network-first strategy to ensure fresh content
   event.respondWith(
     fetch(event.request)
@@ -89,6 +100,9 @@ self.addEventListener('fetch', (event) => {
           const responseToCache = fetchResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
+          }).catch((error) => {
+            // Silently fail if caching is not possible (e.g., unsupported scheme)
+            console.warn('Failed to cache request:', event.request.url, error);
           });
         }
         return fetchResponse;
