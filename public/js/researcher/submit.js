@@ -564,12 +564,18 @@ function validateCurrentStep() {
  */
 function saveFormData() {
     const inputs = form.querySelectorAll('input, select, textarea');
-    const submitterType = document.getElementById('submitter_type')?.value;
+    const submitterTypeSelect = document.getElementById('submitter_type');
+    const submitterType = submitterTypeSelect?.value || formData.submitter_type || 'فرد';
+    
+    // Always save submitter_type
+    if (submitterTypeSelect && submitterTypeSelect.value) {
+        formData.submitter_type = submitterTypeSelect.value;
+    }
     
     inputs.forEach(input => {
         if (input.type === 'checkbox') {
             formData[input.name] = input.checked;
-        } else if (input.type !== 'file') {
+        } else if (input.type !== 'file' && input.type !== 'hidden') {
             // Handle email field - use the appropriate one based on submitter type
             if (input.id === 'email_org') {
                 // Organization email
@@ -584,6 +590,9 @@ function saveFormData() {
             } else {
                 formData[input.name] = input.value;
             }
+        } else if (input.type === 'hidden') {
+            // Save hidden fields too (like submitter_type)
+            formData[input.name] = input.value;
         }
     });
 }
@@ -673,6 +682,27 @@ function updateReviewContent() {
                 <span class="review-value">${submitterType || '-'}</span>
             </div>
     `;
+    
+    // Show account owner info if business account
+    if (!isIndividual && formData.submitter_type === 'أعمال') {
+        basicInfoHTML += `
+            <div class="review-item" style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0;">
+                <span class="review-label" style="font-weight: 600;">معلومات صاحب الحساب (مقدم البحث):</span>
+                <div style="margin-top: 0.5rem;">
+                    <div style="margin: 0.25rem 0;">
+                        <span class="review-label">اسم الأعمال:</span>
+                        <span class="review-value">${formData.organization_name || '-'}</span>
+                    </div>
+                    ${formData.organization_type ? `
+                    <div style="margin: 0.25rem 0;">
+                        <span class="review-label">نوع الأعمال:</span>
+                        <span class="review-value">${formData.organization_type}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
     
     if (isIndividual) {
         basicInfoHTML += `
@@ -830,8 +860,13 @@ async function handleSubmit(e) {
             }
         }
         
+        // Ensure submitter_type is saved before creating submission data
+        saveFormData();
+        const finalSubmitterType = formData.submitter_type || submitterType;
+        const finalIsIndividual = finalSubmitterType === 'فرد';
+        
         const submissionData = {
-            submitter_type: submitterType,
+            submitter_type: finalSubmitterType,
             country: formData.country,
             email: formData.email,
             research_type: formData.research_type,
@@ -848,22 +883,26 @@ async function handleSubmit(e) {
         };
         
         // Add fields based on submitter type
-        if (isIndividual) {
+        if (finalIsIndividual) {
             // Individual fields
-            submissionData.full_name = formData.full_name.trim();
-            submissionData.gender = formData.gender;
-            submissionData.id_number = formData.id_number.trim();
+            submissionData.full_name = formData.full_name?.trim() || '';
+            submissionData.gender = formData.gender || 'ذكر';
+            submissionData.id_number = formData.id_number?.trim() || '';
         } else {
-            // Organization fields
-            submissionData.organization_name = formData.organization_name.trim();
-            submissionData.organization_type = formData.organization_type;
-            submissionData.commercial_registration_number = formData.commercial_registration_number.trim();
+            // Organization fields - ensure all required fields are present
+            const orgName = formData.organization_name?.trim() || '';
+            const orgType = formData.organization_type || '';
+            const commercialReg = formData.commercial_registration_number?.trim() || '';
+            
+            submissionData.organization_name = orgName;
+            submissionData.organization_type = orgType;
+            submissionData.commercial_registration_number = commercialReg;
             
             // For backward compatibility with database schema, also set required fields
             // These are required by the database but we use organization data
-            submissionData.full_name = formData.organization_name.trim();
+            submissionData.full_name = orgName; // Use organization name as full_name
             submissionData.gender = 'ذكر'; // Default value for organizations (required field)
-            submissionData.id_number = formData.commercial_registration_number.trim(); // Use commercial reg as id_number (required field)
+            submissionData.id_number = commercialReg; // Use commercial reg as id_number (required field)
         }
         
         // Create submission
@@ -1059,8 +1098,10 @@ async function prefillUserData(user) {
             submitterType = 'فرد';
         } else if (accountType === 'أعمال') {
             submitterType = 'أعمال';
-            // Show account owner info for business accounts
-            showAccountOwnerInfo(currentUser);
+            // Show account owner info for business accounts - call after a short delay to ensure DOM is ready
+            setTimeout(() => {
+                showAccountOwnerInfo(currentUser);
+            }, 150);
         } else {
             // For 'تجريبي' or unknown, default to 'فرد'
             submitterType = 'فرد';
@@ -1082,20 +1123,30 @@ async function prefillUserData(user) {
             const orgNameInput = document.getElementById('organization_name');
             const orgTypeSelect = document.getElementById('organization_type');
             const commercialRegInput = document.getElementById('commercial_registration_number');
+            const emailOrgInput = document.getElementById('email_org');
             
-            if (orgNameInput && currentUser.organization_name && !orgNameInput.value) {
+            // Pre-fill organization name
+            if (orgNameInput && currentUser.organization_name) {
                 orgNameInput.value = currentUser.organization_name;
                 formData.organization_name = currentUser.organization_name;
             }
             
-            if (orgTypeSelect && currentUser.organization_type && !orgTypeSelect.value) {
+            // Pre-fill organization type
+            if (orgTypeSelect && currentUser.organization_type) {
                 orgTypeSelect.value = currentUser.organization_type;
                 formData.organization_type = currentUser.organization_type;
             }
             
-            if (commercialRegInput && currentUser.commercial_registration_number && !commercialRegInput.value) {
+            // Pre-fill commercial registration number
+            if (commercialRegInput && currentUser.commercial_registration_number) {
                 commercialRegInput.value = currentUser.commercial_registration_number;
                 formData.commercial_registration_number = currentUser.commercial_registration_number;
+            }
+            
+            // Pre-fill email for organization
+            if (emailOrgInput && currentUser.email) {
+                emailOrgInput.value = currentUser.email;
+                formData.email = currentUser.email;
             }
         }
         
@@ -1160,27 +1211,47 @@ function showAccountOwnerInfo(user) {
     const displayOrgNameItem = document.getElementById('display-organization-name-item');
     const displayOrgTypeItem = document.getElementById('display-organization-type-item');
     
-    if (!accountOwnerInfo) return;
+    if (!accountOwnerInfo) {
+        console.warn('account-owner-info element not found');
+        return;
+    }
+    
+    console.log('Showing account owner info for user:', user);
     
     // Show the info box
     accountOwnerInfo.style.display = 'block';
     
-    // Set account type
+    // Set account type - show "أعمال" for business accounts
     if (displayAccountType) {
-        displayAccountType.textContent = user.account_type || 'غير محدد';
+        const accountType = user.account_type || 'غير محدد';
+        displayAccountType.textContent = accountType === 'أعمال' ? 'أعمال' : accountType;
     }
     
     // Set organization info if available
     if (user.account_type === 'أعمال') {
+        // Show organization name
         if (user.organization_name && displayOrgName) {
             displayOrgName.textContent = user.organization_name;
-            if (displayOrgNameItem) displayOrgNameItem.style.display = 'flex';
+            if (displayOrgNameItem) {
+                displayOrgNameItem.style.display = 'flex';
+            }
+        } else if (displayOrgNameItem) {
+            displayOrgNameItem.style.display = 'none';
         }
         
+        // Show organization type
         if (user.organization_type && displayOrgType) {
             displayOrgType.textContent = user.organization_type;
-            if (displayOrgTypeItem) displayOrgTypeItem.style.display = 'flex';
+            if (displayOrgTypeItem) {
+                displayOrgTypeItem.style.display = 'flex';
+            }
+        } else if (displayOrgTypeItem) {
+            displayOrgTypeItem.style.display = 'none';
         }
+    } else {
+        // Hide organization items if not business account
+        if (displayOrgNameItem) displayOrgNameItem.style.display = 'none';
+        if (displayOrgTypeItem) displayOrgTypeItem.style.display = 'none';
     }
 }
 
