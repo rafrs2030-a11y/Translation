@@ -98,10 +98,24 @@ async function handleSubmit(e) {
             // Show success message
             showAlert('تم تسجيل الدخول بنجاح! جاري التحويل...', 'success');
             
-            // Get user data
-            const user = await authStore.getCurrentUser();
+            // Wait for authStore to finish updating (setSession completes)
+            await authStore.waitForInitialization();
             
-            // Redirect based on role
+            // Get user data - try from state first, then from getCurrentUser
+            let user = authStore.getState().user;
+            
+            if (!user) {
+                // If not in state yet, try getCurrentUser
+                user = await authStore.getCurrentUser();
+            }
+            
+            // If still no user, wait a bit more and try again
+            if (!user) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                user = authStore.getState().user || await authStore.getCurrentUser();
+            }
+            
+            // Redirect based on role (default to researcher if role not found)
             setTimeout(() => {
                 if (user?.role === 'admin') {
                     window.location.href = '/pages/admin/dashboard.html';

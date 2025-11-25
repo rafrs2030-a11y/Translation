@@ -56,7 +56,24 @@ class AuthStore {
         .single();
 
       if (error) {
-        this.setState({ error: error.message, loading: false });
+        console.error('Error fetching user data in setSession:', error);
+        // Even if user data fetch fails, we still have a valid session
+        // Use basic user info from session.user as fallback
+        const fallbackUser = {
+          id: session.user.id,
+          email: session.user.email,
+          role: session.user.user_metadata?.role || 'researcher',
+          ...session.user.user_metadata
+        };
+        
+        this.setState({
+          user: fallbackUser,
+          session,
+          isAuthenticated: true,
+          role: fallbackUser.role,
+          loading: false,
+          error: null, // Don't set error here, session is valid
+        });
         return;
       }
 
