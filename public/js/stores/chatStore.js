@@ -16,6 +16,7 @@ class ChatStore {
       loading: false,
       error: null,
       realtimeSubscription: null,
+      conversationSubscription: null,
     };
 
     this.listeners = [];
@@ -52,26 +53,70 @@ class ChatStore {
       this.state.realtimeSubscription.unsubscribe();
     }
 
-    // الاشتراك الجديد
-    const subscription = supabase
-      .channel('chat_messages')
+    // بناء filter حسب دور المستخدم
+    let conversationFilter = '';
+    if (user.role === 'researcher') {
+      conversationFilter = `user_id=eq.${user.id}`;
+    } else if (user.role === 'admin' || user.role === 'super_admin') {
+      conversationFilter = `admin_id=eq.${user.id}`;
+    } else {
+      return; // لا يوجد دور صالح
+    }
+
+    // الاشتراك في المحادثات
+    const conversationsChannel = supabase
+      .channel('chat_conversations_realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'chat_conversations',
+        filter: conversationFilter,
+      }, async (payload) => {
+        console.log('Conversation changed:', payload);
+        // تحديث قائمة المحادثات
+        await this.fetchConversations();
+      })
+      .subscribe();
+
+    // الاشتراك في الرسائل - فقط الرسائل الموجهة للمستخدم
+    const messagesChannel = supabase
+      .channel('chat_messages_realtime')
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'chat_messages',
-      }, (payload) => {
-        this.handleNewMessage(payload.new);
+      }, async (payload) => {
+        const newMessage = payload.new;
+        console.log('New message received:', newMessage);
+        
+        // التحقق من أن الرسالة في محادثة المستخدم
+        const isInUserConversation = this.state.conversations.some(
+          conv => conv.id === newMessage.conversation_id
+        );
+        
+        if (isInUserConversation) {
+          await this.handleNewMessage(newMessage);
+        }
       })
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'chat_messages',
       }, (payload) => {
+        console.log('Message updated:', payload);
         this.handleMessageUpdate(payload.new);
       })
       .subscribe();
 
-    this.setState({ realtimeSubscription: subscription });
+    // دمج الاشتراكات
+    const combinedSubscription = {
+      unsubscribe: () => {
+        conversationsChannel.unsubscribe();
+        messagesChannel.unsubscribe();
+      }
+    };
+
+    this.setState({ realtimeSubscription: combinedSubscription });
   }
 
   /**
@@ -88,18 +133,83 @@ class ChatStore {
    * معالجة رسالة جديدة
    */
   async handleNewMessage(message) {
+    const user = authStore.getState().user;
+    if (!user) return;
+
+    // جلب معلومات المرسل إذا لم تكن موجودة
+    if (!message.sender) {
+      try {
+        const { data: sender } = await supabase
+          .from('users')
+          .select('id, username, email, profile_picture')
+          .eq('id', message.sender_id)
+          .single();
+        
+        if (sender) {
+          message.sender = sender;
+        }
+      } catch (error) {
+        console.error('Error fetching sender:', error);
+      }
+    }
+
     // تحديث الرسائل إذا كانت المحادثة مفتوحة
     if (this.state.currentConversation && message.conversation_id === this.state.currentConversation.id) {
-      this.setState({
-        messages: [...this.state.messages, message],
-      });
+      // التحقق من عدم تكرار الرسالة
+      const messageExists = this.state.messages.some(m => m.id === message.id);
+      if (!messageExists) {
+        this.setState({
+          messages: [...this.state.messages, message],
+        });
+
+        // إذا كانت الرسالة من شخص آخر، وضع علامة مقروء
+        if (message.sender_id !== user.id) {
+          await this.markMessagesAsRead(this.state.currentConversation.id);
+        }
+      }
+    } else {
+      // إذا كانت المحادثة غير مفتوحة، تحديث عدد الرسائل غير المقروءة فقط
+      // (لن نضيف الرسالة للقائمة لأن المحادثة غير مفتوحة)
     }
 
     // تحديث عدد الرسائل غير المقروءة
     await this.updateUnreadCount();
     
-    // تحديث المحادثات
+    // تحديث المحادثات (لتحديث last_message_at)
     await this.fetchConversations();
+
+    // إرسال إشعار للمستخدم إذا كانت الرسالة من شخص آخر
+    if (message.sender_id !== user.id) {
+      this.notifyNewMessage(message);
+    }
+  }
+
+  /**
+   * إرسال إشعار بوجود رسالة جديدة
+   */
+  notifyNewMessage(message) {
+    // إرسال إشعار المتصفح إذا كان متاحاً
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const notification = new Notification('رسالة جديدة', {
+        body: message.message.length > 50 
+          ? message.message.substring(0, 50) + '...' 
+          : message.message,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: `chat-${message.conversation_id}`,
+        requireInteraction: false,
+      });
+
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+    }
+
+    // إرسال حدث مخصص للواجهة
+    window.dispatchEvent(new CustomEvent('chat:new-message', {
+      detail: { message }
+    }));
   }
 
   /**
@@ -383,6 +493,9 @@ class ChatStore {
       // وضع علامة مقروء على الرسائل
       await this.markMessagesAsRead(conversationId);
 
+      // الاشتراك في رسائل هذه المحادثة بشكل خاص
+      this.subscribeToConversationMessages(conversationId);
+
       return { success: true, data: data || [] };
 
     } catch (error) {
@@ -390,6 +503,78 @@ class ChatStore {
       this.setState({ error: error.message, loading: false });
       return { success: false, error: error.message, data: [] };
     }
+  }
+
+  /**
+   * الاشتراك في رسائل محادثة محددة
+   */
+  subscribeToConversationMessages(conversationId) {
+    const user = authStore.getState().user;
+    if (!user) return;
+
+    // إلغاء الاشتراك السابق لهذه المحادثة إن وُجد
+    if (this.state.conversationSubscription) {
+      this.state.conversationSubscription.unsubscribe();
+    }
+
+    // الاشتراك في رسائل هذه المحادثة فقط
+    const subscription = supabase
+      .channel(`chat_messages_${conversationId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+        filter: `conversation_id=eq.${conversationId}`,
+      }, async (payload) => {
+        const newMessage = payload.new;
+        console.log('New message in conversation:', newMessage);
+        
+        // جلب معلومات المرسل
+        if (!newMessage.sender) {
+          try {
+            const { data: sender } = await supabase
+              .from('users')
+              .select('id, username, email, profile_picture')
+              .eq('id', newMessage.sender_id)
+              .single();
+            
+            if (sender) {
+              newMessage.sender = sender;
+            }
+          } catch (error) {
+            console.error('Error fetching sender:', error);
+          }
+        }
+
+        // إضافة الرسالة إذا لم تكن موجودة
+        const messageExists = this.state.messages.some(m => m.id === newMessage.id);
+        if (!messageExists) {
+          this.setState({
+            messages: [...this.state.messages, newMessage],
+          });
+
+          // إذا كانت الرسالة من شخص آخر، وضع علامة مقروء
+          if (newMessage.sender_id !== user.id) {
+            await this.markMessagesAsRead(conversationId);
+          }
+        }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'chat_messages',
+        filter: `conversation_id=eq.${conversationId}`,
+      }, (payload) => {
+        const updatedMessage = payload.new;
+        this.setState({
+          messages: this.state.messages.map(m => 
+            m.id === updatedMessage.id ? updatedMessage : m
+          ),
+        });
+      })
+      .subscribe();
+
+    this.setState({ conversationSubscription: subscription });
   }
 
   /**
@@ -416,17 +601,33 @@ class ChatStore {
           sender_id: user.id,
           message: message,
         }])
-        .select()
+        .select(`
+          *,
+          sender:users!chat_messages_sender_id_fkey(id, username, email, profile_picture)
+        `)
         .single();
 
       if (error) throw error;
 
-      // إضافة الرسالة إلى القائمة
-      this.setState({
-        messages: [...this.state.messages, data],
-      });
+      // إضافة معلومات المرسل
+      if (data && !data.sender) {
+        data.sender = {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          profile_picture: user.profile_picture
+        };
+      }
 
-      // تحديث المحادثات
+      // إضافة الرسالة إلى القائمة (Realtime سيتولى الباقي لكن نضيفها فوراً للUX)
+      const messageExists = this.state.messages.some(m => m.id === data.id);
+      if (!messageExists) {
+        this.setState({
+          messages: [...this.state.messages, data],
+        });
+      }
+
+      // تحديث المحادثات (سيتم تحديثها تلقائياً عبر Realtime أيضاً)
       await this.fetchConversations();
 
       return { success: true, message: data };
@@ -528,6 +729,12 @@ class ChatStore {
    */
   cleanup() {
     this.unsubscribeFromRealtime();
+    
+    // إلغاء الاشتراك في محادثة محددة
+    if (this.state.conversationSubscription) {
+      this.state.conversationSubscription.unsubscribe();
+    }
+    
     this.setState({
       conversations: [],
       currentConversation: null,
@@ -535,6 +742,7 @@ class ChatStore {
       unreadCount: 0,
       loading: false,
       error: null,
+      conversationSubscription: null,
     });
   }
 

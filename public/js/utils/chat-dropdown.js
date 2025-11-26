@@ -25,6 +25,9 @@ export async function initChatDropdown() {
     
     if (!chatBtn) return;
     
+    // Request notification permission
+    requestNotificationPermission();
+    
     // Initialize chat store
     await chatStore.initialize();
     
@@ -34,6 +37,9 @@ export async function initChatDropdown() {
     // Setup event listeners
     setupEventListeners();
     
+    // Setup realtime event listeners
+    setupRealtimeListeners();
+    
     // Load initial badge count
     const user = authStore.getState().user;
     if (user) {
@@ -41,6 +47,47 @@ export async function initChatDropdown() {
     }
     
     isInitialized = true;
+}
+
+/**
+ * Request notification permission
+ */
+function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+            console.log('Notification permission:', permission);
+        });
+    }
+}
+
+/**
+ * Setup realtime event listeners
+ */
+function setupRealtimeListeners() {
+    // Listen for new chat messages
+    window.addEventListener('chat:new-message', async (event) => {
+        const { message } = event.detail;
+        
+        // تحديث العداد
+        await chatStore.updateUnreadCount();
+        
+        // تحديث قائمة المحادثات إذا كانت مفتوحة
+        if (chatDropdown && chatDropdown.style.display !== 'none') {
+            await loadConversations();
+        }
+        
+        // تحديث الرسائل في نافذة الدردشة إذا كانت مفتوحة
+        const chatWindow = document.getElementById('chat-window');
+        if (chatWindow) {
+            const currentConversation = chatStore.getState().currentConversation;
+            if (currentConversation && message.conversation_id === currentConversation.id) {
+                // الرسالة ستظهر تلقائياً عبر Realtime
+                // لكن نحدث الواجهة للتأكد
+                const messages = chatStore.getState().messages;
+                updateMessages(messages);
+            }
+        }
+    });
 }
 
 /**
@@ -138,6 +185,16 @@ function openDropdown() {
     }
     
     chatDropdown.style.display = 'block';
+    chatDropdown.style.opacity = '0';
+    chatDropdown.style.transform = 'translateY(-10px)';
+    
+    // Trigger animation
+    requestAnimationFrame(() => {
+        chatDropdown.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        chatDropdown.style.opacity = '1';
+        chatDropdown.style.transform = 'translateY(0)';
+    });
+    
     loadConversations();
 }
 
@@ -146,7 +203,14 @@ function openDropdown() {
  */
 function closeDropdown() {
     if (!chatDropdown) return;
-    chatDropdown.style.display = 'none';
+    
+    chatDropdown.style.transition = 'all 0.2s ease';
+    chatDropdown.style.opacity = '0';
+    chatDropdown.style.transform = 'translateY(-10px)';
+    
+    setTimeout(() => {
+        chatDropdown.style.display = 'none';
+    }, 200);
 }
 
 /**
@@ -458,10 +522,18 @@ function createChatWindow(conversation) {
         // Setup chat window listeners
         setupChatWindowListeners();
         
-        // Scroll to bottom
+        // Auto-focus input
+        const messageInput = document.getElementById('chat-message-input');
+        if (messageInput) {
+            setTimeout(() => {
+                messageInput.focus();
+            }, 200);
+        }
+        
+        // Scroll to bottom with animation
         setTimeout(() => {
             scrollToBottom();
-        }, 100);
+        }, 150);
         
         // Subscribe to new messages
         chatStore.subscribe((state) => {
@@ -484,7 +556,15 @@ function setupChatWindowListeners() {
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
             const chatWindow = document.getElementById('chat-window');
-            if (chatWindow) chatWindow.remove();
+            if (chatWindow) {
+                chatWindow.style.transition = 'all 0.3s ease';
+                chatWindow.style.opacity = '0';
+                chatWindow.style.transform = 'translateY(20px) scale(0.95)';
+                
+                setTimeout(() => {
+                    chatWindow.remove();
+                }, 300);
+            }
         });
     }
     
@@ -497,21 +577,55 @@ function setupChatWindowListeners() {
             const message = messageInput.value.trim();
             if (!message) return;
             
-            messageInput.value = '';
-            const result = await chatStore.sendMessage(message);
+            // Disable input while sending
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            sendBtn.style.opacity = '0.6';
             
-            if (result.success) {
-                scrollToBottom();
-            } else {
-                alert(result.error || 'فشل إرسال الرسالة');
+            // Clear input immediately for better UX
+            messageInput.value = '';
+            
+            try {
+                const result = await chatStore.sendMessage(message);
+                
+                if (result.success) {
+                    // Scroll to bottom after a short delay to allow message to render
+                    setTimeout(() => {
+                        scrollToBottom();
+                    }, 100);
+                } else {
+                    // Restore message if sending failed
+                    messageInput.value = message;
+                    alert(result.error || 'فشل إرسال الرسالة');
+                }
+            } catch (error) {
+                // Restore message if error occurred
+                messageInput.value = message;
+                alert('حدث خطأ أثناء إرسال الرسالة');
+            } finally {
+                // Re-enable input
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                sendBtn.style.opacity = '1';
+                messageInput.focus();
             }
         };
         
         sendBtn.addEventListener('click', sendMessage);
         messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 sendMessage();
             }
+        });
+        
+        // Add input animation on focus
+        messageInput.addEventListener('focus', () => {
+            messageInput.style.transform = 'translateY(-1px)';
+        });
+        
+        messageInput.addEventListener('blur', () => {
+            messageInput.style.transform = 'translateY(0)';
         });
     }
 }
@@ -521,15 +635,38 @@ function setupChatWindowListeners() {
  */
 function renderMessages(messages) {
     if (!messages || messages.length === 0) {
-        return '<div class="chat-empty">لا توجد رسائل بعد</div>';
+        return `
+            <div class="chat-empty" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; padding: 2rem;">
+                <i class="fas fa-comments" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                <p style="color: var(--text-secondary); font-size: 0.9375rem;">لا توجد رسائل بعد</p>
+                <p style="color: var(--text-tertiary); font-size: 0.8125rem; margin-top: 0.5rem;">ابدأ المحادثة بإرسال رسالة</p>
+            </div>
+        `;
     }
     
     const user = authStore.getState().user;
+    let lastSenderId = null;
+    let lastDate = null;
     
-    return messages.map(message => {
+    return messages.map((message, index) => {
         const isOwn = message.sender_id === user.id;
+        const messageDate = new Date(message.created_at);
+        const showDateSeparator = !lastDate || 
+            messageDate.toDateString() !== new Date(lastDate).toDateString();
+        
+        const showAvatar = !isOwn && (lastSenderId !== message.sender_id || index === 0);
+        lastSenderId = message.sender_id;
+        lastDate = message.created_at;
+        
         return `
-            <div class="chat-message ${isOwn ? 'own' : 'other'}">
+            ${showDateSeparator ? `
+                <div style="text-align: center; margin: 1rem 0; position: relative;">
+                    <span style="background: var(--chat-bg-secondary); padding: 0.375rem 0.75rem; border-radius: 12px; font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;">
+                        ${formatDateSeparator(message.created_at)}
+                    </span>
+                </div>
+            ` : ''}
+            <div class="chat-message ${isOwn ? 'own' : 'other'}" style="animation-delay: ${index * 0.05}s;">
                 <div class="chat-message-content">
                     <p>${escapeHtml(message.message)}</p>
                     <span class="chat-message-time">${formatRelativeTime(message.created_at)}</span>
@@ -540,23 +677,70 @@ function renderMessages(messages) {
 }
 
 /**
+ * Format date separator
+ */
+function formatDateSeparator(dateString) {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+        return 'اليوم';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+        return 'أمس';
+    } else {
+        return date.toLocaleDateString('ar-SA', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+    }
+}
+
+/**
  * Update messages in chat window
  */
 function updateMessages(messages) {
     const messagesContainer = document.getElementById('chat-window-messages');
     if (messagesContainer) {
+        const wasAtBottom = isScrolledToBottom(messagesContainer);
+        const currentScrollTop = messagesContainer.scrollTop;
+        const currentScrollHeight = messagesContainer.scrollHeight;
+        
         messagesContainer.innerHTML = renderMessages(messages);
-        scrollToBottom();
+        
+        // إذا كان المستخدم في الأسفل، التمرير للأسفل
+        // وإلا الحفاظ على موضع التمرير
+        if (wasAtBottom) {
+            scrollToBottom();
+        } else {
+            // الحفاظ على موضع التمرير النسبي
+            const newScrollHeight = messagesContainer.scrollHeight;
+            const heightDifference = newScrollHeight - currentScrollHeight;
+            messagesContainer.scrollTop = currentScrollTop + heightDifference;
+        }
     }
 }
 
 /**
- * Scroll to bottom
+ * Check if scrolled to bottom
+ */
+function isScrolledToBottom(element) {
+    const threshold = 100; // pixels from bottom
+    return element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
+}
+
+/**
+ * Scroll to bottom with smooth animation
  */
 function scrollToBottom() {
     const messagesContainer = document.getElementById('chat-window-messages');
     if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        messagesContainer.scrollTo({
+            top: messagesContainer.scrollHeight,
+            behavior: 'smooth'
+        });
     }
 }
 
@@ -600,14 +784,29 @@ function renderError() {
  * Update badge count
  */
 function handleStoreUpdate(state) {
-    // Update badge
+    // Update badge with animation
     if (chatBadge) {
         const unreadCount = state.unreadCount || 0;
         if (unreadCount > 0) {
-            chatBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-            chatBadge.style.display = '';
+            const newCount = unreadCount > 99 ? '99+' : unreadCount;
+            
+            // Animate badge if count changed
+            if (chatBadge.textContent !== String(newCount)) {
+                chatBadge.style.transform = 'scale(0)';
+                setTimeout(() => {
+                    chatBadge.textContent = newCount;
+                    chatBadge.style.display = '';
+                    chatBadge.style.transform = 'scale(1)';
+                    chatBadge.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                }, 150);
+            } else {
+                chatBadge.style.display = '';
+            }
         } else {
-            chatBadge.style.display = 'none';
+            chatBadge.style.transform = 'scale(0)';
+            setTimeout(() => {
+                chatBadge.style.display = 'none';
+            }, 200);
         }
     }
 }
