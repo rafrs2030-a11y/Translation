@@ -25,8 +25,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         const user = await requireResearcher();
         if (!user) return;
         
+        console.log('🔔 Initializing notifications for researcher:', user.id);
+        
         // Initialize notifications store first
         await notificationsStore.initialize();
+        
+        // Subscribe to store updates
+        notificationsStore.subscribe((state) => {
+            console.log('📬 Notifications store updated:', {
+                total: state.notifications.length,
+                unread: state.unreadCount
+            });
+            
+            // تحديث العداد في الواجهة
+            updateBadgeCount(state.unreadCount);
+            
+            // إعادة تحميل الإشعارات إذا كانت الصفحة مفتوحة
+            if (notificationsContainer) {
+                loadNotifications();
+            }
+        });
+        
+        // Listen for new notifications via events
+        window.addEventListener('notification:new', (event) => {
+            console.log('📬 New notification event received:', event.detail);
+            const { notification } = event.detail;
+            
+            // تحديث الواجهة
+            if (notificationsContainer) {
+                loadNotifications();
+            }
+            
+            // تحديث العداد
+            updateBadgeCount(notificationsStore.getState().unreadCount);
+        });
+        
+        // Listen for chat message notifications
+        window.addEventListener('notification:chat-message', (event) => {
+            console.log('💬 Chat message notification received:', event.detail);
+            // تحديث الواجهة
+            if (notificationsContainer) {
+                loadNotifications();
+            }
+        });
         
         initElements();
         initEventListeners();
@@ -409,17 +450,43 @@ function updateLoadMoreButton(hasMore) {
  * Subscribe to realtime updates
  */
 function subscribeToRealtime() {
-    notificationsStore.subscribeToNotifications((notification) => {
-        // Show toast notification
-        showToast(notification.message);
+    // الاشتراك في تحديثات notificationsStore
+    notificationsStore.subscribe((state) => {
+        console.log('📬 Notifications store state updated:', {
+            total: state.notifications.length,
+            unread: state.unreadCount
+        });
         
-        // Reload notifications if on the current filter
-        if (currentFilter === 'all' || 
-            currentFilter === notification.type || 
-            (currentFilter === 'unread' && !notification.is_read)) {
+        // تحديث العداد
+        updateBadgeCount(state.unreadCount);
+        
+        // إعادة تحميل الإشعارات إذا كانت الصفحة مفتوحة
+        if (notificationsContainer) {
             loadNotifications();
         }
     });
+}
+
+/**
+ * Update badge count
+ */
+function updateBadgeCount(count) {
+    // Update sidebar badge
+    const sidebarBadge = document.getElementById('sidebar-notification-count');
+    if (sidebarBadge) {
+        sidebarBadge.textContent = count || 0;
+        sidebarBadge.style.display = (count && count > 0) ? 'inline' : 'none';
+    }
+    
+    // Update counters if available
+    if (counters.unread) {
+        counters.unread.textContent = count || 0;
+    }
+    
+    // Update badge manager
+    if (badgeManager) {
+        badgeManager.updateNotificationCount(count || 0);
+    }
 }
 
 /**

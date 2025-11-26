@@ -34,9 +34,11 @@ class NotificationsStore {
     try {
       const user = authStore.getState().user;
       if (!user) {
-        // إذا لم يكن المستخدم مسجل دخول، لا تفعل شيئاً
+        console.warn('Cannot initialize notifications: user not found');
         return;
       }
+
+      console.log(`Initializing notifications for user: ${user.id} (${user.role})`);
 
       // جلب الإشعارات الأولية
       await this.fetchNotifications();
@@ -46,11 +48,21 @@ class NotificationsStore {
 
       // الاشتراك في الإشعارات الفورية
       this.subscribeToRealtime();
+
+      // إضافة مستمع للتأكد من أن الاشتراك يعمل
+      setTimeout(() => {
+        if (this.state.realtimeSubscription) {
+          const status = this.state.realtimeSubscription.state;
+          console.log('Notifications subscription state:', status);
+        }
+      }, 2000);
+
     } catch (error) {
-      // تجاهل الأخطاء أثناء التهيئة إذا لم يكن المستخدم مسجل دخول
-      if (error.message && !error.message.includes('غير مسجل الدخول')) {
-        console.error('Error initializing notifications:', error);
-      }
+      console.error('Error initializing notifications:', error);
+      // إعادة المحاولة بعد ثانية
+      setTimeout(() => {
+        this.initialize();
+      }, 1000);
     }
   }
 
@@ -59,27 +71,72 @@ class NotificationsStore {
    */
   subscribeToRealtime() {
     const user = authStore.getState().user;
-    if (!user) return;
+    if (!user) {
+      console.warn('Cannot subscribe to notifications: user not found');
+      return;
+    }
 
     // إلغاء الاشتراك السابق إن وُجد
     if (this.state.realtimeSubscription) {
+      console.log('Unsubscribing from previous notifications subscription');
       this.state.realtimeSubscription.unsubscribe();
     }
 
-    // الاشتراك الجديد
+    console.log(`Subscribing to notifications for user: ${user.id} (${user.role})`);
+
+    // الاشتراك الجديد مع معالجة أفضل للأخطاء
+    const channelName = `notifications_${user.id}_${Date.now()}`;
     const subscription = supabase
-      .channel('notifications')
+      .channel(channelName)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'notifications',
         filter: `user_id=eq.${user.id}`,
       }, (payload) => {
+        console.log('📬 New notification received via Realtime:', payload);
         this.handleNewNotification(payload.new);
       })
-      .subscribe();
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`,
+      }, (payload) => {
+        console.log('📬 Notification updated via Realtime:', payload);
+        this.handleNotificationUpdate(payload.new);
+      })
+      .subscribe((status) => {
+        console.log('📡 Notifications subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to notifications Realtime');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Error subscribing to notifications Realtime');
+        } else if (status === 'TIMED_OUT') {
+          console.warn('⏱️ Notifications subscription timed out, retrying...');
+          // إعادة المحاولة بعد ثانية
+          setTimeout(() => {
+            this.subscribeToRealtime();
+          }, 1000);
+        } else if (status === 'CLOSED') {
+          console.warn('🔌 Notifications subscription closed');
+        }
+      });
 
     this.setState({ realtimeSubscription: subscription });
+  }
+
+  /**
+   * معالجة تحديث إشعار
+   */
+  handleNotificationUpdate(notification) {
+    this.setState({
+      notifications: this.state.notifications.map(n =>
+        n.id === notification.id ? notification : n
+      ),
+      // تحديث العداد إذا تغيرت حالة القراءة
+      unreadCount: this.state.notifications.filter(n => !n.read_at).length,
+    });
   }
 
   /**
@@ -96,18 +153,24 @@ class NotificationsStore {
    * معالجة إشعار جديد
    */
   handleNewNotification(notification) {
+    console.log('🔔 Handling new notification:', notification);
+    
     // التحقق من أن الإشعار ليس مكرراً
     const isDuplicate = this.state.notifications.some(n => n.id === notification.id);
     if (isDuplicate) {
-      console.log('Duplicate notification ignored:', notification.id);
+      console.log('⚠️ Duplicate notification ignored:', notification.id);
       return;
     }
 
     // إضافة إلى القائمة
+    const newUnreadCount = notification.read_at ? this.state.unreadCount : this.state.unreadCount + 1;
+    
     this.setState({
       notifications: [notification, ...this.state.notifications],
-      unreadCount: this.state.unreadCount + 1,
+      unreadCount: newUnreadCount,
     });
+
+    console.log(`✅ Notification added. Total: ${this.state.notifications.length + 1}, Unread: ${newUnreadCount}`);
 
     // عرض إشعار في المتصفح
     if (this.state.preferences.in_app_enabled) {
@@ -119,10 +182,16 @@ class NotificationsStore {
 
     // إذا كان إشعار محادثة، إرسال حدث مخصص
     if (notification.payload && notification.payload.is_chat_message) {
+      console.log('💬 Chat message notification detected');
       window.dispatchEvent(new CustomEvent('notification:chat-message', {
         detail: { notification }
       }));
     }
+
+    // إرسال حدث عام للإشعارات الجديدة
+    window.dispatchEvent(new CustomEvent('notification:new', {
+      detail: { notification }
+    }));
   }
 
   /**
