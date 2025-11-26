@@ -1,5 +1,5 @@
 // Service Worker for PWA
-const CACHE_NAME = 'arab-research-platform-v3';
+const CACHE_NAME = 'arab-research-platform-v4';
 const urlsToCache = [
   '/',
   '/index.html',
