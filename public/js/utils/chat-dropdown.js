@@ -273,11 +273,15 @@ function renderConversations(conversations) {
             <div class="chat-conversation-item ${hasUnread ? 'has-unread' : ''}" data-id="${conversation.id}">
                 <div class="chat-conversation-avatar" data-user-id="${otherUser?.id}">
                     ${otherUser?.profile_picture 
-                        ? `<img src="${escapeHtml(otherUser.profile_picture)}" alt="الصورة الشخصية" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                           <div style="display: none; width: 40px; height: 40px; border-radius: 50%; background: var(--chat-gradient); color: white; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                        ? `<img src="${escapeHtml(otherUser.profile_picture)}" 
+                                alt="${escapeHtml(otherUser?.username || otherUser?.email || 'مستخدم')}" 
+                                class="chat-avatar-img"
+                                loading="lazy"
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                           <div class="chat-avatar-fallback" style="display: none;">
                                ${escapeHtml((otherUser?.username || otherUser?.email || 'م')[0].toUpperCase())}
                            </div>`
-                        : `<div style="width: 40px; height: 40px; border-radius: 50%; background: var(--chat-gradient); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                        : `<div class="chat-avatar-fallback">
                                ${escapeHtml((otherUser?.username || otherUser?.email || 'م')[0].toUpperCase())}
                            </div>`
                     }
@@ -340,11 +344,15 @@ async function showUserSelection() {
                         <div class="chat-user-selection-item" data-user-id="${user.id}" data-username="${escapeHtml((user.username || '').toLowerCase())}" data-email="${escapeHtml((user.email || '').toLowerCase())}">
                             <div class="chat-user-selection-avatar">
                                 ${user.profile_picture 
-                                    ? `<img src="${escapeHtml(user.profile_picture)}" alt="الصورة الشخصية" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                       <div style="display: none; width: 40px; height: 40px; border-radius: 50%; background: var(--chat-gradient); color: white; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                                    ? `<img src="${escapeHtml(user.profile_picture)}" 
+                                            alt="${escapeHtml(user.username || user.email || 'مستخدم')}" 
+                                            class="chat-avatar-img"
+                                            loading="lazy"
+                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                       <div class="chat-avatar-fallback" style="display: none;">
                                            ${escapeHtml((user.username || user.email || 'م')[0].toUpperCase())}
                                        </div>`
-                                    : `<div style="width: 40px; height: 40px; border-radius: 50%; background: var(--chat-gradient); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                                    : `<div class="chat-avatar-fallback">
                                            ${escapeHtml((user.username || user.email || 'م')[0].toUpperCase())}
                                        </div>`
                                 }
@@ -506,11 +514,15 @@ function createChatWindow(conversation) {
                     <div class="chat-window-user">
                         <div class="chat-window-avatar">
                             ${otherUser?.profile_picture 
-                                ? `<img src="${escapeHtml(otherUser.profile_picture)}" alt="الصورة الشخصية" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                   <div style="display: none; width: 40px; height: 40px; border-radius: 50%; background: var(--chat-gradient); color: white; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                                ? `<img src="${escapeHtml(otherUser.profile_picture)}" 
+                                        alt="${escapeHtml(otherUser?.username || otherUser?.email || 'مستخدم')}" 
+                                        class="chat-avatar-img"
+                                        loading="lazy"
+                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                   <div class="chat-avatar-fallback" style="display: none;">
                                        ${escapeHtml((otherUser?.username || otherUser?.email || 'م')[0].toUpperCase())}
                                    </div>`
-                                : `<div style="width: 40px; height: 40px; border-radius: 50%; background: var(--chat-gradient); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                                : `<div class="chat-avatar-fallback">
                                        ${escapeHtml((otherUser?.username || otherUser?.email || 'م')[0].toUpperCase())}
                                    </div>`
                             }
@@ -688,6 +700,9 @@ function renderMessages(messages) {
             ? (isRead ? '<i class="fas fa-check-double chat-message-status-icon"></i>' : '<i class="fas fa-check chat-message-status-icon"></i>')
             : (isRead ? '' : '<span class="chat-message-status-unread-dot"></span>');
         
+        const sender = message.sender || {};
+        const senderInitials = (sender.username || sender.email || 'م')[0].toUpperCase();
+        
         return `
             ${showDateSeparator ? `
                 <div style="text-align: center; margin: 1rem 0; position: relative;">
@@ -697,7 +712,27 @@ function renderMessages(messages) {
                 </div>
             ` : ''}
             <div class="chat-message ${isOwn ? 'own' : 'other'}" style="animation-delay: ${index * 0.05}s;" data-message-id="${message.id}" data-is-read="${isRead}">
+                ${!isOwn && showAvatar ? `
+                    <div class="chat-message-avatar">
+                        ${sender.profile_picture 
+                            ? `<img src="${escapeHtml(sender.profile_picture)}" 
+                                    alt="${escapeHtml(sender.username || sender.email || 'مستخدم')}" 
+                                    class="chat-message-avatar-img"
+                                    loading="lazy"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                 <div class="chat-message-avatar-fallback" style="display: none;">
+                                     ${escapeHtml(senderInitials)}
+                                 </div>`
+                            : `<div class="chat-message-avatar-fallback">
+                                 ${escapeHtml(senderInitials)}
+                               </div>`
+                        }
+                    </div>
+                ` : !isOwn ? '<div class="chat-message-avatar-spacer"></div>' : ''}
                 <div class="chat-message-content">
+                    ${!isOwn && showAvatar ? `
+                        <div class="chat-message-sender-name">${escapeHtml(sender.username || sender.email || 'مستخدم')}</div>
+                    ` : ''}
                     <p>${escapeHtml(message.message)}</p>
                     <div style="display: flex; align-items: center; justify-content: ${isOwn ? 'flex-end' : 'flex-start'}; gap: 0.5rem; margin-top: 0.375rem;">
                         <span class="chat-message-time">${formatRelativeTime(message.created_at)}</span>
