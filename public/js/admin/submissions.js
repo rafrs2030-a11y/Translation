@@ -30,6 +30,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const user = await requireAdmin();
     if (!user) return;
     
+    // مسح الكاش القديم أولاً
+    const { clearAdminCache } = await import('../utils/admin-cache-clear.js');
+    await clearAdminCache();
+    
     initElements();
     initEventListeners();
     await loadSubmissions();

@@ -25,12 +25,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const user = await requireAdmin();
     if (!user) return;
     
+    // مسح الكاش القديم أولاً
+    const { clearAdminCache } = await import('../utils/admin-cache-clear.js');
+    await clearAdminCache();
+    
     initElements();
     initEventListeners();
     await loadDashboardData();
     await initChatDropdown();
     await badgeManager.initialize();
 });
+<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
+read_lints
 
 /**
  * Initialize DOM elements

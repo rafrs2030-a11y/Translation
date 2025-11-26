@@ -31,6 +31,10 @@ let applicantEmailOrg, applicantPhoneOrg, applicantUserIdOrg;
 document.addEventListener('DOMContentLoaded', async () => {
     if (!await checkAuth()) return;
     
+    // مسح الكاش القديم أولاً
+    const { clearAdminCache } = await import('../utils/admin-cache-clear.js');
+    await clearAdminCache();
+    
     initElements();
     initEventListeners();
     await loadSubmissionDetails();
