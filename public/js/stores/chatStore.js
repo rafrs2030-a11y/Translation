@@ -30,7 +30,7 @@ class ChatStore {
       const user = authStore.getState().user;
       if (!user) return;
 
-      // مسح الكاش القديم أولاً
+      // مسح الكاش القديم أولاً (يشمل CSS)
       await this.clearCache();
 
       // جلب المحادثات
@@ -1034,6 +1034,9 @@ class ChatStore {
         }
       }
       
+      // مسح كاش CSS وإعادة تحميل ملفات CSS
+      await this.reloadChatCSS();
+      
       // تقرير النتائج
       if (clearedCount > 0) {
         console.log(`✅ تم مسح ${clearedCount} عنصر من كاش المحادثات:`);
@@ -1058,6 +1061,149 @@ class ChatStore {
         success: false,
         error: error.message
       };
+    }
+  }
+
+  /**
+   * إعادة تحميل ملفات CSS للدردشة لمسح الكاش القديم
+   */
+  async reloadChatCSS() {
+    try {
+      console.log('🔄 بدء إعادة تحميل ملفات CSS للدردشة...');
+      
+      // قائمة ملفات CSS المتعلقة بالدردشة
+      const cssFiles = [
+        '/css/chat.css',
+        '/css/dashboard.css',
+        '/css/main.css'
+      ];
+      
+      // مسح كاش CSS من Service Worker
+      if ('caches' in window) {
+        try {
+          const cacheNames = await caches.keys();
+          const cssCacheNames = cacheNames.filter(name => 
+            /css|style|chat|dashboard/i.test(name)
+          );
+          
+          await Promise.all(
+            cssCacheNames.map(async (cacheName) => {
+              try {
+                const cache = await caches.open(cacheName);
+                const requests = await cache.keys();
+                
+                // مسح جميع ملفات CSS من الكاش
+                await Promise.all(
+                  requests
+                    .filter(request => cssFiles.some(cssFile => request.url.includes(cssFile)))
+                    .map(request => cache.delete(request))
+                );
+                
+                console.log(`🗑️ تم مسح كاش CSS من: ${cacheName}`);
+              } catch (err) {
+                console.warn(`⚠️ خطأ في مسح كاش CSS من: ${cacheName}`, err);
+              }
+            })
+          );
+        } catch (err) {
+          console.warn('⚠️ خطأ في الوصول إلى Service Worker caches:', err);
+        }
+      }
+      
+      // إعادة تحميل ملفات CSS ديناميكياً
+      const timestamp = Date.now();
+      const styleSheets = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+      let reloadedCount = 0;
+      
+      styleSheets.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && cssFiles.some(cssFile => href.includes(cssFile))) {
+          try {
+            // إنشاء رابط جديد
+            const newLink = document.createElement('link');
+            newLink.rel = 'stylesheet';
+            newLink.type = 'text/css';
+            
+            // إضافة timestamp جديد لإجبار المتصفح على تحميل النسخة الجديدة
+            try {
+              const url = new URL(href, window.location.origin);
+              url.searchParams.set('v', timestamp);
+              newLink.href = url.toString();
+            } catch (urlError) {
+              // إذا فشل إنشاء URL، استخدم href مباشرة مع timestamp
+              const separator = href.includes('?') ? '&' : '?';
+              newLink.href = `${href}${separator}v=${timestamp}`;
+            }
+            
+            // إضافة event listeners
+            newLink.onload = () => {
+              reloadedCount++;
+              const fileName = href.split('/').pop() || href;
+              console.log(`✅ تم تحميل CSS جديد: ${fileName}`);
+              
+              // إزالة الملف القديم بعد تحميل الجديد
+              setTimeout(() => {
+                try {
+                  if (link.parentNode) {
+                    link.parentNode.removeChild(link);
+                  }
+                } catch (removeError) {
+                  console.warn('⚠️ خطأ في إزالة CSS القديم:', removeError);
+                }
+              }, 100);
+            };
+            
+            newLink.onerror = () => {
+              const fileName = href.split('/').pop() || href;
+              console.warn(`⚠️ خطأ في تحميل CSS: ${fileName}`);
+            };
+            
+            // إضافة الملف الجديد
+            if (link.parentNode) {
+              link.parentNode.insertBefore(newLink, link.nextSibling);
+              const fileName = href.split('/').pop() || href;
+              console.log(`🔄 إعادة تحميل CSS: ${fileName}`);
+            }
+          } catch (err) {
+            console.warn(`⚠️ خطأ في إعادة تحميل CSS: ${href}`, err);
+          }
+        }
+      });
+      
+      // إجبار المتصفح على إعادة تطبيق الأنماط
+      setTimeout(() => {
+        try {
+          // إعادة تطبيق CSS variables للتأكد من استخدام الألوان الجديدة
+          const root = document.documentElement;
+          root.style.setProperty('--chat-primary', '#3D5A94');
+          root.style.setProperty('--chat-primary-light', '#5176B8');
+          root.style.setProperty('--chat-primary-dark', '#2A4070');
+          root.style.setProperty('--chat-gradient', 'linear-gradient(135deg, #3D5A94 0%, #5176B8 100%)');
+          root.style.setProperty('--chat-gradient-hover', 'linear-gradient(135deg, #5176B8 0%, #3D5A94 100%)');
+          
+          // إجبار إعادة حساب الأنماط
+          const chatElements = document.querySelectorAll('.chat-dropdown, .chat-window, .chat-message');
+          chatElements.forEach(el => {
+            el.style.display = 'none';
+            el.offsetHeight; // Force reflow
+            el.style.display = '';
+          });
+          
+          console.log(`✅ تم إعادة تطبيق الأنماط على ${chatElements.length} عنصر`);
+        } catch (err) {
+          console.warn('⚠️ خطأ في إعادة تطبيق الأنماط:', err);
+        }
+      }, 300);
+      
+      return { 
+        success: true, 
+        message: `تم إعادة تحميل ${reloadedCount} ملف CSS بنجاح`,
+        reloaded: reloadedCount
+      };
+      
+    } catch (error) {
+      console.error('❌ خطأ في إعادة تحميل CSS:', error);
+      return { success: false, error: error.message };
     }
   }
 
