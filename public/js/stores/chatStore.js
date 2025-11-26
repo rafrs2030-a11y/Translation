@@ -31,7 +31,7 @@ class ChatStore {
       if (!user) return;
 
       // مسح الكاش القديم أولاً
-      this.clearCache();
+      await this.clearCache();
 
       // جلب المحادثات
       await this.fetchConversations();
@@ -819,7 +819,7 @@ class ChatStore {
   /**
    * تنظيف (عند تسجيل الخروج)
    */
-  cleanup() {
+  async cleanup() {
     this.unsubscribeFromRealtime();
     
     // إلغاء الاشتراك في محادثة محددة
@@ -828,7 +828,7 @@ class ChatStore {
     }
     
     // مسح الكاش المحلي
-    this.clearCache();
+    await this.clearCache();
     
     this.setState({
       conversations: [],
@@ -842,27 +842,47 @@ class ChatStore {
   }
 
   /**
-   * مسح كاش المحادثات القديم - ديناميكي بالكامل
+   * مسح كاش المحادثات القديم - شامل ومحسّن
    */
-  clearCache() {
+  async clearCache() {
     try {
-      let clearedCount = 0;
+      console.log('🧹 بدء مسح كاش المحادثات...');
       
-      // قائمة بأنماط البحث الديناميكية
+      let clearedCount = 0;
+      const clearedItems = {
+        localStorage: 0,
+        sessionStorage: 0,
+        indexedDB: 0,
+        serviceWorker: 0,
+        supabase: 0
+      };
+      
+      // قائمة بأنماط البحث الشاملة
       const chatPatterns = [
-        /^chat_/i,                    // يبدأ بـ chat_
-        /^supabase\.chat\./i,          // يبدأ بـ supabase.chat.
-        /chat/i,                       // يحتوي على chat
-        /conversation/i,               // يحتوي على conversation
-        /chat_messages/i,              // chat_messages
-        /chat_conversations/i,         // chat_conversations
-        /chat_realtime/i,              // chat_realtime
-        /chat_subscription/i,          // chat_subscription
-        /chat_window/i,                // chat_window
-        /chat_dropdown/i,              // chat_dropdown
-        /chat_unread/i,                // chat_unread
-        /chat_state/i,                 // chat_state
-        /chat_cache/i                  // chat_cache
+        /^chat_/i,                          // يبدأ بـ chat_
+        /^supabase\.chat\./i,                // يبدأ بـ supabase.chat.
+        /^sb-.*chat/i,                       // Supabase chat keys
+        /chat/i,                             // يحتوي على chat
+        /conversation/i,                     // يحتوي على conversation
+        /chat_messages/i,                    // chat_messages
+        /chat_conversations/i,               // chat_conversations
+        /chat_realtime/i,                    // chat_realtime
+        /chat_subscription/i,                // chat_subscription
+        /chat_window/i,                      // chat_window
+        /chat_dropdown/i,                    // chat_dropdown
+        /chat_unread/i,                      // chat_unread
+        /chat_state/i,                       // chat_state
+        /chat_cache/i,                       // chat_cache
+        /realtime.*chat/i,                   // realtime chat
+        /postgres.*chat/i,                   // postgres chat
+        /channel.*chat/i                     // channel chat
+      ];
+      
+      // أنماط Supabase المحددة
+      const supabasePatterns = [
+        /^sb-.*-chat/i,
+        /supabase.*realtime.*chat/i,
+        /supabase.*channel.*chat/i
       ];
       
       /**
@@ -873,24 +893,41 @@ class ChatStore {
       };
       
       /**
+       * التحقق من أن المفتاح متعلق بـ Supabase
+       */
+      const isSupabaseKey = (key) => {
+        return supabasePatterns.some(pattern => pattern.test(key)) || 
+               (key.startsWith('sb-') && matchesPattern(key));
+      };
+      
+      /**
        * مسح المفاتيح من storage معين
        */
       const clearFromStorage = (storage, storageName) => {
         try {
           const allKeys = Object.keys(storage);
           let storageCleared = 0;
+          let supabaseCleared = 0;
           
           allKeys.forEach(key => {
             if (matchesPattern(key)) {
               try {
                 storage.removeItem(key);
                 storageCleared++;
+                
+                if (isSupabaseKey(key)) {
+                  supabaseCleared++;
+                }
+                
                 console.log(`🗑️ تم مسح ${storageName}: ${key}`);
               } catch (err) {
                 console.warn(`⚠️ خطأ في مسح ${storageName} key: ${key}`, err);
               }
             }
           });
+          
+          clearedItems[storageName === 'localStorage' ? 'localStorage' : 'sessionStorage'] = storageCleared;
+          clearedItems.supabase += supabaseCleared;
           
           return storageCleared;
         } catch (err) {
@@ -907,24 +944,120 @@ class ChatStore {
       const sessionStorageCleared = clearFromStorage(sessionStorage, 'sessionStorage');
       clearedCount += sessionStorageCleared;
       
-      // مسح من IndexedDB إذا كان متاحاً (للمستقبل)
+      // مسح من IndexedDB إذا كان متاحاً
       if ('indexedDB' in window) {
         try {
-          // يمكن إضافة منطق لمسح IndexedDB هنا إذا لزم الأمر
-          // لكن Supabase لا يستخدم IndexedDB عادة
+          const dbNames = ['chat', 'conversations', 'messages', 'realtime'];
+          
+          for (const dbName of dbNames) {
+            try {
+              const deleteRequest = indexedDB.deleteDatabase(dbName);
+              deleteRequest.onsuccess = () => {
+                clearedItems.indexedDB++;
+                console.log(`🗑️ تم مسح IndexedDB: ${dbName}`);
+              };
+              deleteRequest.onerror = () => {
+                console.warn(`⚠️ خطأ في مسح IndexedDB: ${dbName}`);
+              };
+            } catch (err) {
+              console.warn(`⚠️ خطأ في محاولة مسح IndexedDB: ${dbName}`, err);
+            }
+          }
         } catch (err) {
-          // تجاهل الأخطاء
+          console.warn('⚠️ خطأ في الوصول إلى IndexedDB:', err);
         }
       }
       
+      // مسح كاش Service Workers المتعلق بالدردشة
+      if ('caches' in window) {
+        try {
+          const cacheNames = await caches.keys();
+          const chatCacheNames = cacheNames.filter(name => 
+            /chat|conversation|realtime/i.test(name)
+          );
+          
+          await Promise.all(
+            chatCacheNames.map(async (cacheName) => {
+              try {
+                const deleted = await caches.delete(cacheName);
+                if (deleted) {
+                  clearedItems.serviceWorker++;
+                  clearedCount++;
+                  console.log(`🗑️ تم مسح Service Worker cache: ${cacheName}`);
+                }
+              } catch (err) {
+                console.warn(`⚠️ خطأ في مسح Service Worker cache: ${cacheName}`, err);
+              }
+            })
+          );
+        } catch (err) {
+          console.warn('⚠️ خطأ في الوصول إلى Service Worker caches:', err);
+        }
+      }
+      
+      // مسح كاش Supabase Realtime
+      try {
+        if (this.state.realtimeSubscription) {
+          this.state.realtimeSubscription.unsubscribe();
+          console.log('🗑️ تم إلغاء اشتراك Supabase Realtime');
+        }
+        if (this.state.conversationSubscription) {
+          this.state.conversationSubscription.unsubscribe();
+          console.log('🗑️ تم إلغاء اشتراك محادثة Supabase');
+        }
+      } catch (err) {
+        console.warn('⚠️ خطأ في إلغاء اشتراكات Supabase:', err);
+      }
+      
+      // مسح كاش الصور (Cache API)
+      if ('caches' in window) {
+        try {
+          const cacheNames = await caches.keys();
+          const imageCacheNames = cacheNames.filter(name => 
+            /image|avatar|profile|picture/i.test(name)
+          );
+          
+          await Promise.all(
+            imageCacheNames.map(async (cacheName) => {
+              try {
+                const deleted = await caches.delete(cacheName);
+                if (deleted) {
+                  console.log(`🗑️ تم مسح كاش الصور: ${cacheName}`);
+                }
+              } catch (err) {
+                console.warn(`⚠️ خطأ في مسح كاش الصور: ${cacheName}`, err);
+              }
+            })
+          );
+        } catch (err) {
+          console.warn('⚠️ خطأ في مسح كاش الصور:', err);
+        }
+      }
+      
+      // تقرير النتائج
       if (clearedCount > 0) {
-        console.log(`✅ تم مسح ${clearedCount} عنصر من كاش المحادثات (${localStorageCleared} من localStorage، ${sessionStorageCleared} من sessionStorage)`);
+        console.log(`✅ تم مسح ${clearedCount} عنصر من كاش المحادثات:`);
+        console.log(`   - localStorage: ${clearedItems.localStorage}`);
+        console.log(`   - sessionStorage: ${clearedItems.sessionStorage}`);
+        console.log(`   - IndexedDB: ${clearedItems.indexedDB}`);
+        console.log(`   - Service Worker: ${clearedItems.serviceWorker}`);
+        console.log(`   - Supabase: ${clearedItems.supabase}`);
       } else {
         console.log('✅ لا يوجد كاش قديم للمحادثات');
       }
       
+      return {
+        success: true,
+        cleared: clearedCount,
+        details: clearedItems
+      };
+      
     } catch (error) {
       console.error('❌ خطأ في مسح كاش المحادثات:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 

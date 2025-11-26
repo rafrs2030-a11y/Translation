@@ -35,7 +35,7 @@ export async function handleLogout() {
 
         // تنظيف كاش الدردشة أولاً
         try {
-            chatStore.cleanup();
+            await chatStore.cleanup();
         } catch (chatCleanupError) {
             console.warn('Chat cleanup warning:', chatCleanupError);
         }
@@ -77,7 +77,7 @@ export async function handleLogout() {
         // Force logout locally even if there was an error
         try {
             // تنظيف كاش الدردشة
-            chatStore.cleanup();
+            await chatStore.cleanup();
             
             const supabaseKeys = Object.keys(localStorage).filter(key => 
                 key.startsWith('sb-') || 
