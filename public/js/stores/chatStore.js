@@ -30,6 +30,9 @@ class ChatStore {
       const user = authStore.getState().user;
       if (!user) return;
 
+      // مسح الكاش القديم أولاً
+      this.clearCache();
+
       // جلب المحادثات
       await this.fetchConversations();
 
@@ -839,29 +842,87 @@ class ChatStore {
   }
 
   /**
-   * مسح كاش المحادثات
+   * مسح كاش المحادثات القديم - ديناميكي بالكامل
    */
   clearCache() {
     try {
-      const chatKeys = [
-        'chat_conversations',
-        'chat_messages',
-        'chat_unread_count',
-        'chat_last_fetch',
-        'chat_cache',
-        'chat_state'
+      let clearedCount = 0;
+      
+      // قائمة بأنماط البحث الديناميكية
+      const chatPatterns = [
+        /^chat_/i,                    // يبدأ بـ chat_
+        /^supabase\.chat\./i,          // يبدأ بـ supabase.chat.
+        /chat/i,                       // يحتوي على chat
+        /conversation/i,               // يحتوي على conversation
+        /chat_messages/i,              // chat_messages
+        /chat_conversations/i,         // chat_conversations
+        /chat_realtime/i,              // chat_realtime
+        /chat_subscription/i,          // chat_subscription
+        /chat_window/i,                // chat_window
+        /chat_dropdown/i,              // chat_dropdown
+        /chat_unread/i,                // chat_unread
+        /chat_state/i,                 // chat_state
+        /chat_cache/i                  // chat_cache
       ];
       
-      chatKeys.forEach(key => {
+      /**
+       * التحقق من تطابق المفتاح مع أي نمط
+       */
+      const matchesPattern = (key) => {
+        return chatPatterns.some(pattern => pattern.test(key));
+      };
+      
+      /**
+       * مسح المفاتيح من storage معين
+       */
+      const clearFromStorage = (storage, storageName) => {
         try {
-          localStorage.removeItem(key);
-          sessionStorage.removeItem(key);
+          const allKeys = Object.keys(storage);
+          let storageCleared = 0;
+          
+          allKeys.forEach(key => {
+            if (matchesPattern(key)) {
+              try {
+                storage.removeItem(key);
+                storageCleared++;
+                console.log(`🗑️ تم مسح ${storageName}: ${key}`);
+              } catch (err) {
+                console.warn(`⚠️ خطأ في مسح ${storageName} key: ${key}`, err);
+              }
+            }
+          });
+          
+          return storageCleared;
+        } catch (err) {
+          console.error(`❌ خطأ في الوصول إلى ${storageName}:`, err);
+          return 0;
+        }
+      };
+      
+      // مسح من localStorage
+      const localStorageCleared = clearFromStorage(localStorage, 'localStorage');
+      clearedCount += localStorageCleared;
+      
+      // مسح من sessionStorage
+      const sessionStorageCleared = clearFromStorage(sessionStorage, 'sessionStorage');
+      clearedCount += sessionStorageCleared;
+      
+      // مسح من IndexedDB إذا كان متاحاً (للمستقبل)
+      if ('indexedDB' in window) {
+        try {
+          // يمكن إضافة منطق لمسح IndexedDB هنا إذا لزم الأمر
+          // لكن Supabase لا يستخدم IndexedDB عادة
         } catch (err) {
           // تجاهل الأخطاء
         }
-      });
+      }
       
-      console.log('✅ تم مسح كاش المحادثات');
+      if (clearedCount > 0) {
+        console.log(`✅ تم مسح ${clearedCount} عنصر من كاش المحادثات (${localStorageCleared} من localStorage، ${sessionStorageCleared} من sessionStorage)`);
+      } else {
+        console.log('✅ لا يوجد كاش قديم للمحادثات');
+      }
+      
     } catch (error) {
       console.error('❌ خطأ في مسح كاش المحادثات:', error);
     }

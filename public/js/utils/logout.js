@@ -4,6 +4,7 @@
  */
 
 import authStore from '../stores/authStore.js';
+import chatStore from '../stores/chatStore.js';
 
 /**
  * Handle logout
@@ -32,6 +33,13 @@ export async function handleLogout() {
             logoutLink.style.opacity = '0.6';
         }
 
+        // تنظيف كاش الدردشة أولاً
+        try {
+            chatStore.cleanup();
+        } catch (chatCleanupError) {
+            console.warn('Chat cleanup warning:', chatCleanupError);
+        }
+        
         // Call authStore logout
         const result = await authStore.logout();
         
@@ -68,6 +76,9 @@ export async function handleLogout() {
         
         // Force logout locally even if there was an error
         try {
+            // تنظيف كاش الدردشة
+            chatStore.cleanup();
+            
             const supabaseKeys = Object.keys(localStorage).filter(key => 
                 key.startsWith('sb-') || 
                 key.startsWith('supabase.') ||
