@@ -1,180 +1,262 @@
 /**
  * Clear Cache Utility
- * أداة مسح الكاش
+ * أداة مسح الكاش القديم
  */
 
 /**
- * Clear all cache (Service Worker, localStorage, sessionStorage)
- * مسح جميع أنواع الكاش
+ * مسح جميع أنواع الكاش القديم
  */
-export async function clearAllCache() {
+export async function clearAllOldCache() {
     try {
-        console.log('بدء مسح الكاش...');
+        console.log('🔄 بدء مسح الكاش القديم...');
         
-        let cacheNamesDeleted = [];
-        let localStorageItemsDeleted = 0;
-        let serviceWorkersUnregistered = 0;
-        
-        // Clear ALL Service Worker caches (including old versions)
+        let results = {
+            serviceWorker: 0,
+            localStorage: 0,
+            sessionStorage: 0,
+            indexedDB: false,
+            total: 0
+        };
+
+        // 1. مسح Service Worker Cache
         if ('caches' in window) {
-            const cacheNames = await caches.keys();
-            console.log('تم العثور على', cacheNames.length, 'كاش:', cacheNames);
-            
-            // Delete all caches (including old versions)
-            await Promise.all(
-                cacheNames.map(async (cacheName) => {
-                    try {
-                        console.log('مسح كاش:', cacheName);
-                        const deleted = await caches.delete(cacheName);
-                        if (deleted) {
-                            cacheNamesDeleted.push(cacheName);
-                        }
-                        return deleted;
-                    } catch (err) {
-                        console.error('خطأ في مسح كاش:', cacheName, err);
-                        return false;
-                    }
-                })
-            );
-            console.log('✓ تم مسح', cacheNamesDeleted.length, 'كاش من Service Worker');
-        }
-        
-        // Clear localStorage (keep auth tokens only)
-        const importantKeys = ['supabase.auth.token', 'sb-'];
-        const allKeys = Object.keys(localStorage);
-        const keysToRemove = allKeys.filter(
-            key => !importantKeys.some(important => key.includes(important))
-        );
-        
-        keysToRemove.forEach(key => {
             try {
-                console.log('مسح من localStorage:', key);
-                localStorage.removeItem(key);
-                localStorageItemsDeleted++;
-            } catch (err) {
-                console.error('خطأ في مسح:', key, err);
-            }
-        });
-        console.log('✓ تم مسح', localStorageItemsDeleted, 'عنصر من localStorage');
-        
-        // Clear ALL sessionStorage
-        try {
-            const sessionKeys = Object.keys(sessionStorage);
-            sessionStorage.clear();
-            console.log('✓ تم مسح', sessionKeys.length, 'عنصر من sessionStorage');
-        } catch (err) {
-            console.error('خطأ في مسح sessionStorage:', err);
-        }
-        
-        // Unregister ALL Service Workers (including old versions)
-        if ('serviceWorker' in navigator) {
-            try {
-                const registrations = await navigator.serviceWorker.getRegistrations();
-                console.log('تم العثور على', registrations.length, 'Service Worker مسجل');
+                const cacheNames = await caches.keys();
+                console.log(`📦 تم العثور على ${cacheNames.length} كاش من Service Worker`);
                 
                 await Promise.all(
-                    registrations.map(async (registration) => {
+                    cacheNames.map(async (cacheName) => {
                         try {
-                            console.log('إلغاء تسجيل Service Worker:', registration.scope);
-                            const unregistered = await registration.unregister();
-                            if (unregistered) {
-                                serviceWorkersUnregistered++;
+                            const deleted = await caches.delete(cacheName);
+                            if (deleted) {
+                                results.serviceWorker++;
+                                console.log(`✅ تم مسح كاش: ${cacheName}`);
                             }
-                            return unregistered;
                         } catch (err) {
-                            console.error('خطأ في إلغاء تسجيل Service Worker:', err);
-                            return false;
+                            console.error(`❌ خطأ في مسح كاش ${cacheName}:`, err);
                         }
                     })
                 );
-                console.log('✓ تم إلغاء تسجيل', serviceWorkersUnregistered, 'Service Worker');
-            } catch (err) {
-                console.error('خطأ في جلب Service Workers:', err);
+            } catch (error) {
+                console.error('❌ خطأ في مسح Service Worker cache:', error);
             }
         }
-        
-        // Force reload to clear any remaining cache
-        console.log('✓ تم مسح الكاش بنجاح');
-        
-        return { 
-            success: true, 
-            message: 'تم مسح الكاش بنجاح',
-            cleared: {
-                serviceWorker: cacheNamesDeleted.length,
-                localStorage: localStorageItemsDeleted,
-                sessionStorage: true,
-                serviceWorkersUnregistered: serviceWorkersUnregistered
-            },
-            details: {
-                cacheNames: cacheNamesDeleted
-            }
-        };
-    } catch (error) {
-        console.error('خطأ في مسح الكاش:', error);
-        return { 
-            success: false, 
-            error: error.message 
-        };
-    }
-}
 
-/**
- * Clear only Service Worker cache
- * مسح كاش Service Worker فقط
- */
-export async function clearServiceWorkerCache() {
-    try {
+        // 2. مسح localStorage (مع الحفاظ على tokens المهمة)
+        try {
+            const allKeys = Object.keys(localStorage);
+            const keysToRemove = [];
+            
+            allKeys.forEach(key => {
+                // الحفاظ على tokens المهمة فقط
+                if (
+                    !key.startsWith('sb-') && 
+                    !key.startsWith('supabase.auth.') &&
+                    !key.includes('auth_token') &&
+                    !key.includes('refresh_token')
+                ) {
+                    keysToRemove.push(key);
+                }
+            });
+            
+            keysToRemove.forEach(key => {
+                try {
+                    localStorage.removeItem(key);
+                    results.localStorage++;
+                } catch (err) {
+                    console.error(`❌ خطأ في مسح ${key}:`, err);
+                }
+            });
+            
+            console.log(`✅ تم مسح ${results.localStorage} عنصر من localStorage`);
+        } catch (error) {
+            console.error('❌ خطأ في مسح localStorage:', error);
+        }
+
+        // 3. مسح sessionStorage بالكامل
+        try {
+            const sessionKeys = Object.keys(sessionStorage);
+            sessionStorage.clear();
+            results.sessionStorage = sessionKeys.length;
+            console.log(`✅ تم مسح ${results.sessionStorage} عنصر من sessionStorage`);
+        } catch (error) {
+            console.error('❌ خطأ في مسح sessionStorage:', error);
+        }
+
+        // 4. مسح IndexedDB (إذا كان موجوداً)
+        if ('indexedDB' in window) {
+            try {
+                // محاولة مسح databases معروفة
+                const databases = ['chat_cache', 'notifications_cache', 'app_cache'];
+                for (const dbName of databases) {
+                    try {
+                        const deleteReq = indexedDB.deleteDatabase(dbName);
+                        await new Promise((resolve, reject) => {
+                            deleteReq.onsuccess = () => resolve();
+                            deleteReq.onerror = () => reject(deleteReq.error);
+                            deleteReq.onblocked = () => resolve(); // تجاهل إذا كان محظوراً
+                        });
+                        console.log(`✅ تم مسح IndexedDB: ${dbName}`);
+                    } catch (err) {
+                        // تجاهل الأخطاء
+                    }
+                }
+                results.indexedDB = true;
+            } catch (error) {
+                console.error('❌ خطأ في مسح IndexedDB:', error);
+            }
+        }
+
+        // 5. مسح كاش المتصفح (Cache API)
         if ('caches' in window) {
-            const cacheNames = await caches.keys();
-            await Promise.all(
-                cacheNames.map(cacheName => caches.delete(cacheName))
-            );
-            return { success: true, message: 'تم مسح كاش Service Worker' };
+            try {
+                // مسح جميع caches مرة أخرى للتأكد
+                const allCaches = await caches.keys();
+                for (const cacheName of allCaches) {
+                    await caches.delete(cacheName);
+                }
+            } catch (error) {
+                console.error('❌ خطأ في مسح Cache API:', error);
+            }
         }
-        return { success: true, message: 'لا يوجد Service Worker' };
-    } catch (error) {
-        return { success: false, error: error.message };
-    }
-}
 
-/**
- * Clear only localStorage
- * مسح localStorage فقط
- */
-export function clearLocalStorage() {
-    try {
-        const importantKeys = ['supabase.auth.token', 'sb-'];
-        const keysToRemove = Object.keys(localStorage).filter(
-            key => !importantKeys.some(important => key.includes(important))
-        );
-        keysToRemove.forEach(key => localStorage.removeItem(key));
-        return { 
-            success: true, 
-            message: `تم مسح ${keysToRemove.length} عنصر من localStorage` 
+        results.total = results.serviceWorker + results.localStorage + results.sessionStorage;
+        
+        console.log('✅ تم مسح الكاش بنجاح:', results);
+        
+        return {
+            success: true,
+            results: results,
+            message: `تم مسح ${results.total} عنصر من الكاش`
         };
+
     } catch (error) {
+        console.error('❌ خطأ عام في مسح الكاش:', error);
+        return {
+            success: false,
+            error: error.message,
+            results: null
+        };
+    }
+}
+
+/**
+ * مسح كاش المحادثات فقط
+ */
+export function clearChatCache() {
+    try {
+        const chatKeys = [
+            'chat_conversations',
+            'chat_messages',
+            'chat_unread_count',
+            'chat_last_fetch',
+            'chat_cache',
+            'chat_state'
+        ];
+        
+        let cleared = 0;
+        chatKeys.forEach(key => {
+            if (localStorage.getItem(key)) {
+                localStorage.removeItem(key);
+                cleared++;
+            }
+            if (sessionStorage.getItem(key)) {
+                sessionStorage.removeItem(key);
+                cleared++;
+            }
+        });
+        
+        console.log(`✅ تم مسح ${cleared} عنصر من كاش المحادثات`);
+        return { success: true, cleared };
+    } catch (error) {
+        console.error('❌ خطأ في مسح كاش المحادثات:', error);
         return { success: false, error: error.message };
     }
 }
 
 /**
- * Clear only sessionStorage
- * مسح sessionStorage فقط
+ * مسح كاش الإشعارات فقط
  */
-export function clearSessionStorage() {
+export function clearNotificationsCache() {
     try {
-        sessionStorage.clear();
-        return { success: true, message: 'تم مسح sessionStorage' };
+        const notificationKeys = [
+            'notifications',
+            'notifications_unread',
+            'notifications_last_fetch',
+            'notification_cache',
+            'notification_preferences'
+        ];
+        
+        let cleared = 0;
+        notificationKeys.forEach(key => {
+            if (localStorage.getItem(key)) {
+                localStorage.removeItem(key);
+                cleared++;
+            }
+            if (sessionStorage.getItem(key)) {
+                sessionStorage.removeItem(key);
+                cleared++;
+            }
+        });
+        
+        console.log(`✅ تم مسح ${cleared} عنصر من كاش الإشعارات`);
+        return { success: true, cleared };
     } catch (error) {
+        console.error('❌ خطأ في مسح كاش الإشعارات:', error);
         return { success: false, error: error.message };
     }
 }
 
-// Make it available globally
-if (typeof window !== 'undefined') {
-    window.clearAllCache = clearAllCache;
-    window.clearServiceWorkerCache = clearServiceWorkerCache;
-    window.clearLocalStorage = clearLocalStorage;
-    window.clearSessionStorage = clearSessionStorage;
+/**
+ * مسح كاش Supabase (مع الحفاظ على auth)
+ */
+export function clearSupabaseCache() {
+    try {
+        const supabaseKeys = Object.keys(localStorage).filter(key => 
+            key.startsWith('sb-') && 
+            !key.includes('auth.token') &&
+            !key.includes('auth.refresh')
+        );
+        
+        let cleared = 0;
+        supabaseKeys.forEach(key => {
+            try {
+                localStorage.removeItem(key);
+                cleared++;
+            } catch (err) {
+                console.error(`❌ خطأ في مسح ${key}:`, err);
+            }
+        });
+        
+        console.log(`✅ تم مسح ${cleared} عنصر من كاش Supabase`);
+        return { success: true, cleared };
+    } catch (error) {
+        console.error('❌ خطأ في مسح كاش Supabase:', error);
+        return { success: false, error: error.message };
+    }
 }
 
+/**
+ * مسح جميع الكاش وإعادة تحميل الصفحة
+ */
+export async function clearCacheAndReload() {
+    const result = await clearAllOldCache();
+    
+    if (result.success) {
+        // إعادة تحميل الصفحة بعد مسح الكاش
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
+    }
+    
+    return result;
+}
+
+// جعل الدالة متاحة عالمياً للاستخدام من console
+if (typeof window !== 'undefined') {
+    window.clearAllCache = clearAllOldCache;
+    window.clearChatCache = clearChatCache;
+    window.clearNotificationsCache = clearNotificationsCache;
+    window.clearSupabaseCache = clearSupabaseCache;
+    window.clearCacheAndReload = clearCacheAndReload;
+}

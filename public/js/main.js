@@ -6,6 +6,9 @@
 // Import Supabase client
 import { supabase } from './config/supabase.js';
 
+// Import cache clearing utilities
+import { clearAllOldCache, clearChatCache, clearNotificationsCache, clearCacheAndReload } from './utils/clear-cache.js';
+
 // ========================================
 // Global State
 // ========================================
@@ -494,6 +497,12 @@ window.saveToStorage = saveToStorage;
 window.getFromStorage = getFromStorage;
 window.removeFromStorage = removeFromStorage;
 window.clearAllCache = clearAllCache;
+
+// جعل دوال مسح الكاش المحسّنة متاحة عالمياً
+window.clearAllOldCache = clearAllOldCache;
+window.clearChatCache = clearChatCache;
+window.clearNotificationsCache = clearNotificationsCache;
+window.clearCacheAndReload = clearCacheAndReload;
 
 // ========================================
 // Initialize

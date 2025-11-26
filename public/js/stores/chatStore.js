@@ -185,6 +185,63 @@ class ChatStore {
   }
 
   /**
+   * إنشاء إشعار في قاعدة البيانات للمستلم
+   */
+  async createChatNotification(conversationId, message, sender) {
+    try {
+      const user = authStore.getState().user;
+      if (!user) return;
+
+      // جلب معلومات المحادثة لتحديد المستلم
+      const { data: conversation, error: convError } = await supabase
+        .from('chat_conversations')
+        .select('user_id, admin_id')
+        .eq('id', conversationId)
+        .single();
+
+      if (convError || !conversation) {
+        console.error('Error fetching conversation:', convError);
+        return;
+      }
+
+      // تحديد المستلم (الشخص الآخر في المحادثة)
+      const recipientId = conversation.user_id === user.id 
+        ? conversation.admin_id 
+        : conversation.user_id;
+
+      // إنشاء معاينة للرسالة
+      const messagePreview = message.message.length > 100 
+        ? message.message.substring(0, 100) + '...' 
+        : message.message;
+
+      // إنشاء إشعار
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert([{
+          user_id: recipientId,
+          type: 'request_submitted', // استخدام نوع موجود
+          channel: 'in_app',
+          payload: {
+            conversation_id: conversationId,
+            message_id: message.id,
+            sender_id: sender.id,
+            sender_username: sender.username || sender.email || 'مستخدم',
+            message_preview: messagePreview,
+            is_chat_message: true
+          }
+        }]);
+
+      if (notifError) {
+        console.error('Error creating chat notification:', notifError);
+      } else {
+        console.log('Chat notification created successfully');
+      }
+    } catch (error) {
+      console.error('Error in createChatNotification:', error);
+    }
+  }
+
+  /**
    * إرسال إشعار بوجود رسالة جديدة
    */
   notifyNewMessage(message) {
@@ -630,6 +687,9 @@ class ChatStore {
       // تحديث المحادثات (سيتم تحديثها تلقائياً عبر Realtime أيضاً)
       await this.fetchConversations();
 
+      // إنشاء إشعار للمستلم
+      await this.createChatNotification(convId, data, user);
+
       return { success: true, message: data };
 
     } catch (error) {
@@ -735,6 +795,9 @@ class ChatStore {
       this.state.conversationSubscription.unsubscribe();
     }
     
+    // مسح الكاش المحلي
+    this.clearCache();
+    
     this.setState({
       conversations: [],
       currentConversation: null,
@@ -744,6 +807,35 @@ class ChatStore {
       error: null,
       conversationSubscription: null,
     });
+  }
+
+  /**
+   * مسح كاش المحادثات
+   */
+  clearCache() {
+    try {
+      const chatKeys = [
+        'chat_conversations',
+        'chat_messages',
+        'chat_unread_count',
+        'chat_last_fetch',
+        'chat_cache',
+        'chat_state'
+      ];
+      
+      chatKeys.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        } catch (err) {
+          // تجاهل الأخطاء
+        }
+      });
+      
+      console.log('✅ تم مسح كاش المحادثات');
+    } catch (error) {
+      console.error('❌ خطأ في مسح كاش المحادثات:', error);
+    }
   }
 
   /**

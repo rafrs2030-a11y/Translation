@@ -96,6 +96,13 @@ class NotificationsStore {
    * معالجة إشعار جديد
    */
   handleNewNotification(notification) {
+    // التحقق من أن الإشعار ليس مكرراً
+    const isDuplicate = this.state.notifications.some(n => n.id === notification.id);
+    if (isDuplicate) {
+      console.log('Duplicate notification ignored:', notification.id);
+      return;
+    }
+
     // إضافة إلى القائمة
     this.setState({
       notifications: [notification, ...this.state.notifications],
@@ -109,6 +116,13 @@ class NotificationsStore {
 
     // تشغيل صوت (اختياري)
     this.playNotificationSound();
+
+    // إذا كان إشعار محادثة، إرسال حدث مخصص
+    if (notification.payload && notification.payload.is_chat_message) {
+      window.dispatchEvent(new CustomEvent('notification:chat-message', {
+        detail: { notification }
+      }));
+    }
   }
 
   /**
@@ -143,7 +157,11 @@ class NotificationsStore {
 
       // Apply filters
       if (filters.is_read !== undefined) {
-        query = query.eq('is_read', filters.is_read);
+        if (filters.is_read) {
+          query = query.not('read_at', 'is', null);
+        } else {
+          query = query.is('read_at', null);
+        }
       }
 
       if (filters.type) {
@@ -174,7 +192,7 @@ class NotificationsStore {
         .from('notifications')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
-        .eq('is_read', false);
+        .is('read_at', null);
 
       const hasMore = count && (from + data.length) < count;
 
@@ -208,14 +226,15 @@ class NotificationsStore {
     try {
       const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true })
-        .eq('id', notificationId);
+        .update({ read_at: new Date().toISOString() })
+        .eq('id', notificationId)
+        .is('read_at', null); // تحديث فقط إذا لم يكن مقروءاً
 
       if (error) throw error;
 
       this.setState({
         notifications: this.state.notifications.map(n =>
-          n.id === notificationId ? { ...n, is_read: true } : n
+          n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n
         ),
         unreadCount: Math.max(0, this.state.unreadCount - 1),
       });
@@ -237,16 +256,20 @@ class NotificationsStore {
       const user = authStore.getState().user;
       if (!user) throw new Error('المستخدم غير مسجل الدخول');
 
+      const now = new Date().toISOString();
       const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true })
+        .update({ read_at: now })
         .eq('user_id', user.id)
-        .eq('is_read', false);
+        .is('read_at', null); // تحديث فقط غير المقروءة
 
       if (error) throw error;
 
       this.setState({
-        notifications: this.state.notifications.map(n => ({ ...n, is_read: true })),
+        notifications: this.state.notifications.map(n => ({ 
+          ...n, 
+          read_at: n.read_at || now 
+        })),
         unreadCount: 0,
         loading: false,
       });
@@ -275,7 +298,7 @@ class NotificationsStore {
 
       this.setState({
         notifications: this.state.notifications.filter(n => n.id !== notificationId),
-        unreadCount: notification && !notification.is_read 
+        unreadCount: notification && !notification.read_at 
           ? Math.max(0, this.state.unreadCount - 1)
           : this.state.unreadCount,
       });
@@ -516,14 +539,14 @@ class NotificationsStore {
    * الحصول على الإشعارات غير المقروءة
    */
   getUnreadNotifications() {
-    return this.state.notifications.filter(n => !n.is_read);
+    return this.state.notifications.filter(n => !n.read_at);
   }
 
   /**
    * الحصول على الإشعارات المقروءة
    */
   getReadNotifications() {
-    return this.state.notifications.filter(n => n.is_read);
+    return this.state.notifications.filter(n => n.read_at);
   }
 
   /**
@@ -531,12 +554,44 @@ class NotificationsStore {
    */
   cleanup() {
     this.unsubscribeFromRealtime();
+    
+    // مسح الكاش المحلي
+    this.clearCache();
+    
     this.setState({
       notifications: [],
       unreadCount: 0,
       loading: false,
       error: null,
     });
+  }
+
+  /**
+   * مسح كاش الإشعارات
+   */
+  clearCache() {
+    try {
+      const notificationKeys = [
+        'notifications',
+        'notifications_unread',
+        'notifications_last_fetch',
+        'notification_cache',
+        'notification_preferences'
+      ];
+      
+      notificationKeys.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        } catch (err) {
+          // تجاهل الأخطاء
+        }
+      });
+      
+      console.log('✅ تم مسح كاش الإشعارات');
+    } catch (error) {
+      console.error('❌ خطأ في مسح كاش الإشعارات:', error);
+    }
   }
 
   /**
