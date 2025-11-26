@@ -184,6 +184,11 @@ function openDropdown() {
         createDropdown();
     }
     
+    // Prevent body scroll on mobile when dropdown is open
+    if (window.innerWidth <= 768) {
+        document.body.style.overflow = 'hidden';
+    }
+    
     chatDropdown.style.display = 'block';
     chatDropdown.style.opacity = '0';
     chatDropdown.style.transform = 'translateY(-10px)';
@@ -203,6 +208,11 @@ function openDropdown() {
  */
 function closeDropdown() {
     if (!chatDropdown) return;
+    
+    // Restore body scroll on mobile
+    if (window.innerWidth <= 768) {
+        document.body.style.overflow = '';
+    }
     
     chatDropdown.style.transition = 'all 0.2s ease';
     chatDropdown.style.opacity = '0';
@@ -256,18 +266,22 @@ function renderConversations(conversations) {
             ? formatRelativeTime(conversation.last_message_at)
             : '';
         
+        const unreadCount = conversation.unread_count || 0;
+        const hasUnread = unreadCount > 0;
+        
         return `
-            <div class="chat-conversation-item" data-id="${conversation.id}">
+            <div class="chat-conversation-item ${hasUnread ? 'has-unread' : ''}" data-id="${conversation.id}">
                 <div class="chat-conversation-avatar" data-user-id="${otherUser?.id}">
                     ${otherUser?.profile_picture 
                         ? `<img src="${escapeHtml(otherUser.profile_picture)}" alt="الصورة الشخصية" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                           <div style="display: none; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                           <div style="display: none; width: 40px; height: 40px; border-radius: 50%; background: var(--chat-gradient); color: white; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
                                ${escapeHtml((otherUser?.username || otherUser?.email || 'م')[0].toUpperCase())}
                            </div>`
-                        : `<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                        : `<div style="width: 40px; height: 40px; border-radius: 50%; background: var(--chat-gradient); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
                                ${escapeHtml((otherUser?.username || otherUser?.email || 'م')[0].toUpperCase())}
                            </div>`
                     }
+                    ${hasUnread ? `<span class="chat-conversation-unread-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}
                 </div>
                 <div class="chat-conversation-content">
                     <h4 class="chat-conversation-name">${escapeHtml(otherUser?.username || otherUser?.email || 'مستخدم')}</h4>
@@ -327,10 +341,10 @@ async function showUserSelection() {
                             <div class="chat-user-selection-avatar">
                                 ${user.profile_picture 
                                     ? `<img src="${escapeHtml(user.profile_picture)}" alt="الصورة الشخصية" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                       <div style="display: none; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                                       <div style="display: none; width: 40px; height: 40px; border-radius: 50%; background: var(--chat-gradient); color: white; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
                                            ${escapeHtml((user.username || user.email || 'م')[0].toUpperCase())}
                                        </div>`
-                                    : `<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                                    : `<div style="width: 40px; height: 40px; border-radius: 50%; background: var(--chat-gradient); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
                                            ${escapeHtml((user.username || user.email || 'م')[0].toUpperCase())}
                                        </div>`
                                 }
@@ -464,6 +478,11 @@ function createChatWindow(conversation) {
         const existing = document.getElementById('chat-window');
         if (existing) existing.remove();
         
+        // Prevent body scroll on mobile when chat window is open
+        if (window.innerWidth <= 768) {
+            document.body.style.overflow = 'hidden';
+        }
+        
         const user = authStore.getState().user;
         if (!user) {
             console.error('User not found');
@@ -488,10 +507,10 @@ function createChatWindow(conversation) {
                         <div class="chat-window-avatar">
                             ${otherUser?.profile_picture 
                                 ? `<img src="${escapeHtml(otherUser.profile_picture)}" alt="الصورة الشخصية" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                   <div style="display: none; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                                   <div style="display: none; width: 40px; height: 40px; border-radius: 50%; background: var(--chat-gradient); color: white; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
                                        ${escapeHtml((otherUser?.username || otherUser?.email || 'م')[0].toUpperCase())}
                                    </div>`
-                                : `<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
+                                : `<div style="width: 40px; height: 40px; border-radius: 50%; background: var(--chat-gradient); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">
                                        ${escapeHtml((otherUser?.username || otherUser?.email || 'م')[0].toUpperCase())}
                                    </div>`
                             }
@@ -557,6 +576,11 @@ function setupChatWindowListeners() {
         closeBtn.addEventListener('click', () => {
             const chatWindow = document.getElementById('chat-window');
             if (chatWindow) {
+                // Restore body scroll on mobile
+                if (window.innerWidth <= 768) {
+                    document.body.style.overflow = '';
+                }
+                
                 chatWindow.style.transition = 'all 0.3s ease';
                 chatWindow.style.opacity = '0';
                 chatWindow.style.transform = 'translateY(20px) scale(0.95)';
@@ -658,6 +682,12 @@ function renderMessages(messages) {
         lastSenderId = message.sender_id;
         lastDate = message.created_at;
         
+        const isRead = message.is_read === true;
+        const statusClass = isRead ? 'read' : 'unread';
+        const statusIcon = isOwn 
+            ? (isRead ? '<i class="fas fa-check-double chat-message-status-icon"></i>' : '<i class="fas fa-check chat-message-status-icon"></i>')
+            : (isRead ? '' : '<span class="chat-message-status-unread-dot"></span>');
+        
         return `
             ${showDateSeparator ? `
                 <div style="text-align: center; margin: 1rem 0; position: relative;">
@@ -666,10 +696,23 @@ function renderMessages(messages) {
                     </span>
                 </div>
             ` : ''}
-            <div class="chat-message ${isOwn ? 'own' : 'other'}" style="animation-delay: ${index * 0.05}s;">
+            <div class="chat-message ${isOwn ? 'own' : 'other'}" style="animation-delay: ${index * 0.05}s;" data-message-id="${message.id}" data-is-read="${isRead}">
                 <div class="chat-message-content">
                     <p>${escapeHtml(message.message)}</p>
-                    <span class="chat-message-time">${formatRelativeTime(message.created_at)}</span>
+                    <div style="display: flex; align-items: center; justify-content: ${isOwn ? 'flex-end' : 'flex-start'}; gap: 0.5rem; margin-top: 0.375rem;">
+                        <span class="chat-message-time">${formatRelativeTime(message.created_at)}</span>
+                        ${isOwn ? `
+                            <span class="chat-message-status ${statusClass}">
+                                ${statusIcon}
+                            </span>
+                        ` : `
+                            ${!isRead ? `
+                                <span class="chat-message-status ${statusClass}">
+                                    <i class="fas fa-circle chat-message-status-icon" style="font-size: 0.5rem; color: var(--chat-primary);"></i>
+                                </span>
+                            ` : ''}
+                        `}
+                    </div>
                 </div>
             </div>
         `;

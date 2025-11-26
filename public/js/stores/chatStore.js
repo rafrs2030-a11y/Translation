@@ -333,15 +333,32 @@ class ChatStore {
 
       if (error) throw error;
 
+      // جلب عدد الرسائل غير المقروءة لكل محادثة
+      const conversationsWithUnread = await Promise.all(
+        (data || []).map(async (conversation) => {
+          const { count } = await supabase
+            .from('chat_messages')
+            .select('id', { count: 'exact', head: true })
+            .eq('conversation_id', conversation.id)
+            .eq('is_read', false)
+            .neq('sender_id', user.id);
+
+          return {
+            ...conversation,
+            unread_count: count || 0,
+          };
+        })
+      );
+
       this.setState({
-        conversations: data || [],
+        conversations: conversationsWithUnread,
         loading: false,
       });
 
-      // تحديث عدد الرسائل غير المقروءة
+      // تحديث عدد الرسائل غير المقروءة الإجمالي
       await this.updateUnreadCount();
 
-      return { success: true, data: data || [] };
+      return { success: true, data: conversationsWithUnread };
 
     } catch (error) {
       console.error('Error fetching conversations:', error);
@@ -706,14 +723,26 @@ class ChatStore {
       const user = authStore.getState().user;
       if (!user) return;
 
-      const { error } = await supabase
+      // تحديث الرسائل غير المقروءة فقط
+      const { data: updatedMessages, error } = await supabase
         .from('chat_messages')
         .update({ is_read: true })
         .eq('conversation_id', conversationId)
         .neq('sender_id', user.id)
-        .eq('is_read', false);
+        .eq('is_read', false)
+        .select();
 
       if (error) throw error;
+
+      // تحديث حالة الرسائل في الـ store
+      if (updatedMessages && updatedMessages.length > 0) {
+        this.setState({
+          messages: this.state.messages.map(msg => {
+            const updated = updatedMessages.find(um => um.id === msg.id);
+            return updated ? { ...msg, is_read: true } : msg;
+          }),
+        });
+      }
 
       // تحديث عدد الرسائل غير المقروءة
       await this.updateUnreadCount();
