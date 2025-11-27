@@ -245,6 +245,84 @@ class ChatStore {
   }
 
   /**
+   * إرسال بريد إلكتروني للإدمن عند وصول رسالة جديدة من الباحث
+   */
+  async sendAdminEmailForNewMessage(conversationId, message, sender) {
+    try {
+      const currentUser = authStore.getState().user;
+      if (!currentUser || currentUser.role !== 'researcher') {
+        // نرسل بريد فقط عندما يكون المرسل باحثاً
+        return;
+      }
+
+      // جلب بريد الإدمن المرتبط بهذه المحادثة
+      const { data: conversation, error: convError } = await supabase
+        .from('chat_conversations')
+        .select(`
+          id,
+          admin:users!chat_conversations_admin_id_fkey(email, username)
+        `)
+        .eq('id', conversationId)
+        .maybeSingle();
+
+      if (convError || !conversation || !conversation.admin || !conversation.admin.email) {
+        console.warn('Could not fetch admin email for chat conversation', convError);
+        return;
+      }
+
+      const adminEmail = conversation.admin.email;
+      const adminName = conversation.admin.username || conversation.admin.email;
+      const senderName = sender.username || sender.email || 'باحث';
+
+      // إنشاء معاينة بسيطة للرسالة
+      const preview = (message.message || '').length > 150
+        ? message.message.substring(0, 150) + '...'
+        : (message.message || '');
+
+      const emailHtml = `
+        <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="background: linear-gradient(135deg, #3D5A94 0%, #5176B8 100%); color: #fff; padding: 16px 24px;">
+              <h2 style="margin: 0; font-size: 20px;">رسالة جديدة من الباحث في نظام الدردشة</h2>
+            </div>
+            <div style="padding: 24px;">
+              <p>السلام عليكم ${adminName}،</p>
+              <p>قام الباحث <strong>${senderName}</strong> بإرسال رسالة جديدة في نظام الدردشة.</p>
+              <div style="background-color: #f8f9fa; border-right: 4px solid #3D5A94; padding: 16px; margin: 20px 0; border-radius: 4px;">
+                <h3 style="margin-top: 0; font-size: 16px;">محتوى الرسالة:</h3>
+                <p style="white-space: pre-wrap; margin-bottom: 0;">${preview}</p>
+              </div>
+              <p style="margin-top: 0;">يمكنك الرد على الرسالة من لوحة تحكم الإدمن في قسم الدردشة.</p>
+              <p style="margin-top: 24px;">مع تحيات،<br><strong>منصة نشر الأبحاث العربية</strong></p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // استدعاء Edge Function لإرسال البريد
+      const { error } = await supabase.functions.invoke('send-notification-email', {
+        body: {
+          emailData: {
+            to: adminEmail,
+            subject: `رسالة جديدة من الباحث ${senderName} في الدردشة`,
+            html: emailHtml,
+            type: 'system',
+            userId: sender.id,
+          },
+        },
+      });
+
+      if (error) {
+        console.error('Error invoking send-notification-email for chat message:', error);
+      } else {
+        console.log('Admin chat notification email sent successfully');
+      }
+    } catch (error) {
+      console.error('Error sending admin email for new chat message:', error);
+    }
+  }
+
+  /**
    * إرسال إشعار بوجود رسالة جديدة
    */
   notifyNewMessage(message) {
@@ -709,6 +787,9 @@ class ChatStore {
 
       // إنشاء إشعار للمستلم
       await this.createChatNotification(convId, data, user);
+
+      // إرسال بريد إلكتروني للإدمن عند استلام رسالة جديدة من الباحث
+      await this.sendAdminEmailForNewMessage(convId, data, user);
 
       return { success: true, message: data };
 

@@ -35,8 +35,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initChatDropdown();
     await badgeManager.initialize();
 });
-<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
-read_lints
 
 /**
  * Initialize DOM elements
