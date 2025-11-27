@@ -25,6 +25,9 @@ interface StatusChangeData {
 }
 
 Deno.serve(async (req: Request) => {
+  let emailData: EmailData | null = null;
+  let statusData: StatusChangeData | null = null;
+  
   try {
     // CORS headers
     if (req.method === 'OPTIONS') {
@@ -48,7 +51,9 @@ Deno.serve(async (req: Request) => {
       }
     );
 
-    const { emailData, statusData } = await req.json();
+    const requestBody = await req.json();
+    emailData = requestBody.emailData;
+    statusData = requestBody.statusData;
 
     if (!emailData || !emailData.to || !emailData.subject) {
       return new Response(
@@ -76,14 +81,20 @@ Deno.serve(async (req: Request) => {
       }]);
 
     // Get email service configuration
-    const emailProvider = Deno.env.get('EMAIL_PROVIDER') || 'resend'; // 'resend', 'sendgrid', or 'smtp'
+    const emailProvider = Deno.env.get('EMAIL_PROVIDER') || 'smtp'; // 'resend', 'sendgrid', or 'smtp'
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY');
     const fromEmail = Deno.env.get('FROM_EMAIL') || 'noreply@arabresearch.com';
     const fromName = Deno.env.get('FROM_NAME') || 'منصة نشر الأبحاث العربية';
+    
+    // SMTP configuration
+    const smtpHost = Deno.env.get('SMTP_HOST') || 'smtp.resend.com';
+    const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '465');
+    const smtpUser = Deno.env.get('SMTP_USER') || 'resend';
+    const smtpPassword = Deno.env.get('SMTP_PASSWORD') || resendApiKey;
 
     let emailSent = false;
-    let errorMessage = null;
+    let errorMessage: string | null = null;
 
     // Send email using Resend (recommended)
     if (emailProvider === 'resend' && resendApiKey) {
@@ -149,9 +160,50 @@ Deno.serve(async (req: Request) => {
           errorMessage = errorText || 'Failed to send email via SendGrid';
           console.error('SendGrid error:', errorText);
         }
-      } catch (error) {
-        errorMessage = error.message;
+      } catch (error: any) {
+        errorMessage = error?.message || String(error) || 'SendGrid exception occurred';
         console.error('SendGrid exception:', error);
+      }
+    }
+    // Send email using SMTP
+    else if (emailProvider === 'smtp' && smtpPassword) {
+      try {
+        // For Resend SMTP, use the API with SMTP credentials
+        // This works because Resend's API key is the same as SMTP password
+        if (smtpHost === 'smtp.resend.com') {
+          const resendResponse = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${smtpPassword}`,
+            },
+            body: JSON.stringify({
+              from: `${fromName} <${fromEmail}>`,
+              to: [emailData.to],
+              subject: emailData.subject,
+              html: htmlContent,
+            }),
+          });
+
+          const resendData = await resendResponse.json();
+
+          if (resendResponse.ok && resendData.id) {
+            emailSent = true;
+            console.log('Email sent via SMTP (Resend API):', resendData.id);
+          } else {
+            errorMessage = resendData.message || 'Failed to send email via SMTP';
+            console.error('SMTP (Resend) error:', resendData);
+          }
+        } else {
+          // For other SMTP providers, you would need to implement proper SMTP protocol
+          // Since Deno Edge Functions have limitations with raw TCP/TLS,
+          // it's recommended to configure SMTP in Supabase Dashboard > Settings > Auth > SMTP Settings
+          console.warn('Custom SMTP hosts require configuration in Supabase Dashboard > Settings > Auth > SMTP Settings');
+          errorMessage = 'SMTP configuration required in Supabase Dashboard';
+        }
+      } catch (error: any) {
+        errorMessage = error?.message || String(error) || 'SMTP exception occurred';
+        console.error('SMTP exception:', error);
       }
     }
     // Fallback: Log only (for development/testing)
@@ -160,6 +212,7 @@ Deno.serve(async (req: Request) => {
       console.log('To enable email sending, set:');
       console.log('- EMAIL_PROVIDER=resend and RESEND_API_KEY=your_key');
       console.log('- OR EMAIL_PROVIDER=sendgrid and SENDGRID_API_KEY=your_key');
+      console.log('- OR EMAIL_PROVIDER=smtp and SMTP_PASSWORD=your_key (with SMTP_HOST, SMTP_PORT, SMTP_USER)');
     }
 
     // Update email log
@@ -216,7 +269,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending email:', error);
     
     // Log failure
@@ -226,13 +279,16 @@ Deno.serve(async (req: Request) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       );
       
+      // Use emailData from outer scope
+      const recipientEmail = (emailData as EmailData | null)?.to || 'unknown';
+      
       await supabaseClient
         .from('email_log')
         .update({ 
           status: 'failed',
-          error_message: error.message
+          error_message: error?.message || String(error) || 'Unknown error'
         })
-        .eq('recipient_email', (await req.json()).emailData?.to)
+        .eq('recipient_email', recipientEmail)
         .order('created_at', { ascending: false })
         .limit(1);
     } catch (logError) {
@@ -240,7 +296,11 @@ Deno.serve(async (req: Request) => {
     }
 
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false,
+        error: error?.message || String(error) || 'Unknown error',
+        message: 'Failed to send email'
+      }),
       { 
         status: 500,
         headers: { 
@@ -409,7 +469,7 @@ function generateStatusChangeEmail(data: StatusChangeData): string {
     
     <div class="footer">
       <p>© 2025 منصة نشر الأبحاث العربية. جميع الحقوق محفوظة.</p>
-      <p>support@arabresearch.com | www.arabresearch.com</p>
+      <p>support@res-assistant.com</p>
     </div>
   </div>
 </body>

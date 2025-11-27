@@ -6,7 +6,18 @@
 
 ## المتغيرات البيئية المطلوبة
 
-### للاستخدام مع Resend:
+### للاستخدام مع SMTP (موصى به):
+```
+EMAIL_PROVIDER=smtp
+SMTP_HOST=smtp.resend.com
+SMTP_PORT=465
+SMTP_USER=resend
+SMTP_PASSWORD=YOUR_RESEND_API_KEY
+FROM_EMAIL=noreply@yourdomain.com
+FROM_NAME=منصة نشر الأبحاث العربية
+```
+
+### للاستخدام مع Resend REST API:
 ```
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxx
 EMAIL_PROVIDER=resend
@@ -27,6 +38,8 @@ FROM_NAME=منصة نشر الأبحاث العربية
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
+
+**ملاحظة:** عند استخدام SMTP مع Resend، `SMTP_PASSWORD` يجب أن يكون نفس `RESEND_API_KEY`.
 
 ## الاستخدام
 

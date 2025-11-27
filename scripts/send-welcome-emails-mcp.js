@@ -1,29 +1,40 @@
 /**
- * Bulk Welcome Email Sender
+ * Bulk Welcome Email Sender using MCP and Supabase
  * يرسل إيميل ترحيبي لكل المستخدمين المسجلين في جدول users
- * يستخدم Resend Batch API لإرسال الإيميلات بشكل أكثر كفاءة
+ * يستخدم Supabase Client لجلب المستخدمين و Supabase Edge Function لإرسال الإيميلات عبر resend.com SMTP
  *
- * الاستخدام:
- * 1. تأكد من وجود المتغيرات التالية في ملف .env أو في بيئة التشغيل:
+ * المتطلبات:
+ * 1. متغيرات البيئة في ملف .env:
  *    - SUPABASE_URL
  *    - SUPABASE_SERVICE_ROLE_KEY
- *    - RESEND_API_KEY
  *    - FROM_EMAIL (اختياري، افتراضي: noreply@arabresearch.com)
  *    - FROM_NAME (اختياري، افتراضي: منصة نشر الأبحاث العربية)
- * 2. تأكد من تثبيت resend package:
- *    npm install resend
- * 3. نفّذ:
- *    node scripts/send-welcome-email-to-all-users.js
+ *
+ * 2. إعداد Supabase Edge Function Secrets:
+ *    - اذهب إلى Supabase Dashboard > Edge Functions > send-notification-email > Secrets
+ *    - أضف:
+ *      * RESEND_API_KEY=re_xxxxxxxxxxxxx
+ *      * EMAIL_PROVIDER=smtp
+ *      * SMTP_HOST=smtp.resend.com
+ *      * SMTP_PORT=465
+ *      * SMTP_USER=resend
+ *      * SMTP_PASSWORD=re_xxxxxxxxxxxxx (نفس RESEND_API_KEY)
+ *      * FROM_EMAIL=noreply@arabresearch.com
+ *      * FROM_NAME=منصة نشر الأبحاث العربية
+ *
+ * الاستخدام:
+ *    node scripts/send-welcome-emails-mcp.js
+ *
+ * للمزيد من التفاصيل: راجع scripts/SEND_WELCOME_EMAILS_MCP_README.md
  */
 
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
-const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 
 // دالة مساعدة للكتابة في الملف والطرفية
-const logFile = path.join(__dirname, 'email-send-log.txt');
+const logFile = path.join(__dirname, 'email-send-log-mcp.txt');
 let logStream;
 
 try {
@@ -41,30 +52,18 @@ function log(message) {
       logStream.write(logMessage + '\n');
     }
   } catch (err) {
-    // في حالة فشل الكتابة، استخدم console.log كبديل
     console.log(logMessage);
   }
 }
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const resendApiKey = process.env.RESEND_API_KEY;
-
-// إعدادات SMTP
-const smtpHost = process.env.SMTP_HOST || 'smtp.resend.com';
-const smtpPort = parseInt(process.env.SMTP_PORT || '465');
-const smtpUser = process.env.SMTP_USER || 'resend';
-const smtpPassword = process.env.SMTP_PASSWORD || resendApiKey;
-const fromEmail = process.env.FROM_EMAIL || 'rafrs2030@gmail.com';
+const fromEmail = process.env.FROM_EMAIL || 'noreply@arabresearch.com';
 const fromName = process.env.FROM_NAME || 'منصة نشر الأبحاث العربية';
 
 log('📋 التحقق من المتغيرات البيئية:');
 log(`  SUPABASE_URL: ${supabaseUrl ? '✅ موجود' : '❌ غير موجود'}`);
 log(`  SUPABASE_SERVICE_ROLE_KEY: ${supabaseServiceKey ? '✅ موجود' : '❌ غير موجود'}`);
-log(`  SMTP_HOST: ${smtpHost}`);
-log(`  SMTP_PORT: ${smtpPort}`);
-log(`  SMTP_USER: ${smtpUser}`);
-log(`  SMTP_PASSWORD: ${smtpPassword ? '✅ موجود' : '❌ غير موجود'}`);
 log(`  FROM_EMAIL: ${fromEmail}`);
 log(`  FROM_NAME: ${fromName}`);
 log('');
@@ -75,32 +74,12 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-if (!smtpPassword) {
-  log('❌ يجب ضبط SMTP_PASSWORD أو RESEND_API_KEY في ملف .env قبل التشغيل.');
-  if (logStream) logStream.end();
-  process.exit(1);
-}
-
 // نستخدم service role لتجاوز RLS عند قراءة جميع المستخدمين
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
   },
-});
-
-// تهيئة nodemailer مع SMTP
-log('🔌 إعداد اتصال SMTP...');
-const transporter = nodemailer.createTransport({
-  host: smtpHost,
-  port: smtpPort,
-  secure: smtpPort === 465, // true for 465, false for other ports
-  auth: {
-    user: smtpUser,
-    pass: smtpPassword,
-  },
-  debug: true, // تفعيل وضع التصحيح
-  logger: true, // تفعيل السجلات
 });
 
 /**
@@ -205,6 +184,33 @@ function generateWelcomeEmailHtml(usernameOrEmail) {
 }
 
 /**
+ * إرسال إيميل عبر Supabase Edge Function
+ */
+async function sendEmailViaEdgeFunction(userId, recipientEmail, subject, html) {
+  try {
+    const { data, error } = await supabase.functions.invoke('send-notification-email', {
+      body: {
+        emailData: {
+          to: recipientEmail,
+          subject: subject,
+          html: html,
+          type: 'system',
+          userId: userId,
+        },
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to invoke edge function');
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    throw error;
+  }
+}
+
+/**
  * تسجيل الإيميل في email_log
  */
 async function logEmailToDatabase(userId, recipientEmail, subject, status, errorMessage = null) {
@@ -232,7 +238,7 @@ async function logEmailToDatabase(userId, recipientEmail, subject, status, error
 
 async function sendWelcomeEmailToAllUsers() {
   log('📧 بدء إرسال الإيميل الترحيبي لجميع المستخدمين المسجلين...');
-  log('📤 استخدام SMTP لإرسال الإيميلات');
+  log('📤 استخدام Supabase Edge Function مع resend.com لإرسال الإيميلات');
   log('');
 
   // جلب جميع المستخدمين من public.users
@@ -268,22 +274,6 @@ async function sendWelcomeEmailToAllUsers() {
   log(`✅ تم العثور على ${validUsers.length} مستخدم(ين) بإيميلات صالحة من أصل ${users.length}.`);
   log('');
 
-  // إعداد Batch من الإيميلات
-  const emailBatch = validUsers.map(user => {
-    const displayName = user.username || user.email.split('@')[0];
-    const html = generateWelcomeEmailHtml(displayName);
-
-    return {
-      from: `${fromName} <${fromEmail}>`,
-      to: [user.email],
-      subject: 'مرحباً بك في منصة نشر الأبحاث العربية',
-      html: html,
-    };
-  });
-
-  log(`📦 إعداد ${emailBatch.length} إيميل للإرسال...`);
-  log('');
-
   // تسجيل جميع الإيميلات كـ queued في email_log
   log('📝 تسجيل الإيميلات في email_log...');
   for (const user of validUsers) {
@@ -297,8 +287,8 @@ async function sendWelcomeEmailToAllUsers() {
   log('✅ تم تسجيل جميع الإيميلات');
   log('');
 
-  // إرسال الإيميلات باستخدام SMTP
-  log('🚀 بدء إرسال الإيميلات عبر SMTP...');
+  // إرسال الإيميلات باستخدام Supabase Edge Function
+  log('🚀 بدء إرسال الإيميلات عبر Supabase Edge Function (resend.com)...');
   log('');
 
   try {
@@ -306,7 +296,7 @@ async function sendWelcomeEmailToAllUsers() {
     let failCount = 0;
 
     // إرسال الإيميلات بشكل متوازي (batches صغيرة لتجنب rate limits)
-    const BATCH_SIZE = 10; // إرسال 10 إيميلات في كل مرة
+    const BATCH_SIZE = 5; // إرسال 5 إيميلات في كل مرة
     
     for (let i = 0; i < validUsers.length; i += BATCH_SIZE) {
       const batch = validUsers.slice(i, i + BATCH_SIZE);
@@ -318,37 +308,38 @@ async function sendWelcomeEmailToAllUsers() {
         const html = generateWelcomeEmailHtml(displayName);
 
         try {
-          const info = await transporter.sendMail({
-            from: `${fromName} <${fromEmail}>`,
-            to: user.email,
-            subject: 'مرحباً بك في منصة نشر الأبحاث العربية',
-            html: html,
-          });
+          const result = await sendEmailViaEdgeFunction(
+            user.id,
+            user.email,
+            'مرحباً بك في منصة نشر الأبحاث العربية',
+            html
+          );
 
-          successCount++;
+          if (result.success) {
+            successCount++;
             await logEmailToDatabase(
               user.id,
               user.email,
               'مرحباً بك في منصة نشر الأبحاث العربية',
               'sent'
             );
-            log(`✅ تم إرسال الإيميل إلى: ${user.email} (Message ID: ${info.messageId || 'N/A'})`);
-            return { success: true, user, result: info };
+            log(`✅ تم إرسال الإيميل إلى: ${user.email}`);
+            return { success: true, user, result };
+          } else {
+            throw new Error('Edge function returned unsuccessful result');
+          }
         } catch (sendError) {
           failCount++;
           const errorMessage = sendError.message || (sendError.response ? sendError.response : 'Exception occurred');
-            await logEmailToDatabase(
-              user.id,
-              user.email,
-              'مرحباً بك في منصة نشر الأبحاث العربية',
-              'failed',
-              errorMessage
-            );
-            log(`❌ خطأ أثناء إرسال الإيميل إلى ${user.email}: ${errorMessage}`);
-            if (sendError.response) {
-              log(`SMTP Response: ${sendError.response}`);
-            }
-            return { success: false, user, error: sendError };
+          await logEmailToDatabase(
+            user.id,
+            user.email,
+            'مرحباً بك في منصة نشر الأبحاث العربية',
+            'failed',
+            errorMessage
+          );
+          log(`❌ خطأ أثناء إرسال الإيميل إلى ${user.email}: ${errorMessage}`);
+          return { success: false, user, error: sendError };
         }
       });
 
@@ -357,7 +348,7 @@ async function sendWelcomeEmailToAllUsers() {
       
       // تأخير بسيط بين الدفعات لتجنب rate limits
       if (i + BATCH_SIZE < validUsers.length) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
 
@@ -388,7 +379,6 @@ async function sendWelcomeEmailToAllUsers() {
   log('✨ انتهى التنفيذ.');
 }
 
-
 // تشغيل السكربت مع معالجة شاملة للأخطاء
 (async () => {
   try {
@@ -397,7 +387,7 @@ async function sendWelcomeEmailToAllUsers() {
     log('');
     log('✅ اكتمل التنفيذ بنجاح!');
     log(`📄 تم حفظ السجل في ملف: ${logFile}`);
-    logStream.end();
+    if (logStream) logStream.end();
     process.exit(0);
   } catch (err) {
     const errorMsg = `❌ خطأ غير متوقَّع: ${err.message || err}\n`;
@@ -406,9 +396,8 @@ async function sendWelcomeEmailToAllUsers() {
     } else {
       log(errorMsg);
     }
-    logStream.end();
+    if (logStream) logStream.end();
     process.exit(1);
   }
 })();
-
 
