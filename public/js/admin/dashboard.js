@@ -7,8 +7,7 @@ import adminStore from '../stores/adminStore.js';
 import authStore from '../stores/authStore.js';
 import { handleLogout } from '../utils/logout.js';
 import { requireAdmin } from '../utils/auth-guard.js';
-import { initChatDropdown } from '../utils/chat-dropdown.js';
-import badgeManager from '../utils/badge-manager.js';
+// Chat and badges are initialized by common.js
 import { updateAvatarDisplay } from '../utils/avatar-helper.js';
 import { supabase } from '../config/supabase.js';
 
@@ -32,8 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initElements();
     initEventListeners();
     await loadDashboardData();
-    await initChatDropdown();
-    await badgeManager.initialize();
+    // Chat and badges are initialized by common.js
 });
 
 /**
