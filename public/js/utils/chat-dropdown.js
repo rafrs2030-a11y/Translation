@@ -13,40 +13,63 @@ let chatBtn = null;
 let chatBadge = null;
 let chatContainer = null;
 let isInitialized = false;
+let eventListenersSetup = false;
 
 /**
  * Initialize chat dropdown
  */
 export async function initChatDropdown() {
-    if (isInitialized) return;
-    
+    // Get elements
     chatBtn = document.getElementById('chat-btn');
     chatBadge = document.getElementById('chat-badge');
     
-    if (!chatBtn) return;
-    
-    // Request notification permission
-    requestNotificationPermission();
-    
-    // Initialize chat store
-    await chatStore.initialize();
-    
-    // Subscribe to store updates
-    chatStore.subscribe(handleStoreUpdate);
-    
-    // Setup event listeners
-    setupEventListeners();
-    
-    // Setup realtime event listeners
-    setupRealtimeListeners();
-    
-    // Load initial badge count
-    const user = authStore.getState().user;
-    if (user) {
-        await chatStore.updateUnreadCount();
+    if (!chatBtn) {
+        console.warn('Chat button not found');
+        return;
     }
     
-    isInitialized = true;
+    // Check if already initialized for this button
+    if (chatBtn.getAttribute('data-chat-initialized') === 'true') {
+        console.log('Chat already initialized for this button');
+        return;
+    }
+    
+    try {
+        console.log('🔄 Initializing chat dropdown...');
+        
+        // Request notification permission
+        requestNotificationPermission();
+        
+        // Initialize chat store (only once)
+        if (!isInitialized) {
+            await chatStore.initialize();
+            isInitialized = true;
+        }
+        
+        // Subscribe to store updates (only once)
+        if (!eventListenersSetup) {
+            chatStore.subscribe(handleStoreUpdate);
+            setupRealtimeListeners();
+            eventListenersSetup = true;
+        }
+        
+        // Setup event listeners for this button (can be called multiple times)
+        setupEventListeners();
+        
+        // Load initial badge count
+        const user = authStore.getState().user;
+        if (user) {
+            await chatStore.updateUnreadCount();
+        }
+        
+        // Mark as initialized
+        chatBtn.setAttribute('data-chat-initialized', 'true');
+        console.log('✅ Chat dropdown initialized successfully');
+        
+    } catch (error) {
+        console.error('❌ Error initializing chat dropdown:', error);
+        throw error;
+    }
 }
 
 /**
@@ -134,28 +157,27 @@ function createDropdown() {
  * Setup event listeners
  */
 function setupEventListeners() {
+    if (!chatBtn) return;
+    
+    // Remove existing listeners to avoid duplicates
+    const newChatBtn = chatBtn.cloneNode(true);
+    chatBtn.parentNode.replaceChild(newChatBtn, chatBtn);
+    chatBtn = newChatBtn;
+    
     // Toggle dropdown on click
     chatBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         toggleDropdown();
     });
     
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-        if (chatDropdown && !chatDropdown.contains(e.target) && !chatBtn.contains(e.target)) {
-            closeDropdown();
-        }
-    });
-    
-    // New chat button
-    const newChatBtn = document.getElementById('new-chat-btn');
-    if (newChatBtn) {
-        newChatBtn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const user = authStore.getState().user;
-            // للباحث والإدمن: عرض قائمة المستخدمين للاختيار
-            await showUserSelection();
+    // Close dropdown when clicking outside (only add once)
+    if (!window.__chatClickListenerAdded) {
+        document.addEventListener('click', (e) => {
+            if (chatDropdown && !chatDropdown.contains(e.target) && chatBtn && !chatBtn.contains(e.target)) {
+                closeDropdown();
+            }
         });
+        window.__chatClickListenerAdded = true;
     }
 }
 
@@ -201,6 +223,20 @@ function openDropdown() {
     });
     
     loadConversations();
+    
+    // Setup new chat button listener (after dropdown is created)
+    setTimeout(() => {
+        const newChatBtn = document.getElementById('new-chat-btn');
+        if (newChatBtn && !newChatBtn.hasAttribute('data-listener-added')) {
+            newChatBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const user = authStore.getState().user;
+                // للباحث والإدمن: عرض قائمة المستخدمين للاختيار
+                await showUserSelection();
+            });
+            newChatBtn.setAttribute('data-listener-added', 'true');
+        }
+    }, 100);
 }
 
 /**

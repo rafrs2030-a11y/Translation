@@ -6,7 +6,7 @@
 import { supabase } from '../config/supabase.js';
 import authStore from '../stores/authStore.js';
 import { requireAdmin } from '../utils/auth-guard.js';
-import { clearAllCache } from '../utils/clear-cache.js';
+import { clearCompleteCache, clearCacheAndReload } from '../utils/clear-cache.js';
 
 // Settings object
 const settings = {};
@@ -219,7 +219,7 @@ function showError(message) {
 async function handleClearCache() {
     try {
         // Confirm action
-        if (!confirm('هل أنت متأكد من مسح جميع أنواع الكاش؟\n\nسيتم مسح:\n- كاش Service Worker\n- localStorage\n- sessionStorage')) {
+        if (!confirm('هل أنت متأكد من مسح جميع أنواع الكاش؟\n\nسيتم مسح:\n- كاش Service Worker\n- localStorage\n- sessionStorage\n- IndexedDB\n- كاش الملفات الثابتة\n\nسيتم إعادة تحميل الصفحة بعد المسح.')) {
             return;
         }
         
@@ -229,38 +229,43 @@ async function handleClearCache() {
         // Show loading
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المسح...';
-        if (statusEl) statusEl.textContent = 'جاري مسح الكاش...';
+        if (statusEl) {
+            statusEl.textContent = 'جاري مسح الكاش...';
+            statusEl.style.color = 'var(--warning-color)';
+        }
         
-        // Clear cache
-        const result = await clearAllCache();
+        // Clear complete cache
+        const result = await clearCompleteCache();
         
-        if (result.success) {
+        if (result.success && result.results) {
+            const results = result.results;
+            
             // Update status
             if (statusEl) {
-                statusEl.textContent = 'تم مسح الكاش بنجاح';
+                statusEl.textContent = 'تم مسح الكاش بنجاح! جاري إعادة التحميل...';
                 statusEl.style.color = 'var(--success-color)';
             }
             
-            // Update cache info
-            updateCacheInfo();
-            
             // Show success message
-            showSuccess(`تم مسح الكاش بنجاح!\n\nتم مسح:\n- كاش Service Worker\n- ${result.cleared.localStorage} عنصر من localStorage\n- sessionStorage`);
+            const message = `✅ تم مسح الكاش بنجاح!\n\n` +
+                `📦 Service Worker: ${results.serviceWorker} كاش\n` +
+                `💾 localStorage: ${results.localStorage} عنصر\n` +
+                `🗂️ sessionStorage: ${results.sessionStorage} عنصر\n` +
+                `📊 IndexedDB: ${results.indexedDB ? 'تم المسح' : 'غير متوفر'}\n` +
+                `🎨 الملفات الثابتة: ${results.assets} عنصر\n\n` +
+                `المجموع: ${results.total} عنصر\n\n` +
+                `سيتم إعادة تحميل الصفحة الآن...`;
             
-            // Reset status color after 3 seconds
+            showSuccess(message);
+            
+            // Reload page after 2 seconds
             setTimeout(() => {
-                if (statusEl) {
-                    statusEl.textContent = 'جاهز للمسح';
-                    statusEl.style.color = '';
-                }
-            }, 3000);
+                window.location.reload(true);
+            }, 2000);
+            
         } else {
             throw new Error(result.error || 'فشل مسح الكاش');
         }
-        
-        // Reset button
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-broom"></i> مسح الكاش الآن';
         
     } catch (error) {
         console.error('Error clearing cache:', error);
@@ -300,9 +305,34 @@ function updateCacheInfo() {
         
         // Count Service Worker caches (async)
         if ('caches' in window) {
-            caches.keys().then(cacheNames => {
-                const totalItems = localStorageKeys.length + sessionStorageKeys.length + cacheNames.length;
-                cacheCountEl.textContent = `${totalItems} عنصر في الكاش (${localStorageKeys.length} localStorage، ${sessionStorageKeys.length} sessionStorage، ${cacheNames.length} Service Worker)`;
+            caches.keys().then(async (cacheNames) => {
+                // Count IndexedDB databases
+                let indexedDBCount = 0;
+                if ('indexedDB' in window) {
+                    try {
+                        const databases = ['chat_cache', 'notifications_cache', 'app_cache', 'supabase_cache'];
+                        for (const dbName of databases) {
+                            try {
+                                const req = indexedDB.open(dbName);
+                                req.onsuccess = () => {
+                                    indexedDBCount++;
+                                };
+                                req.onerror = () => {};
+                            } catch (e) {}
+                        }
+                    } catch (e) {}
+                }
+                
+                const totalItems = localStorageKeys.length + sessionStorageKeys.length + cacheNames.length + indexedDBCount;
+                cacheCountEl.innerHTML = `
+                    <strong>${totalItems}</strong> عنصر في الكاش<br>
+                    <small style="color: var(--text-secondary);">
+                        • ${localStorageKeys.length} localStorage<br>
+                        • ${sessionStorageKeys.length} sessionStorage<br>
+                        • ${cacheNames.length} Service Worker<br>
+                        • ${indexedDBCount} IndexedDB
+                    </small>
+                `;
             });
         } else {
             const totalItems = localStorageKeys.length + sessionStorageKeys.length;
