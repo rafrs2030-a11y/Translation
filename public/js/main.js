@@ -526,19 +526,69 @@ window.clearCache = async () => {
 // Initialize
 // ========================================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('App initialized');
     
     // Initialize user menu dropdown
     initUserMenuDropdown();
     
-    // Initialize chat if chat button exists
-    import('./utils/init-chat.js').then(module => {
-        module.initChatIfExists();
-    }).catch(err => {
-        // Chat not available on this page, ignore
-    });
+    // Initialize chat if chat button exists (with retry mechanism)
+    await initChatWithRetry();
 });
+
+/**
+ * Initialize chat with retry mechanism
+ */
+async function initChatWithRetry() {
+    const maxRetries = 3;
+    let retries = 0;
+    
+    while (retries < maxRetries) {
+        try {
+            const chatBtn = document.getElementById('chat-btn');
+            if (!chatBtn) {
+                // No chat button on this page, skip
+                return;
+            }
+            
+            // Import and initialize chat
+            const chatModule = await import('./utils/init-chat.js');
+            await chatModule.initChatIfExists();
+            
+            // Verify initialization
+            if (chatBtn.onclick || chatBtn.getAttribute('data-chat-initialized')) {
+                console.log('✅ Chat initialized successfully');
+                return;
+            }
+            
+            // If not initialized, wait and retry
+            retries++;
+            if (retries < maxRetries) {
+                console.log(`⏳ Retrying chat initialization (${retries}/${maxRetries})...`);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        } catch (err) {
+            console.warn('Chat initialization error:', err);
+            retries++;
+            if (retries < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+    }
+    
+    // Final attempt: direct initialization
+    try {
+        const chatBtn = document.getElementById('chat-btn');
+        if (chatBtn && !chatBtn.getAttribute('data-chat-initialized')) {
+            console.log('🔄 Attempting direct chat initialization...');
+            const chatModule = await import('./utils/init-chat.js');
+            await chatModule.initChatIfExists();
+            chatBtn.setAttribute('data-chat-initialized', 'true');
+        }
+    } catch (err) {
+        console.error('Failed to initialize chat after all retries:', err);
+    }
+}
 
 /**
  * Initialize user menu dropdown

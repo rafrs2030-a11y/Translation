@@ -276,6 +276,14 @@
     
     <!-- Scripts -->
     <script type="module" src="/js/main.js?v=2.0"></script>
+    <script type="module">
+        import { initAdminSidebar } from '/js/admin/components/sidebar.js';
+        
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            initAdminSidebar('submissions');
+        });
+    </script>
     <script type="module" src="/js/admin/submissions.js?v=2.0"></script>
     
     <style>
