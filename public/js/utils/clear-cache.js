@@ -243,13 +243,192 @@ export async function clearCacheAndReload() {
     const result = await clearAllOldCache();
     
     if (result.success) {
+        // إضافة timestamp لإجبار المتصفح على تحميل الملفات الجديدة
+        const timestamp = new Date().getTime();
+        const url = new URL(window.location.href);
+        url.searchParams.set('_nocache', timestamp);
+        
         // إعادة تحميل الصفحة بعد مسح الكاش
         setTimeout(() => {
-            window.location.reload();
+            window.location.href = url.toString();
         }, 500);
     }
     
     return result;
+}
+
+/**
+ * مسح كاش CSS و JS المحدثة
+ */
+export function clearAssetCache() {
+    try {
+        // مسح كاش الملفات الثابتة
+        const assetKeys = [
+            'css_version',
+            'js_version',
+            'app_version',
+            'cache_version',
+            'last_update',
+            'assets_cache'
+        ];
+        
+        let cleared = 0;
+        assetKeys.forEach(key => {
+            if (localStorage.getItem(key)) {
+                localStorage.removeItem(key);
+                cleared++;
+            }
+            if (sessionStorage.getItem(key)) {
+                sessionStorage.removeItem(key);
+                cleared++;
+            }
+        });
+        
+        // إزالة query parameters من URLs المحفوظة
+        const allKeys = Object.keys(localStorage);
+        allKeys.forEach(key => {
+            if (key.includes('_cache') || key.includes('_version')) {
+                try {
+                    localStorage.removeItem(key);
+                    cleared++;
+                } catch (err) {
+                    // تجاهل الأخطاء
+                }
+            }
+        });
+        
+        console.log(`✅ تم مسح ${cleared} عنصر من كاش الملفات الثابتة`);
+        return { success: true, cleared };
+    } catch (error) {
+        console.error('❌ خطأ في مسح كاش الملفات الثابتة:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * مسح كاش كامل شامل (جميع الأنواع)
+ */
+export async function clearCompleteCache() {
+    try {
+        console.log('🔄 بدء مسح الكاش الكامل...');
+        
+        const results = {
+            serviceWorker: 0,
+            localStorage: 0,
+            sessionStorage: 0,
+            indexedDB: false,
+            assets: 0,
+            total: 0
+        };
+        
+        // 1. مسح Service Worker Cache
+        if ('caches' in window) {
+            try {
+                const cacheNames = await caches.keys();
+                await Promise.all(
+                    cacheNames.map(async (cacheName) => {
+                        try {
+                            const deleted = await caches.delete(cacheName);
+                            if (deleted) {
+                                results.serviceWorker++;
+                            }
+                        } catch (err) {
+                            console.error(`❌ خطأ في مسح كاش ${cacheName}:`, err);
+                        }
+                    })
+                );
+            } catch (error) {
+                console.error('❌ خطأ في مسح Service Worker cache:', error);
+            }
+        }
+        
+        // 2. إلغاء تسجيل جميع Service Workers
+        if ('serviceWorker' in navigator) {
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(
+                    registrations.map(registration => registration.unregister())
+                );
+                console.log(`✅ تم إلغاء تسجيل ${registrations.length} Service Worker`);
+            } catch (error) {
+                console.error('❌ خطأ في إلغاء تسجيل Service Workers:', error);
+            }
+        }
+        
+        // 3. مسح localStorage (مع الحفاظ على auth tokens فقط)
+        try {
+            const allKeys = Object.keys(localStorage);
+            const importantKeys = ['sb-', 'supabase.auth.'];
+            
+            allKeys.forEach(key => {
+                const isImportant = importantKeys.some(important => key.includes(important));
+                if (!isImportant) {
+                    try {
+                        localStorage.removeItem(key);
+                        results.localStorage++;
+                    } catch (err) {
+                        console.error(`❌ خطأ في مسح ${key}:`, err);
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('❌ خطأ في مسح localStorage:', error);
+        }
+        
+        // 4. مسح sessionStorage بالكامل
+        try {
+            const sessionKeys = Object.keys(sessionStorage);
+            sessionStorage.clear();
+            results.sessionStorage = sessionKeys.length;
+        } catch (error) {
+            console.error('❌ خطأ في مسح sessionStorage:', error);
+        }
+        
+        // 5. مسح IndexedDB
+        if ('indexedDB' in window) {
+            try {
+                const databases = ['chat_cache', 'notifications_cache', 'app_cache', 'supabase_cache'];
+                for (const dbName of databases) {
+                    try {
+                        const deleteReq = indexedDB.deleteDatabase(dbName);
+                        await new Promise((resolve) => {
+                            deleteReq.onsuccess = () => resolve();
+                            deleteReq.onerror = () => resolve();
+                            deleteReq.onblocked = () => resolve();
+                        });
+                    } catch (err) {
+                        // تجاهل الأخطاء
+                    }
+                }
+                results.indexedDB = true;
+            } catch (error) {
+                console.error('❌ خطأ في مسح IndexedDB:', error);
+            }
+        }
+        
+        // 6. مسح كاش الملفات الثابتة
+        const assetResult = clearAssetCache();
+        results.assets = assetResult.cleared || 0;
+        
+        results.total = results.serviceWorker + results.localStorage + 
+                       results.sessionStorage + results.assets;
+        
+        console.log('✅ تم مسح الكاش الكامل بنجاح:', results);
+        
+        return {
+            success: true,
+            results: results,
+            message: `تم مسح ${results.total} عنصر من الكاش`
+        };
+        
+    } catch (error) {
+        console.error('❌ خطأ عام في مسح الكاش الكامل:', error);
+        return {
+            success: false,
+            error: error.message,
+            results: null
+        };
+    }
 }
 
 // جعل الدالة متاحة عالمياً للاستخدام من console
@@ -258,5 +437,16 @@ if (typeof window !== 'undefined') {
     window.clearChatCache = clearChatCache;
     window.clearNotificationsCache = clearNotificationsCache;
     window.clearSupabaseCache = clearSupabaseCache;
+    window.clearAssetCache = clearAssetCache;
+    window.clearCompleteCache = clearCompleteCache;
     window.clearCacheAndReload = clearCacheAndReload;
+    
+    // دالة سريعة لمسح الكاش وإعادة التحميل
+    window.clearCache = async () => {
+        console.log('🔄 مسح الكاش وإعادة التحميل...');
+        await clearCompleteCache();
+        setTimeout(() => {
+            window.location.reload(true);
+        }, 500);
+    };
 }

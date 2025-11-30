@@ -7,7 +7,14 @@
 import { supabase } from './config/supabase.js';
 
 // Import cache clearing utilities
-import { clearAllOldCache, clearChatCache, clearNotificationsCache, clearCacheAndReload } from './utils/clear-cache.js';
+import { 
+    clearAllOldCache, 
+    clearChatCache, 
+    clearNotificationsCache, 
+    clearAssetCache,
+    clearCompleteCache,
+    clearCacheAndReload 
+} from './utils/clear-cache.js';
 
 // ========================================
 // Global State
@@ -502,7 +509,18 @@ window.clearAllCache = clearAllCache;
 window.clearAllOldCache = clearAllOldCache;
 window.clearChatCache = clearChatCache;
 window.clearNotificationsCache = clearNotificationsCache;
+window.clearAssetCache = clearAssetCache;
+window.clearCompleteCache = clearCompleteCache;
 window.clearCacheAndReload = clearCacheAndReload;
+
+// دالة سريعة لمسح الكاش وإعادة التحميل
+window.clearCache = async () => {
+    console.log('🔄 مسح الكاش وإعادة التحميل...');
+    await clearCompleteCache();
+    setTimeout(() => {
+        window.location.reload(true);
+    }, 500);
+};
 
 // ========================================
 // Initialize
@@ -511,6 +529,9 @@ window.clearCacheAndReload = clearCacheAndReload;
 document.addEventListener('DOMContentLoaded', () => {
     console.log('App initialized');
     
+    // Initialize user menu dropdown
+    initUserMenuDropdown();
+    
     // Initialize chat if chat button exists
     import('./utils/init-chat.js').then(module => {
         module.initChatIfExists();
@@ -518,4 +539,37 @@ document.addEventListener('DOMContentLoaded', () => {
         // Chat not available on this page, ignore
     });
 });
+
+/**
+ * Initialize user menu dropdown
+ */
+function initUserMenuDropdown() {
+    const userMenuBtn = document.getElementById('user-menu-btn');
+    const userMenuDropdown = document.getElementById('user-menu-dropdown');
+    const logoutLink = document.getElementById('logout-link');
+    
+    if (!userMenuBtn || !userMenuDropdown) return;
+    
+    // Toggle dropdown on click
+    userMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = userMenuDropdown.style.display === 'block';
+        userMenuDropdown.style.display = isVisible ? 'none' : 'block';
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!userMenuBtn.contains(e.target) && !userMenuDropdown.contains(e.target)) {
+            userMenuDropdown.style.display = 'none';
+        }
+    });
+    
+    // Handle logout
+    if (logoutLink) {
+        logoutLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await logout();
+        });
+    }
+}
 
