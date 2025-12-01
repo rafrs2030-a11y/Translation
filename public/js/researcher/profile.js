@@ -707,31 +707,35 @@ async function handleVerificationRequest() {
             const originalHTML = verifyBtn.innerHTML;
             verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري إرسال الطلب...';
 
-            // إحضار جميع المسؤولين
-            const { data: admins, error: adminsError } = await supabase
-                .from('users')
-                .select('id')
-                .in('role', ['admin', 'super_admin']);
-
-            if (adminsError) {
-                throw adminsError;
-            }
-
-            if (admins && admins.length > 0) {
-                const notifications = admins.map(a => ({
-                    user_id: a.id,
-                    submission_id: null,
-                    type: 'system',
-                    message: `طلب الباحث ${currentUser.username} (${currentUser.email}) توثيق حسابه.`
-                }));
-
-                const { error: notifError } = await supabase
-                    .from('notifications')
-                    .insert(notifications);
-
-                if (notifError) {
-                    throw notifError;
+            // إرسال طلب التوثيق عبر البريد إلى فريق المنصة باستخدام Edge Function
+            const { error: funcError } = await supabase.functions.invoke('send-notification-email', {
+                body: {
+                    emailData: {
+                        to: 'info@rafrs.com', // بريد فريق المنصة
+                        subject: 'طلب توثيق حساب باحث',
+                        html: `
+                            <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px;">
+                                <h2>طلب توثيق حساب جديد</h2>
+                                <p>قام الباحث التالي بطلب توثيق حسابه في منصة نشر الأبحاث العربية:</p>
+                                <ul>
+                                    <li><strong>الاسم:</strong> ${currentUser.username}</li>
+                                    <li><strong>البريد الإلكتروني:</strong> ${currentUser.email}</li>
+                                    <li><strong>رقم الجوال:</strong> ${currentUser.phone || 'غير محدد'}</li>
+                                    <li><strong>رقم الهوية:</strong> ${currentUser.national_id || 'غير محدد'}</li>
+                                </ul>
+                                <p>يرجى مراجعة البيانات وتحديث حالة البريد الإلكتروني إلى "موثّق" من لوحة المسؤولين عند الموافقة.</p>
+                            </div>
+                        `,
+                        type: 'system',
+                        userId: currentUser.id,
+                        submissionId: null
+                    },
+                    statusData: null
                 }
+            });
+
+            if (funcError) {
+                throw funcError;
             }
 
             showAlert('success', 'تم إرسال طلب توثيق الحساب بنجاح. سيتم مراجعته من قبل فريق المنصة قريباً ✓');
