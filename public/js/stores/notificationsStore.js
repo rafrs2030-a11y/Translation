@@ -135,7 +135,7 @@ class NotificationsStore {
         n.id === notification.id ? notification : n
       ),
       // تحديث العداد إذا تغيرت حالة القراءة
-      unreadCount: this.state.notifications.filter(n => !n.read_at).length,
+      unreadCount: this.state.notifications.filter(n => !n.is_read).length,
     });
   }
 
@@ -163,7 +163,7 @@ class NotificationsStore {
     }
 
     // إضافة إلى القائمة
-    const newUnreadCount = notification.read_at ? this.state.unreadCount : this.state.unreadCount + 1;
+    const newUnreadCount = notification.is_read ? this.state.unreadCount : this.state.unreadCount + 1;
     
     this.setState({
       notifications: [notification, ...this.state.notifications],
@@ -227,9 +227,9 @@ class NotificationsStore {
       // Apply filters
       if (filters.is_read !== undefined) {
         if (filters.is_read) {
-          query = query.not('read_at', 'is', null);
+          query = query.eq('is_read', true);
         } else {
-          query = query.is('read_at', null);
+          query = query.eq('is_read', false);
         }
       }
 
@@ -261,7 +261,7 @@ class NotificationsStore {
         .from('notifications')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
-        .is('read_at', null);
+        .eq('is_read', false);
 
       const hasMore = count && (from + data.length) < count;
 
@@ -295,15 +295,15 @@ class NotificationsStore {
     try {
       const { error } = await supabase
         .from('notifications')
-        .update({ read_at: new Date().toISOString() })
+        .update({ is_read: true })
         .eq('id', notificationId)
-        .is('read_at', null); // تحديث فقط إذا لم يكن مقروءاً
+        .eq('is_read', false); // تحديث فقط إذا لم يكن مقروءاً
 
       if (error) throw error;
 
       this.setState({
         notifications: this.state.notifications.map(n =>
-          n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n
+          n.id === notificationId ? { ...n, is_read: true } : n
         ),
         unreadCount: Math.max(0, this.state.unreadCount - 1),
       });
@@ -328,16 +328,16 @@ class NotificationsStore {
       const now = new Date().toISOString();
       const { error } = await supabase
         .from('notifications')
-        .update({ read_at: now })
+        .update({ is_read: true })
         .eq('user_id', user.id)
-        .is('read_at', null); // تحديث فقط غير المقروءة
+        .eq('is_read', false); // تحديث فقط غير المقروءة
 
       if (error) throw error;
 
       this.setState({
         notifications: this.state.notifications.map(n => ({ 
           ...n, 
-          read_at: n.read_at || now 
+          is_read: true
         })),
         unreadCount: 0,
         loading: false,
@@ -367,7 +367,7 @@ class NotificationsStore {
 
       this.setState({
         notifications: this.state.notifications.filter(n => n.id !== notificationId),
-        unreadCount: notification && !notification.read_at 
+        unreadCount: notification && !notification.is_read 
           ? Math.max(0, this.state.unreadCount - 1)
           : this.state.unreadCount,
       });
@@ -608,14 +608,14 @@ class NotificationsStore {
    * الحصول على الإشعارات غير المقروءة
    */
   getUnreadNotifications() {
-    return this.state.notifications.filter(n => !n.read_at);
+    return this.state.notifications.filter(n => !n.is_read);
   }
 
   /**
    * الحصول على الإشعارات المقروءة
    */
   getReadNotifications() {
-    return this.state.notifications.filter(n => n.read_at);
+    return this.state.notifications.filter(n => n.is_read);
   }
 
   /**
