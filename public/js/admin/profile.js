@@ -97,6 +97,9 @@ function initEventListeners() {
     
     // Delete account
     document.getElementById('delete-account-btn')?.addEventListener('click', handleDeleteAccount);
+    
+    // Verify account
+    document.getElementById('verify-account-btn')?.addEventListener('click', handleVerifyAccount);
 }
 
 /**
@@ -153,6 +156,20 @@ function populateProfileHeader() {
     } else {
         verifiedBadge.textContent = 'غير موثّق';
         verifiedBadge.className = 'badge badge-warning';
+    }
+    
+    // Verify account button state
+    const verifyBtn = document.getElementById('verify-account-btn');
+    if (verifyBtn) {
+        if (currentUser.email_verified) {
+            verifyBtn.disabled = true;
+            verifyBtn.classList.add('btn-disabled');
+            verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> الحساب موثّق بالفعل';
+        } else {
+            verifyBtn.disabled = false;
+            verifyBtn.classList.remove('btn-disabled');
+            verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> توثيق الحساب';
+        }
     }
     
     // Account status
@@ -649,6 +666,52 @@ async function handleDeleteAccount() {
     } catch (error) {
         console.error('Error deleting account:', error);
         alert('حدث خطأ في حذف الحساب');
+    }
+}
+
+/**
+ * Handle account verification
+ */
+async function handleVerifyAccount() {
+    try {
+        if (currentUser.email_verified) {
+            showAlert('success', 'الحساب موثّق بالفعل ✓');
+            return;
+        }
+
+        const verifyBtn = document.getElementById('verify-account-btn');
+        if (verifyBtn) {
+            verifyBtn.disabled = true;
+            const originalHTML = verifyBtn.innerHTML;
+            verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التوثيق...';
+
+            const { data, error } = await supabase
+                .from('users')
+                .update({
+                    email_verified: true,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', currentUser.id)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            currentUser = data;
+            populateProfileHeader();
+            showAlert('success', 'تم توثيق الحساب بنجاح ✓');
+
+            verifyBtn.innerHTML = originalHTML;
+        }
+    } catch (error) {
+        console.error('Error verifying account:', error);
+        showAlert('error', 'حدث خطأ أثناء توثيق الحساب: ' + error.message);
+
+        const verifyBtn = document.getElementById('verify-account-btn');
+        if (verifyBtn) {
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> توثيق الحساب';
+        }
     }
 }
 

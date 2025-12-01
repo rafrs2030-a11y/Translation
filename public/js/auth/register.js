@@ -446,7 +446,8 @@ async function handleSubmit(e) {
             } catch (welcomeError) {
                 // لا نمنع إكمال التسجيل إذا فشل البريد الترحيبي
                 console.error('Failed to send welcome email:', welcomeError);
-            }
+            } 
+            
 
             // Show success message
             showAlert(
