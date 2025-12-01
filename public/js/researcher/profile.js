@@ -738,6 +738,20 @@ async function handleVerificationRequest() {
                 throw funcError;
             }
 
+            // إنشاء إشعار داخلي للمستخدم يؤكد استلام طلب التوثيق
+            const { error: notificationError } = await supabase
+                .from('notifications')
+                .insert([{
+                    user_id: currentUser.id,
+                    type: 'system',
+                    message: 'تم استلام طلب توثيق حسابك، وسيتم مراجعته من قبل فريق المنصة قريباً.',
+                    is_read: false
+                }]);
+
+            if (notificationError) {
+                console.error('Error creating verification notification:', notificationError);
+            }
+
             showAlert('success', 'تم إرسال طلب توثيق الحساب بنجاح. سيتم مراجعته من قبل فريق المنصة قريباً ✓');
 
             // تحديث نص الحالة
