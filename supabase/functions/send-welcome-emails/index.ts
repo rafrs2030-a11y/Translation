@@ -345,7 +345,7 @@ async function checkPreferencesAndSend(item: any) {
 
 Deno.serve(async (req) => {
   try {
-    // Only allow POST (triggering a run) or GET for health
+    // Only allow POST (triggering a run or single-send) or GET for health
     if (req.method === "GET") {
       return new Response(JSON.stringify({ 
         ok: true, 
@@ -367,6 +367,42 @@ Deno.serve(async (req) => {
       throw new Error("Supabase client not initialized");
     }
 
+    // Try to read body (may be empty for cron-style POST)
+    let body: any = null;
+    try {
+      body = await req.json();
+    } catch {
+      body = null;
+    }
+
+    // Realtime single-email mode: send immediately without relying on queue scheduler
+    if (body && (body.mode === "single" || body.mode === "realtime")) {
+      const recipient = body.recipient_email || body.email;
+      if (!recipient) {
+        return new Response(JSON.stringify({ ok: false, error: "recipient_email (or email) is required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      // Build a minimal queue-like item so we can reuse the same pipeline (preferences + logging)
+      const item = {
+        id: crypto.randomUUID(),
+        user_id: body.user_id || null,
+        recipient_email: recipient,
+        type: body.type || "welcome",
+        attempts: 0,
+        payload: body.payload || { name: body.name }
+      };
+
+      await checkPreferencesAndSend(item);
+
+      return new Response(JSON.stringify({ ok: true, mode: "single", recipient }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // Default behaviour: process queued batch (used by cron / scheduled jobs)
     console.log("Starting email queue processing...");
 
     // Fetch queued items
