@@ -105,6 +105,9 @@ function initEventListeners() {
     
     // Delete account
     document.getElementById('delete-account-btn')?.addEventListener('click', handleDeleteAccount);
+    
+    // Verification request
+    document.getElementById('request-verification-btn')?.addEventListener('click', handleVerificationRequest);
 }
 
 /**
@@ -150,12 +153,33 @@ function populateProfileHeader() {
     
     // Email verified badge
     const verifiedBadge = document.getElementById('email-verified-badge');
+    const verificationStatusText = document.getElementById('verification-status-text');
+    const verifyBtn = document.getElementById('request-verification-btn');
+
     if (currentUser.email_verified) {
         verifiedBadge.textContent = 'موثّق';
         verifiedBadge.className = 'badge badge-success';
+        
+        if (verificationStatusText) {
+            verificationStatusText.textContent = 'تم توثيق حسابك بنجاح. لا تحتاج إلى أي إجراء إضافي.';
+        }
+        if (verifyBtn) {
+            verifyBtn.disabled = true;
+            verifyBtn.classList.add('btn-disabled');
+            verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> حسابك موثّق بالفعل';
+        }
     } else {
         verifiedBadge.textContent = 'غير موثّق';
         verifiedBadge.className = 'badge badge-warning';
+
+        if (verificationStatusText) {
+            verificationStatusText.textContent = 'لم يتم توثيق حسابك بعد. يرجى استكمال بياناتك ثم إرسال طلب التوثيق ليقوم فريق المنصة بمراجعته.';
+        }
+        if (verifyBtn) {
+            verifyBtn.disabled = false;
+            verifyBtn.classList.remove('btn-disabled');
+            verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> إرسال طلب توثيق الحساب';
+        }
     }
     
     // Dates
@@ -656,6 +680,80 @@ async function handleDeleteAccount() {
     } catch (error) {
         console.error('Error deleting account:', error);
         alert('حدث خطأ في حذف الحساب');
+    }
+}
+
+/**
+ * Handle verification request
+ * إرسال طلب توثيق الحساب إلى فريق المنصة (يُنشئ إشعاراً للمسؤولين)
+ */
+async function handleVerificationRequest() {
+    try {
+        if (currentUser.email_verified) {
+            showAlert('success', 'حسابك موثّق بالفعل ✓');
+            return;
+        }
+
+        // التأكد من اكتمال بيانات الهوية ورقم الهاتف قبل الطلب
+        if (!currentUser.phone || !currentUser.national_id) {
+            showAlert('error', 'يرجى استكمال رقم الهاتف ورقم الهوية في تبويب "المعلومات الشخصية" قبل طلب التوثيق.');
+            switchTab('personal-info');
+            return;
+        }
+
+        const verifyBtn = document.getElementById('request-verification-btn');
+        if (verifyBtn) {
+            verifyBtn.disabled = true;
+            const originalHTML = verifyBtn.innerHTML;
+            verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري إرسال الطلب...';
+
+            // إحضار جميع المسؤولين
+            const { data: admins, error: adminsError } = await supabase
+                .from('users')
+                .select('id')
+                .in('role', ['admin', 'super_admin']);
+
+            if (adminsError) {
+                throw adminsError;
+            }
+
+            if (admins && admins.length > 0) {
+                const notifications = admins.map(a => ({
+                    user_id: a.id,
+                    submission_id: null,
+                    type: 'system',
+                    message: `طلب الباحث ${currentUser.username} (${currentUser.email}) توثيق حسابه.`
+                }));
+
+                const { error: notifError } = await supabase
+                    .from('notifications')
+                    .insert(notifications);
+
+                if (notifError) {
+                    throw notifError;
+                }
+            }
+
+            showAlert('success', 'تم إرسال طلب توثيق الحساب بنجاح. سيتم مراجعته من قبل فريق المنصة قريباً ✓');
+
+            // تحديث نص الحالة
+            const verificationStatusText = document.getElementById('verification-status-text');
+            if (verificationStatusText) {
+                verificationStatusText.textContent = 'تم إرسال طلب توثيق حسابك. سيتم التواصل معك بعد المراجعة.';
+            }
+
+            verifyBtn.innerHTML = originalHTML;
+            verifyBtn.disabled = true;
+        }
+    } catch (error) {
+        console.error('Error sending verification request:', error);
+        showAlert('error', 'حدث خطأ أثناء إرسال طلب التوثيق: ' + error.message);
+
+        const verifyBtn = document.getElementById('request-verification-btn');
+        if (verifyBtn) {
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> إرسال طلب توثيق الحساب';
+        }
     }
 }
 
