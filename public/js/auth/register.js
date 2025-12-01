@@ -3,6 +3,7 @@
  */
 
 import authStore from '../stores/authStore.js';
+import supabase from '../config/supabase.js';
 import { validateEmail, validatePassword, validatePhone, validateNationalId } from '../utils/validators.js';
 import { guestOnly } from '../utils/auth-guard.js';
 
@@ -427,9 +428,29 @@ async function handleSubmit(e) {
         const result = await authStore.register(registerData);
         
         if (result.success) {
+            // Try to send welcome email in real-time (non-blocking for the user)
+            try {
+                const userId = result.data?.user?.id || null;
+                
+                await supabase.functions.invoke('send-welcome-emails', {
+                    body: {
+                        mode: 'realtime',
+                        recipient_email: formData.email,
+                        user_id: userId,
+                        type: 'welcome',
+                        payload: {
+                            name: registerData.username,
+                        },
+                    },
+                });
+            } catch (welcomeError) {
+                // لا نمنع إكمال التسجيل إذا فشل البريد الترحيبي
+                console.error('Failed to send welcome email:', welcomeError);
+            }
+
             // Show success message
             showAlert(
-                'تم إنشاء حسابك بنجاح! تحقق من بريدك الإلكتروني لتفعيل الحساب.',
+                'تم إنشاء حسابك بنجاح! تم إرسال رسالة ترحيبية إلى بريدك الإلكتروني.',
                 'success'
             );
             
