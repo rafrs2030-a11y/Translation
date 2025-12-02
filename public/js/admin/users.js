@@ -414,13 +414,11 @@ async function handleEditUser(e) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>جاري الحفظ...</span>';
         
-        // Update user
-        const { data, error } = await supabase
+        // Update user بدون طلب صف واحد (لتجنب 406 / Cannot coerce the result to a single JSON object)
+        const { error } = await supabase
             .from('users')
             .update(updateData)
-            .eq('id', userId)
-            .select()
-            .single();
+            .eq('id', userId);
         
         if (error) throw error;
         

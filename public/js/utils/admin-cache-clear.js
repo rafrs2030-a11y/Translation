@@ -16,8 +16,14 @@ export async function clearAdminCache(options = {}) {
         const {
             silent = false, // لا تظهر logs إذا كان true
             clearAll = true, // مسح كل الكاش المتعلق بالأدمن
-            preserveAuth = true // الحفاظ على tokens المصادقة
+            preserveAuth = true // الحفاظ على tokens المصادقة (افتراضي: true - مهم جداً!)
         } = options;
+        
+        // التأكد من أن preserveAuth = true دائماً (لحماية auth tokens)
+        if (!preserveAuth) {
+            console.warn('⚠️ تحذير: preserveAuth = false قد يمسح tokens المصادقة! تم تعيينه تلقائياً إلى true.');
+        }
+        const finalPreserveAuth = true; // إجبار preserveAuth = true دائماً
 
         if (!silent) {
             console.log('🧹 بدء مسح كاش صفحات الإدمن (Real-time)...');
@@ -65,6 +71,28 @@ export async function clearAdminCache(options = {}) {
         };
         
         /**
+         * التحقق من أن المفتاح محمي (auth tokens)
+         */
+        const isProtectedKey = (key) => {
+            if (!finalPreserveAuth) return false;
+            
+            // قائمة شاملة من patterns لحماية auth tokens
+            const protectedPatterns = [
+                /^sb-/i,                    // Supabase keys (sb-xxx)
+                /^supabase\.auth\./i,       // supabase.auth.xxx
+                /auth.*token/i,              // auth_token, authToken, etc.
+                /refresh.*token/i,           // refresh_token, refreshToken, etc.
+                /access.*token/i,            // access_token, accessToken, etc.
+                /session/i,                  // session, sessionId, etc.
+                /user.*id/i,                 // user_id, userId, etc.
+                /^sb-.*-auth-token$/i,       // sb-xxx-auth-token
+                /^sb-.*-refresh-token$/i,    // sb-xxx-refresh-token
+            ];
+            
+            return protectedPatterns.some(pattern => pattern.test(key));
+        };
+        
+        /**
          * مسح المفاتيح من storage معين
          */
         const clearFromStorage = (storage, storageName) => {
@@ -73,12 +101,18 @@ export async function clearAdminCache(options = {}) {
                 let storageCleared = 0;
                 
                 allKeys.forEach(key => {
-                    // إذا كان clearAll = true، امسح كل شيء عدا auth tokens
+                    // لا تمسح المفاتيح المحمية (auth tokens)
+                    if (isProtectedKey(key)) {
+                        if (!silent) {
+                            console.log(`🔒 محمي من المسح (auth): ${key}`);
+                        }
+                        return; // تخطي هذا المفتاح
+                    }
+                    
+                    // تحديد ما إذا كان يجب مسح المفتاح
                     const shouldClear = clearAll 
-                        ? (preserveAuth && !key.match(/^(sb-|supabase\.auth\.|auth_token|refresh_token)/i))
-                            ? !key.match(/^(sb-|supabase\.auth\.|auth_token|refresh_token)/i)
-                            : true
-                        : matchesPattern(key);
+                        ? true  // إذا كان clearAll = true، امسح كل شيء عدا المحمي
+                        : matchesPattern(key); // وإلا امسح فقط ما يطابق الأنماط
                     
                     if (shouldClear) {
                         try {
@@ -106,20 +140,11 @@ export async function clearAdminCache(options = {}) {
             }
         };
         
-        // مسح من localStorage
+        // مسح من localStorage (دائماً باستخدام clearFromStorage لحماية auth tokens)
         clearFromStorage(localStorage, 'localStorage');
         
-        // مسح من sessionStorage
-        if (clearAll) {
-            try {
-                sessionStorage.clear();
-                clearedItems.sessionStorage = Object.keys(sessionStorage).length;
-            } catch (err) {
-                clearFromStorage(sessionStorage, 'sessionStorage');
-            }
-        } else {
-            clearFromStorage(sessionStorage, 'sessionStorage');
-        }
+        // مسح من sessionStorage (دائماً باستخدام clearFromStorage لحماية auth tokens)
+        clearFromStorage(sessionStorage, 'sessionStorage');
         
         // مسح من IndexedDB
         if ('indexedDB' in window) {

@@ -434,23 +434,17 @@ async function handleEditUser(e) {
         
         console.log('📝 بيانات التحديث:', updateData);
         
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from('users')
             .update(updateData)
-            .eq('id', userId)
-            .select()
-            .single();
+            .eq('id', userId);
         
         if (error) {
             console.error('❌ خطأ في تحديث قاعدة البيانات:', error);
             throw error;
         }
         
-        if (!data) {
-            throw new Error('لم يتم العثور على المستخدم بعد التحديث');
-        }
-        
-        console.log('✅ تم تحديث المستخدم بنجاح:', data);
+        console.log('✅ تم تحديث المستخدم بنجاح في قاعدة البيانات');
         
         // إعادة جلب البيانات للتأكد من أن كل شيء محدث
         await loadVerificationRequests();
