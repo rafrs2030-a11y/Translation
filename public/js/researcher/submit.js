@@ -19,11 +19,12 @@ let alertContainer;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    // Clear old cache on page load
-    clearOldCache();
-    
     const user = await requireResearcher();
     if (!user) return;
+    
+    // مسح الكاش القديم أولاً - Real-time
+    const { clearCacheOnPageLoad } = await import('../utils/researcher-cache-clear.js');
+    await clearCacheOnPageLoad();
     
     initElements();
     initEventListeners();

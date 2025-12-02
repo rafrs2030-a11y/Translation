@@ -24,6 +24,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentUser = await requireResearcher();
     if (!currentUser) return;
     
+    // مسح الكاش القديم أولاً - Real-time
+    const { clearCacheOnPageLoad } = await import('../utils/researcher-cache-clear.js');
+    await clearCacheOnPageLoad();
+    
     initElements();
     initEventListeners();
     await loadProfileData();

@@ -26,6 +26,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const user = await requireAdmin();
     if (!user) return;
     
+    // مسح الكاش القديم أولاً - Real-time
+    const { clearCacheOnPageLoad } = await import('../utils/admin-cache-clear.js');
+    await clearCacheOnPageLoad();
+    
     initElements();
     initEventListeners();
     await loadVerificationRequests();
@@ -144,59 +148,100 @@ function updateStats() {
  * Render requests
  */
 function renderRequests() {
-    if (filteredRequests.length === 0) {
-        tableContainer.style.display = 'none';
-        emptyState.style.display = 'block';
+    if (!requestsTableBody) {
+        console.error('Table body element not found!');
         return;
     }
     
-    tableContainer.style.display = 'block';
-    emptyState.style.display = 'none';
+    if (filteredRequests.length === 0) {
+        if (tableContainer) tableContainer.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
+        return;
+    }
+    
+    if (tableContainer) tableContainer.style.display = 'block';
+    if (emptyState) emptyState.style.display = 'none';
     
     const getInitialsFn = getInitials;
     
-    requestsTableBody.innerHTML = filteredRequests.map(user => `
-        <tr>
+    // Escape HTML to prevent XSS
+    const escapeHtml = (text) => {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    };
+    
+    requestsTableBody.innerHTML = filteredRequests.map(user => {
+        const username = escapeHtml(user.username || 'غير محدد');
+        const email = escapeHtml(user.email || '-');
+        const phone = user.phone ? escapeHtml(user.phone) : null;
+        const nationalId = user.national_id ? escapeHtml(user.national_id) : null;
+        const createdDate = formatDate(user.created_at);
+        const isVerified = user.email_verified === true;
+        const initials = getInitialsFn(user.username || 'غير محدد');
+        const userId = user.id;
+        
+        return `
+        <tr data-user-id="${userId}">
             <td>
                 <div class="user-info">
                     <div class="user-avatar-table">
                         ${user.profile_picture 
-                            ? `<img src="${user.profile_picture}" alt="الصورة الشخصية" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            ? `<img src="${escapeHtml(user.profile_picture)}" alt="الصورة الشخصية" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                <div style="display: none; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; align-items: center; justify-content: center; font-weight: 700; font-size: 1.125rem;">
-                                   ${getInitialsFn(user.username)}
+                                   ${escapeHtml(initials)}
                                </div>`
                             : `<div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.125rem;">
-                                   ${getInitialsFn(user.username)}
+                                   ${escapeHtml(initials)}
                                </div>`
                         }
                     </div>
                     <div class="user-details">
-                        <h4>${user.username}</h4>
+                        <h4>${username}</h4>
                     </div>
                 </div>
             </td>
-            <td>${user.email}</td>
-            <td>${user.phone || '-'}</td>
-            <td>${user.national_id || '-'}</td>
-            <td>${formatDate(user.created_at)}</td>
             <td>
-                <span class="badge badge-${user.email_verified ? 'success' : 'warning'}">
-                    ${user.email_verified ? 'موثّق' : 'غير موثّق'}
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-envelope" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                    <span>${email}</span>
+                </div>
+            </td>
+            <td>
+                ${phone ? `<div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-phone" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                    <span>${phone}</span>
+                </div>` : '<span style="color: var(--text-light);">-</span>'}
+            </td>
+            <td>
+                ${nationalId ? `<span style="font-family: monospace; direction: ltr; display: inline-block;">${nationalId}</span>` : '<span style="color: var(--text-light);">-</span>'}
+            </td>
+            <td>
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary);">
+                    <i class="fas fa-calendar-alt" style="font-size: 0.875rem;"></i>
+                    <span>${createdDate}</span>
+                </div>
+            </td>
+            <td>
+                <span class="badge badge-${isVerified ? 'success' : 'warning'}">
+                    ${isVerified ? '<i class="fas fa-check-circle"></i> موثّق' : '<i class="fas fa-clock"></i> غير موثّق'}
                 </span>
             </td>
             <td>
                 <div class="user-actions">
                     <button 
                         class="icon-btn-sm edit" 
-                        onclick="openEditUser('${user.id}')"
-                        title="تعديل"
+                        onclick="openEditUser('${userId}')"
+                        title="تعديل حالة التوثيق"
                     >
                         <i class="fas fa-edit"></i>
                     </button>
                 </div>
             </td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 }
 
 /**
