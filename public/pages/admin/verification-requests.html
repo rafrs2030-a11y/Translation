@@ -177,6 +177,24 @@
             gap: var(--spacing-sm);
         }
 
+        /* صف إحصائيات طلبات التوثيق */
+        .stats-row {
+            display: flex;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+            align-items: stretch;
+        }
+
+        .stats-row .stat-card {
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .stats-row {
+                flex-direction: column;
+            }
+        }
+
         .filter-group label {
             font-weight: 600;
             color: var(--text-primary);
@@ -300,7 +318,7 @@
         <!-- Page Content -->
         <div class="page-content">
             <!-- Stats Cards -->
-            <div class="grid grid-cols-3">
+            <div class="stats-row">
                 <div class="stat-card">
                     <div class="stat-icon" style="background-color: rgba(232, 154, 60, 0.1);">
                         <i class="fas fa-clock" style="color: #E89A3C;"></i>

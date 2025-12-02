@@ -19,6 +19,12 @@ export async function clearResearcherCache(options = {}) {
             preserveAuth = true // الحفاظ على tokens المصادقة
         } = options;
 
+        // حماية بيانات المصادقة دائماً حتى لو تم تمرير preserveAuth = false
+        if (!preserveAuth) {
+            console.warn('⚠️ preserveAuth=false قد يمسح بيانات auth. سيتم إجباره إلى true لحماية جلسة المستخدم.');
+        }
+        const finalPreserveAuth = true;
+
         if (!silent) {
             console.log('🧹 بدء مسح كاش صفحات الباحث (Real-time)...');
         }
@@ -61,6 +67,27 @@ export async function clearResearcherCache(options = {}) {
         const matchesPattern = (key) => {
             return researcherPatterns.some(pattern => pattern.test(key));
         };
+
+        /**
+         * التحقق من أن المفتاح يخص المصادقة (auth tokens)
+         */
+        const isProtectedKey = (key) => {
+            if (!finalPreserveAuth) return false;
+
+            const protectedPatterns = [
+                /^sb-/i,
+                /^supabase\.auth\./i,
+                /auth.*token/i,
+                /refresh.*token/i,
+                /access.*token/i,
+                /session/i,
+                /user.*id/i,
+                /^sb-.*-auth-token$/i,
+                /^sb-.*-refresh-token$/i,
+            ];
+
+            return protectedPatterns.some(pattern => pattern.test(key));
+        };
         
         /**
          * مسح المفاتيح من storage معين
@@ -71,11 +98,16 @@ export async function clearResearcherCache(options = {}) {
                 let storageCleared = 0;
                 
                 allKeys.forEach(key => {
-                    // إذا كان clearAll = true، امسح كل شيء عدا auth tokens
-                    const shouldClear = clearAll 
-                        ? (preserveAuth && !key.match(/^(sb-|supabase\.auth\.|auth_token|refresh_token)/i))
-                            ? !key.match(/^(sb-|supabase\.auth\.|auth_token|refresh_token)/i)
-                            : true
+                    // لا تمسح مفاتيح المصادقة المحمية
+                    if (isProtectedKey(key)) {
+                        if (!silent) {
+                            console.log(`🔒 محمي من المسح (auth): ${key}`);
+                        }
+                        return;
+                    }
+
+                    const shouldClear = clearAll
+                        ? true           // امسح كل شيء عدا المحمي
                         : matchesPattern(key);
                     
                     if (shouldClear) {
@@ -104,20 +136,11 @@ export async function clearResearcherCache(options = {}) {
             }
         };
         
-        // مسح من localStorage
+        // مسح من localStorage مع حماية auth
         clearFromStorage(localStorage, 'localStorage');
         
-        // مسح من sessionStorage
-        if (clearAll) {
-            try {
-                sessionStorage.clear();
-                clearedItems.sessionStorage = Object.keys(sessionStorage).length;
-            } catch (err) {
-                clearFromStorage(sessionStorage, 'sessionStorage');
-            }
-        } else {
-            clearFromStorage(sessionStorage, 'sessionStorage');
-        }
+        // مسح من sessionStorage بدون استخدام clear() حتى لا تُمسح الجلسة بالكامل
+        clearFromStorage(sessionStorage, 'sessionStorage');
         
         // مسح من IndexedDB
         if ('indexedDB' in window) {

@@ -475,14 +475,40 @@ class NotificationsStore {
         .from('notification_preferences')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        // إذا لم توجد تفضيلات، إنشاء افتراضية
-        if (error.code === 'PGRST116') {
-          await this.createDefaultPreferences();
-          return { success: true };
+        // إذا لم توجد تفضيلات (PGRST116 / 406)، استخدم قيم افتراضية في الواجهة فقط
+        if (error.code === 'PGRST116' || error.message?.includes('JSON object')) {
+          this.setState({
+            preferences: {
+              email_enabled: true,
+              in_app_enabled: true,
+              status_change_email: true,
+              comments_email: true,
+              reminders_email: true,
+              news_email: true,
+            },
+          });
+          return { success: true, data: null };
         }
+
+        // في حالة 401 (Unauthorized) لا نعتبره خروجاً من الحساب، فقط نستخدم القيم الحالية/الافتراضية
+        if (error.code === '401' || error.message?.includes('Unauthorized')) {
+          console.warn('⚠️ لا يمكن جلب تفضيلات الإشعارات (401). سيتم استخدام القيم الافتراضية في الواجهة.');
+          this.setState({
+            preferences: this.state.preferences || {
+              email_enabled: true,
+              in_app_enabled: true,
+              status_change_email: true,
+              comments_email: true,
+              reminders_email: true,
+              news_email: true,
+            },
+          });
+          return { success: false, error: error.message };
+        }
+
         throw error;
       }
 
