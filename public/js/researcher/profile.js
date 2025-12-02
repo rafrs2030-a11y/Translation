@@ -5,6 +5,7 @@
 
 import authStore from '../stores/authStore.js';
 import submissionsStore from '../stores/submissionsStore.js';
+import notificationsStore from '../stores/notificationsStore.js';
 import { handleLogout } from '../utils/logout.js';
 import { supabase, STORAGE_BUCKETS } from '../config/supabase.js';
 import { requireResearcher } from '../utils/auth-guard.js';
@@ -708,48 +709,74 @@ async function handleVerificationRequest() {
             verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري إرسال الطلب...';
 
             // إرسال طلب التوثيق عبر البريد إلى فريق المنصة باستخدام Edge Function
-            const { error: funcError } = await supabase.functions.invoke('send-notification-email', {
-                body: {
-                    emailData: {
-                        to: 'info@rafrs.com', // بريد فريق المنصة
-                        subject: 'طلب توثيق حساب باحث',
-                        html: `
-                            <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px;">
-                                <h2>طلب توثيق حساب جديد</h2>
-                                <p>قام الباحث التالي بطلب توثيق حسابه في منصة نشر الأبحاث العربية:</p>
-                                <ul>
-                                    <li><strong>الاسم:</strong> ${currentUser.username}</li>
-                                    <li><strong>البريد الإلكتروني:</strong> ${currentUser.email}</li>
-                                    <li><strong>رقم الجوال:</strong> ${currentUser.phone || 'غير محدد'}</li>
-                                    <li><strong>رقم الهوية:</strong> ${currentUser.national_id || 'غير محدد'}</li>
-                                </ul>
-                                <p>يرجى مراجعة البيانات وتحديث حالة البريد الإلكتروني إلى "موثّق" من لوحة المسؤولين عند الموافقة.</p>
-                            </div>
-                        `,
-                        type: 'system',
-                        userId: currentUser.id,
-                        submissionId: null
-                    },
-                    statusData: null
-                }
-            });
+            let emailSent = false;
+            try {
+                const { data: funcData, error: funcError } = await supabase.functions.invoke('send-notification-email', {
+                    body: {
+                        emailData: {
+                            to: 'info@rafrs.com', // بريد فريق المنصة
+                            subject: 'طلب توثيق حساب باحث',
+                            html: `
+                                <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px;">
+                                    <h2>طلب توثيق حساب جديد</h2>
+                                    <p>قام الباحث التالي بطلب توثيق حسابه في منصة نشر الأبحاث العربية:</p>
+                                    <ul>
+                                        <li><strong>الاسم:</strong> ${currentUser.username}</li>
+                                        <li><strong>البريد الإلكتروني:</strong> ${currentUser.email}</li>
+                                        <li><strong>رقم الجوال:</strong> ${currentUser.phone || 'غير محدد'}</li>
+                                        <li><strong>رقم الهوية:</strong> ${currentUser.national_id || 'غير محدد'}</li>
+                                    </ul>
+                                    <p>يرجى مراجعة البيانات وتحديث حالة البريد الإلكتروني إلى "موثّق" من لوحة المسؤولين عند الموافقة.</p>
+                                </div>
+                            `,
+                            type: 'system',
+                            userId: currentUser.id,
+                            submissionId: null
+                        },
+                        statusData: null
+                    }
+                });
 
-            if (funcError) {
-                throw funcError;
+                if (funcError) {
+                    console.warn('Email sending failed (notification will still be created):', funcError);
+                } else if (funcData && funcData.success) {
+                    emailSent = true;
+                }
+            } catch (emailError) {
+                console.warn('Email sending error (notification will still be created):', emailError);
             }
 
             // إنشاء إشعار داخلي للمستخدم يؤكد استلام طلب التوثيق
-            const { error: notificationError } = await supabase
+            const { data: notificationData, error: notificationError } = await supabase
                 .from('notifications')
                 .insert([{
                     user_id: currentUser.id,
                     type: 'system',
                     message: 'تم استلام طلب توثيق حسابك، وسيتم مراجعته من قبل فريق المنصة قريباً.',
                     is_read: false
-                }]);
+                }])
+                .select()
+                .single();
 
             if (notificationError) {
                 console.error('Error creating verification notification:', notificationError);
+            } else if (notificationData) {
+                // تحديث عداد الإشعارات في الواجهة
+                try {
+                    // إضافة الإشعار إلى الحالة مباشرة
+                    notificationsStore.handleNewNotification(notificationData);
+                    
+                    // إعادة جلب الإشعارات لتحديث العداد بشكل صحيح
+                    await notificationsStore.fetchNotifications({ limit: 50 });
+                    
+                    // إشعار المتصفح بالإشعار الجديد
+                    const preferences = notificationsStore.getState().preferences;
+                    if (preferences && preferences.in_app_enabled) {
+                        await notificationsStore.showBrowserNotification(notificationData);
+                    }
+                } catch (updateError) {
+                    console.error('Error updating notifications:', updateError);
+                }
             }
 
             showAlert('success', 'تم إرسال طلب توثيق الحساب بنجاح. سيتم مراجعته من قبل فريق المنصة قريباً ✓');
