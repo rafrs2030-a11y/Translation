@@ -551,10 +551,3 @@ export async function clearPageCache(pageName) {
     }
 }
 
-// Export all functions
-export {
-    startAutoCacheClearing,
-    stopAutoCacheClearing,
-    clearCacheOnPageLoad
-};
-

@@ -149,6 +149,12 @@ function populateProfileHeader() {
     profileName.textContent = currentUser.username;
     profileEmail.textContent = currentUser.email;
     profilePhone.textContent = currentUser.phone || 'غير محدد';
+      
+      // تحديث بريد المستخدم في الشريط العلوي ليظهر البريد الحقيقي بدلاً من النص الافتراضي
+      const topbarUserEmail = document.getElementById('user-email');
+      if (topbarUserEmail) {
+          topbarUserEmail.textContent = currentUser.email || topbarUserEmail.textContent;
+      }
     
     // Role
     const roleLabel = currentUser.role === 'super_admin' ? 'مسؤول رئيسي' : 'مسؤول';
