@@ -31,6 +31,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     initElements();
     initEventListeners();
     await loadUsers();
+    
+    // فحص query parameters وتطبيق الفلتر
+    const urlParams = new URLSearchParams(window.location.search);
+    const filterParam = urlParams.get('filter');
+    const userIdParam = urlParams.get('user');
+    
+    if (filterParam === 'unverified' && verifiedFilter) {
+        verifiedFilter.value = 'false';
+        handleFilterChange();
+        
+        // إذا كان هناك user ID محدد، التمرير إليه
+        if (userIdParam) {
+            setTimeout(() => {
+                const userRow = document.querySelector(`[data-user-id="${userIdParam}"]`);
+                if (userRow) {
+                    userRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    userRow.style.backgroundColor = '#fff3cd';
+                    setTimeout(() => {
+                        userRow.style.backgroundColor = '';
+                    }, 3000);
+                }
+            }, 500);
+        }
+    }
 });
 
 /**

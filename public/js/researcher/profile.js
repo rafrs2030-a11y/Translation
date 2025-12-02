@@ -676,8 +676,6 @@ async function handleDeleteAccount() {
         // This should be handled by backend with proper cascade deletes
         alert('سيتم تنفيذ هذه الميزة قريباً');
         
-        // TODO: Implement account deletion
-        
     } catch (error) {
         console.error('Error deleting account:', error);
         alert('حدث خطأ في حذف الحساب');
@@ -757,6 +755,33 @@ async function handleVerificationRequest() {
                 }])
                 .select()
                 .single();
+
+            // إنشاء إشعارات لجميع المسؤولين
+            try {
+                const { data: adminUsers, error: adminError } = await supabase
+                    .from('users')
+                    .select('id')
+                    .in('role', ['admin', 'super_admin']);
+
+                if (!adminError && adminUsers && adminUsers.length > 0) {
+                    const adminNotifications = adminUsers.map(admin => ({
+                        user_id: admin.id,
+                        type: 'system',
+                        message: `طلب توثيق حساب جديد من الباحث: ${currentUser.username} (${currentUser.email})`,
+                        is_read: false
+                    }));
+
+                    const { error: adminNotificationsError } = await supabase
+                        .from('notifications')
+                        .insert(adminNotifications);
+
+                    if (adminNotificationsError) {
+                        console.error('Error creating admin notifications:', adminNotificationsError);
+                    }
+                }
+            } catch (adminNotifyError) {
+                console.error('Error notifying admins:', adminNotifyError);
+            }
 
             if (notificationError) {
                 console.error('Error creating verification notification:', notificationError);

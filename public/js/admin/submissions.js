@@ -432,8 +432,6 @@ function debounce(func, wait) {
  * Show success message
  */
 function showSuccess(message) {
-    // TODO: Implement toast notification
-    console.log('Success:', message);
     alert(message);
 }
 

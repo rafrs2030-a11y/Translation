@@ -15,6 +15,7 @@ import { supabase } from '../config/supabase.js';
 let totalSubmissionsEl, pendingSubmissionsEl, approvedSubmissionsEl, rejectedSubmissionsEl;
 let pendingListEl, activityListEl;
 let adminNameEl, userEmailEl;
+let pendingVerificationsEl, pendingVerificationsListEl;
 
 // Chart instance
 let submissionsChart = null;
@@ -47,6 +48,8 @@ function initElements() {
     // Lists
     pendingListEl = document.getElementById('pending-list');
     activityListEl = document.getElementById('activity-list');
+    pendingVerificationsEl = document.getElementById('pending-verifications');
+    pendingVerificationsListEl = document.getElementById('pending-verifications-list');
     
     // User info
     adminNameEl = document.getElementById('admin-name');
@@ -119,6 +122,9 @@ async function loadDashboardData() {
         
         // Load pending submissions
         await loadPendingSubmissions();
+        
+        // Load pending verifications
+        await loadPendingVerifications();
         
         // Load recent activity
         await loadRecentActivity();
@@ -203,6 +209,82 @@ async function loadPendingSubmissions() {
                 <p>خطأ في تحميل الطلبات</p>
             </div>
         `;
+    }
+}
+
+/**
+ * Load pending verification requests
+ */
+async function loadPendingVerifications() {
+    try {
+        if (!pendingVerificationsEl || !pendingVerificationsListEl) return;
+        
+        // جلب المستخدمين غير الموثّقين
+        const { data: unverifiedUsers, error } = await supabase
+            .from('users')
+            .select('id, username, email, phone, national_id, created_at')
+            .eq('role', 'researcher')
+            .eq('email_verified', false)
+            .order('created_at', { ascending: false })
+            .limit(5);
+        
+        if (error) throw error;
+        
+        const count = unverifiedUsers?.length || 0;
+        if (pendingVerificationsEl) {
+            pendingVerificationsEl.textContent = count;
+        }
+        
+        if (!unverifiedUsers || unverifiedUsers.length === 0) {
+            if (pendingVerificationsListEl) {
+                pendingVerificationsListEl.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle"></i>
+                        <p>لا توجد طلبات توثيق معلقة</p>
+                    </div>
+                `;
+            }
+            return;
+        }
+        
+        if (pendingVerificationsListEl) {
+            pendingVerificationsListEl.innerHTML = unverifiedUsers.map(user => `
+                <div class="submission-item">
+                    <div class="submission-info">
+                        <h4>${user.username}</h4>
+                        <p class="text-secondary">
+                            <i class="fas fa-envelope"></i>
+                            ${user.email}
+                        </p>
+                        ${user.phone ? `<p class="text-secondary">
+                            <i class="fas fa-phone"></i>
+                            ${user.phone}
+                        </p>` : ''}
+                        <span class="badge badge-sm badge-warning">
+                            ${formatDate(user.created_at)}
+                        </span>
+                    </div>
+                    <div class="submission-actions">
+                        <a href="/pages/admin/users.html?filter=unverified&user=${user.id}" 
+                           class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i>
+                            مراجعة
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+    } catch (error) {
+        console.error('Error loading pending verifications:', error);
+        if (pendingVerificationsListEl) {
+            pendingVerificationsListEl.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>خطأ في تحميل طلبات التوثيق</p>
+                </div>
+            `;
+        }
     }
 }
 

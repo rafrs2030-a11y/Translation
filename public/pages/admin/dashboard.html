@@ -196,7 +196,33 @@
                     </div>
                 </div>
 
-                <!-- Recent Activity -->
+                <!-- Pending Verifications -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-user-check"></i>
+                            طلبات التوثيق المعلقة
+                            <span class="badge badge-warning" id="pending-verifications">0</span>
+                        </h3>
+                        <a href="/pages/admin/users.html?filter=unverified" class="link-primary">
+                            عرض الكل
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div id="pending-verifications-list">
+                            <!-- Loading Spinner -->
+                            <div class="loading-placeholder">
+                                <div class="loading-spinner"></div>
+                                <p>جاري التحميل...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="grid grid-cols-1">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">

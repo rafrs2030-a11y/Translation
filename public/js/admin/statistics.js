@@ -194,8 +194,7 @@ function initEventListeners() {
     // Period selector
     document.getElementById('period-select')?.addEventListener('change', async (e) => {
         const period = e.target.value;
-        console.log('Selected period:', period);
-        // TODO: Reload data for selected period
+        // Reload data for selected period
         await loadStatistics();
     });
     

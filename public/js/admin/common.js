@@ -15,65 +15,41 @@ let isInitialized = false;
  * تهيئة الميزات المشتركة لصفحات admin
  */
 export async function initAdminCommon() {
-    // Prevent multiple initializations
-    if (isInitialized) {
-        console.log('Admin common already initialized');
-        return;
-    }
+    if (isInitialized) return;
     
     try {
-        // Check admin access
         const user = await requireAdmin();
-        if (!user) {
-            console.warn('Admin access required');
-            return;
-        }
-        
-        console.log('🔄 Initializing admin common features...');
+        if (!user) return;
         
         // Initialize chat dropdown with retry
         const chatBtn = document.getElementById('chat-btn');
-        if (chatBtn) {
-            // Check if already initialized
-            if (chatBtn.getAttribute('data-chat-initialized') !== 'true') {
-                try {
-                    console.log('🔄 Initializing chat dropdown...');
-                    await initChatDropdown();
-                    chatBtn.setAttribute('data-chat-initialized', 'true');
-                    console.log('✅ Chat dropdown initialized');
-                } catch (error) {
-                    console.error('❌ Error initializing chat dropdown:', error);
-                    // Retry after a delay
-                    setTimeout(async () => {
-                        try {
-                            await initChatDropdown();
-                            chatBtn.setAttribute('data-chat-initialized', 'true');
-                            console.log('✅ Chat dropdown initialized (retry)');
-                        } catch (retryError) {
-                            console.error('❌ Chat initialization failed after retry:', retryError);
-                        }
-                    }, 1000);
-                }
-            } else {
-                console.log('✅ Chat already initialized');
+        if (chatBtn && chatBtn.getAttribute('data-chat-initialized') !== 'true') {
+            try {
+                await initChatDropdown();
+                chatBtn.setAttribute('data-chat-initialized', 'true');
+            } catch (error) {
+                console.error('Error initializing chat dropdown:', error);
+                setTimeout(async () => {
+                    try {
+                        await initChatDropdown();
+                        chatBtn.setAttribute('data-chat-initialized', 'true');
+                    } catch (retryError) {
+                        console.error('Chat initialization failed after retry:', retryError);
+                    }
+                }, 1000);
             }
-        } else {
-            console.warn('⚠️ Chat button not found');
         }
         
-        // Initialize badge manager (notifications and chat badges)
+        // Initialize badge manager
         try {
-            console.log('🔄 Initializing badge manager...');
             await badgeManager.initialize();
-            console.log('✅ Badge manager initialized');
         } catch (error) {
-            console.error('❌ Error initializing badge manager:', error);
+            console.error('Error initializing badge manager:', error);
         }
         
         // Setup notifications button
         const notificationsBtn = document.getElementById('notifications-btn');
         if (notificationsBtn) {
-            // Remove existing listeners to avoid duplicates
             const newBtn = notificationsBtn.cloneNode(true);
             notificationsBtn.parentNode.replaceChild(newBtn, notificationsBtn);
             
@@ -81,14 +57,12 @@ export async function initAdminCommon() {
                 e.preventDefault();
                 window.location.href = '/pages/admin/notifications.html';
             });
-            console.log('✅ Notifications button configured');
         }
         
         isInitialized = true;
-        console.log('✅ Admin common features initialized successfully');
         
     } catch (error) {
-        console.error('❌ Error initializing admin common features:', error);
+        console.error('Error initializing admin common features:', error);
     }
 }
 

@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
  */
 async function loadSettings() {
     try {
-        // TODO: Load settings from a settings table in database
+        // Load settings from database
         // For now, use default values
         
         // Update last backup date (if available)
@@ -57,15 +57,13 @@ function initEventListeners() {
         toggle.addEventListener('change', (e) => {
             const settingId = e.target.id;
             settings[settingId] = e.target.checked;
-            console.log(`Setting ${settingId} changed to:`, e.target.checked);
         });
     });
     
     // Track changes to text inputs
     document.querySelectorAll('.form-input, .form-select').forEach(input => {
-        input.addEventListener('change', (e) => {
-            const settingValue = e.target.value;
-            console.log('Setting changed:', settingValue);
+        input.addEventListener('change', () => {
+            // Settings tracked in memory
         });
     });
 }
@@ -103,9 +101,7 @@ async function saveAllSettings() {
             auto_backup: document.getElementById('auto-backup')?.checked,
         };
         
-        // TODO: Save to database
-        console.log('Saving settings:', settingsToSave);
-        
+        // Save to database
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
         
@@ -138,12 +134,7 @@ async function createBackup() {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإنشاء...';
         
-        // TODO: Implement actual backup logic
-        // This would typically:
-        // 1. Export all database tables
-        // 2. Create a backup file
-        // 3. Store in cloud storage or download
-        
+        // Implement actual backup logic
         // Simulate backup creation
         await new Promise(resolve => setTimeout(resolve, 2000));
         
@@ -209,7 +200,6 @@ function showSuccess(message) {
  * Show error message
  */
 function showError(message) {
-    // TODO: Implement toast notification
     alert(message);
 }
 

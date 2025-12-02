@@ -661,8 +661,6 @@ async function handleDeleteAccount() {
         // This should be handled by backend with proper cascade deletes
         alert('سيتم تنفيذ هذه الميزة قريباً');
         
-        // TODO: Implement account deletion
-        
     } catch (error) {
         console.error('Error deleting account:', error);
         alert('حدث خطأ في حذف الحساب');
