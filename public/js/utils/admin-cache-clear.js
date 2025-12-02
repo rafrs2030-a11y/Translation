@@ -1,15 +1,27 @@
 /**
  * Admin Cache Clear Utility
- * وظيفة مسح الكاش في صفحات الإدمن
+ * وظيفة مسح الكاش في صفحات الإدمن - Real-time Cache Clearing
  */
 
+// حالة مسح الكاش التلقائي
+let autoCacheClearInterval = null;
+let isAutoCacheClearing = false;
+
 /**
- * مسح الكاش القديم في صفحات الإدمن
- * يشمل: localStorage, sessionStorage, CSS cache, Service Worker cache
+ * مسح الكاش القديم في صفحات الإدمن - شامل وكامل
+ * يشمل: localStorage, sessionStorage, CSS cache, Service Worker cache, IndexedDB
  */
-export async function clearAdminCache() {
+export async function clearAdminCache(options = {}) {
     try {
-        console.log('🧹 بدء مسح كاش صفحات الإدمن...');
+        const {
+            silent = false, // لا تظهر logs إذا كان true
+            clearAll = true, // مسح كل الكاش المتعلق بالأدمن
+            preserveAuth = true // الحفاظ على tokens المصادقة
+        } = options;
+
+        if (!silent) {
+            console.log('🧹 بدء مسح كاش صفحات الإدمن (Real-time)...');
+        }
         
         let clearedCount = 0;
         const clearedItems = {
@@ -17,10 +29,11 @@ export async function clearAdminCache() {
             sessionStorage: 0,
             css: 0,
             serviceWorker: 0,
-            indexedDB: 0
+            indexedDB: 0,
+            fetchCache: 0
         };
         
-        // أنماط البحث للمفاتيح المتعلقة بصفحات الإدمن
+        // أنماط البحث للمفاتيح المتعلقة بصفحات الإدمن - موسعة
         const adminPatterns = [
             /^admin_/i,
             /^submission/i,
@@ -32,7 +45,16 @@ export async function clearAdminCache() {
             /^sb-.*admin/i,
             /^sb-.*submission/i,
             /supabase.*admin/i,
-            /supabase.*submission/i
+            /supabase.*submission/i,
+            /dashboard/i,
+            /notifications.*admin/i,
+            /users.*admin/i,
+            /statistics.*admin/i,
+            /reports.*admin/i,
+            /verification.*admin/i,
+            /admin.*data/i,
+            /admin.*list/i,
+            /admin.*filter/i
         ];
         
         /**
@@ -51,14 +73,25 @@ export async function clearAdminCache() {
                 let storageCleared = 0;
                 
                 allKeys.forEach(key => {
-                    if (matchesPattern(key)) {
+                    // إذا كان clearAll = true، امسح كل شيء عدا auth tokens
+                    const shouldClear = clearAll 
+                        ? (preserveAuth && !key.match(/^(sb-|supabase\.auth\.|auth_token|refresh_token)/i))
+                            ? !key.match(/^(sb-|supabase\.auth\.|auth_token|refresh_token)/i)
+                            : true
+                        : matchesPattern(key);
+                    
+                    if (shouldClear) {
                         try {
                             storage.removeItem(key);
                             storageCleared++;
                             clearedCount++;
-                            console.log(`🗑️ تم مسح ${storageName}: ${key}`);
+                            if (!silent) {
+                                console.log(`🗑️ تم مسح ${storageName}: ${key}`);
+                            }
                         } catch (err) {
-                            console.warn(`⚠️ خطأ في مسح ${storageName} key: ${key}`, err);
+                            if (!silent) {
+                                console.warn(`⚠️ خطأ في مسح ${storageName} key: ${key}`, err);
+                            }
                         }
                     }
                 });
@@ -66,7 +99,9 @@ export async function clearAdminCache() {
                 clearedItems[storageName === 'localStorage' ? 'localStorage' : 'sessionStorage'] = storageCleared;
                 return storageCleared;
             } catch (err) {
-                console.error(`❌ خطأ في الوصول إلى ${storageName}:`, err);
+                if (!silent) {
+                    console.error(`❌ خطأ في الوصول إلى ${storageName}:`, err);
+                }
                 return 0;
             }
         };
@@ -75,30 +110,61 @@ export async function clearAdminCache() {
         clearFromStorage(localStorage, 'localStorage');
         
         // مسح من sessionStorage
-        clearFromStorage(sessionStorage, 'sessionStorage');
+        if (clearAll) {
+            try {
+                sessionStorage.clear();
+                clearedItems.sessionStorage = Object.keys(sessionStorage).length;
+            } catch (err) {
+                clearFromStorage(sessionStorage, 'sessionStorage');
+            }
+        } else {
+            clearFromStorage(sessionStorage, 'sessionStorage');
+        }
         
         // مسح من IndexedDB
         if ('indexedDB' in window) {
             try {
-                const dbNames = ['admin', 'submissions', 'submission_details', 'admin_store'];
+                const dbNames = [
+                    'admin', 'submissions', 'submission_details', 'admin_store',
+                    'admin_cache', 'dashboard_cache', 'notifications_cache',
+                    'users_cache', 'statistics_cache', 'reports_cache'
+                ];
                 
                 for (const dbName of dbNames) {
                     try {
                         const deleteRequest = indexedDB.deleteDatabase(dbName);
-                        deleteRequest.onsuccess = () => {
-                            clearedItems.indexedDB++;
-                            clearedCount++;
-                            console.log(`🗑️ تم مسح IndexedDB: ${dbName}`);
-                        };
-                        deleteRequest.onerror = () => {
-                            console.warn(`⚠️ خطأ في مسح IndexedDB: ${dbName}`);
-                        };
+                        await new Promise((resolve) => {
+                            deleteRequest.onsuccess = () => {
+                                clearedItems.indexedDB++;
+                                clearedCount++;
+                                if (!silent) {
+                                    console.log(`🗑️ تم مسح IndexedDB: ${dbName}`);
+                                }
+                                resolve();
+                            };
+                            deleteRequest.onerror = () => {
+                                if (!silent) {
+                                    console.warn(`⚠️ خطأ في مسح IndexedDB: ${dbName}`);
+                                }
+                                resolve();
+                            };
+                            deleteRequest.onblocked = () => {
+                                if (!silent) {
+                                    console.warn(`⚠️ IndexedDB محظور: ${dbName}`);
+                                }
+                                resolve();
+                            };
+                        });
                     } catch (err) {
-                        console.warn(`⚠️ خطأ في محاولة مسح IndexedDB: ${dbName}`, err);
+                        if (!silent) {
+                            console.warn(`⚠️ خطأ في محاولة مسح IndexedDB: ${dbName}`, err);
+                        }
                     }
                 }
             } catch (err) {
-                console.warn('⚠️ خطأ في الوصول إلى IndexedDB:', err);
+                if (!silent) {
+                    console.warn('⚠️ خطأ في الوصول إلى IndexedDB:', err);
+                }
             }
         }
         
@@ -107,7 +173,7 @@ export async function clearAdminCache() {
             try {
                 const cacheNames = await caches.keys();
                 const adminCacheNames = cacheNames.filter(name => 
-                    /admin|submission|dashboard/i.test(name)
+                    /admin|submission|dashboard|notification|user|statistic|report/i.test(name) || clearAll
                 );
                 
                 await Promise.all(
@@ -117,55 +183,170 @@ export async function clearAdminCache() {
                             if (deleted) {
                                 clearedItems.serviceWorker++;
                                 clearedCount++;
-                                console.log(`🗑️ تم مسح Service Worker cache: ${cacheName}`);
+                                if (!silent) {
+                                    console.log(`🗑️ تم مسح Service Worker cache: ${cacheName}`);
+                                }
                             }
                         } catch (err) {
-                            console.warn(`⚠️ خطأ في مسح Service Worker cache: ${cacheName}`, err);
+                            if (!silent) {
+                                console.warn(`⚠️ خطأ في مسح Service Worker cache: ${cacheName}`, err);
+                            }
                         }
                     })
                 );
             } catch (err) {
-                console.warn('⚠️ خطأ في الوصول إلى Service Worker caches:', err);
+                if (!silent) {
+                    console.warn('⚠️ خطأ في الوصول إلى Service Worker caches:', err);
+                }
             }
         }
         
+        // مسح Fetch Cache (Network Cache)
+        try {
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                for (const cacheName of cacheNames) {
+                    try {
+                        const cache = await caches.open(cacheName);
+                        const requests = await cache.keys();
+                        const adminRequests = requests.filter(req => 
+                            req.url.includes('/admin/') || 
+                            req.url.includes('/api/admin/') ||
+                            req.url.includes('submissions') ||
+                            clearAll
+                        );
+                        
+                        await Promise.all(
+                            adminRequests.map(req => cache.delete(req))
+                        );
+                        
+                        clearedItems.fetchCache += adminRequests.length;
+                    } catch (err) {
+                        // تجاهل الأخطاء
+                    }
+                }
+            }
+        } catch (err) {
+            // تجاهل الأخطاء
+        }
+        
         // إعادة تحميل ملفات CSS
-        await reloadAdminCSS();
+        await reloadAdminCSS({ silent });
         clearedItems.css = 1;
         
         // تقرير النتائج
-        if (clearedCount > 0) {
-            console.log(`✅ تم مسح ${clearedCount} عنصر من كاش صفحات الإدمن:`);
-            console.log(`   - localStorage: ${clearedItems.localStorage}`);
-            console.log(`   - sessionStorage: ${clearedItems.sessionStorage}`);
-            console.log(`   - IndexedDB: ${clearedItems.indexedDB}`);
-            console.log(`   - Service Worker: ${clearedItems.serviceWorker}`);
-            console.log(`   - CSS: ${clearedItems.css}`);
-        } else {
-            console.log('✅ لا يوجد كاش قديم لصفحات الإدمن');
+        if (!silent) {
+            if (clearedCount > 0) {
+                console.log(`✅ تم مسح ${clearedCount} عنصر من كاش صفحات الإدمن (Real-time):`);
+                console.log(`   - localStorage: ${clearedItems.localStorage}`);
+                console.log(`   - sessionStorage: ${clearedItems.sessionStorage}`);
+                console.log(`   - IndexedDB: ${clearedItems.indexedDB}`);
+                console.log(`   - Service Worker: ${clearedItems.serviceWorker}`);
+                console.log(`   - Fetch Cache: ${clearedItems.fetchCache}`);
+                console.log(`   - CSS: ${clearedItems.css}`);
+            } else {
+                console.log('✅ لا يوجد كاش قديم لصفحات الإدمن');
+            }
         }
         
         return {
             success: true,
             cleared: clearedCount,
-            details: clearedItems
+            details: clearedItems,
+            timestamp: new Date().toISOString()
         };
         
     } catch (error) {
         console.error('❌ خطأ في مسح كاش صفحات الإدمن:', error);
         return {
             success: false,
-            error: error.message
+            error: error.message,
+            timestamp: new Date().toISOString()
         };
+    }
+}
+
+/**
+ * بدء مسح الكاش التلقائي بشكل Real-time
+ * @param {number} intervalMinutes - عدد الدقائق بين كل مسح (افتراضي: 5 دقائق)
+ */
+export function startAutoCacheClearing(intervalMinutes = 5) {
+    // إيقاف أي interval سابق
+    if (autoCacheClearInterval) {
+        stopAutoCacheClearing();
+    }
+    
+    // مسح الكاش فوراً عند البدء
+    clearAdminCache({ silent: true, clearAll: true, preserveAuth: true });
+    
+    // إنشاء interval للمسح التلقائي
+    const intervalMs = intervalMinutes * 60 * 1000;
+    autoCacheClearInterval = setInterval(() => {
+        if (!isAutoCacheClearing) {
+            isAutoCacheClearing = true;
+            clearAdminCache({ silent: true, clearAll: true, preserveAuth: true })
+                .finally(() => {
+                    isAutoCacheClearing = false;
+                });
+        }
+    }, intervalMs);
+    
+    console.log(`✅ تم تفعيل مسح الكاش التلقائي (Real-time) كل ${intervalMinutes} دقيقة`);
+    
+    // مسح الكاش عند تغيير الصفحة
+    window.addEventListener('beforeunload', () => {
+        clearAdminCache({ silent: true, clearAll: false, preserveAuth: true });
+    });
+    
+    // مسح الكاش عند العودة للصفحة
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            clearAdminCache({ silent: true, clearAll: false, preserveAuth: true });
+        }
+    });
+}
+
+/**
+ * إيقاف مسح الكاش التلقائي
+ */
+export function stopAutoCacheClearing() {
+    if (autoCacheClearInterval) {
+        clearInterval(autoCacheClearInterval);
+        autoCacheClearInterval = null;
+        console.log('⏸️ تم إيقاف مسح الكاش التلقائي');
+    }
+}
+
+/**
+ * مسح الكاش عند تحميل الصفحة (للصفحات الجديدة)
+ */
+export async function clearCacheOnPageLoad() {
+    // التحقق من وجود timestamp في URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasNoCache = urlParams.has('_nocache');
+    
+    // إذا كان هناك _nocache في URL، امسح كل الكاش
+    if (hasNoCache) {
+        await clearAdminCache({ silent: false, clearAll: true, preserveAuth: true });
+        // إزالة _nocache من URL
+        urlParams.delete('_nocache');
+        const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+    } else {
+        // مسح الكاش العادي
+        await clearAdminCache({ silent: true, clearAll: false, preserveAuth: true });
     }
 }
 
 /**
  * إعادة تحميل ملفات CSS لصفحات الإدمن
  */
-async function reloadAdminCSS() {
+async function reloadAdminCSS(options = {}) {
+    const { silent = false } = options;
     try {
-        console.log('🔄 بدء إعادة تحميل ملفات CSS لصفحات الإدمن...');
+        if (!silent) {
+            console.log('🔄 بدء إعادة تحميل ملفات CSS لصفحات الإدمن...');
+        }
         
         // قائمة ملفات CSS المتعلقة بصفحات الإدمن
         const cssFiles = [
@@ -196,7 +377,9 @@ async function reloadAdminCSS() {
                                     .map(request => cache.delete(request))
                             );
                             
-                            console.log(`🗑️ تم مسح كاش CSS من: ${cacheName}`);
+                            if (!silent) {
+                                console.log(`🗑️ تم مسح كاش CSS من: ${cacheName}`);
+                            }
                         } catch (err) {
                             console.warn(`⚠️ خطأ في مسح كاش CSS من: ${cacheName}`, err);
                         }
@@ -236,7 +419,9 @@ async function reloadAdminCSS() {
                     newLink.onload = () => {
                         reloadedCount++;
                         const fileName = href.split('/').pop() || href;
-                        console.log(`✅ تم تحميل CSS جديد: ${fileName}`);
+                        if (!silent) {
+                            console.log(`✅ تم تحميل CSS جديد: ${fileName}`);
+                        }
                         
                         // إزالة الملف القديم بعد تحميل الجديد
                         setTimeout(() => {
@@ -259,7 +444,9 @@ async function reloadAdminCSS() {
                     if (link.parentNode) {
                         link.parentNode.insertBefore(newLink, link.nextSibling);
                         const fileName = href.split('/').pop() || href;
-                        console.log(`🔄 إعادة تحميل CSS: ${fileName}`);
+                        if (!silent) {
+                            console.log(`🔄 إعادة تحميل CSS: ${fileName}`);
+                        }
                     }
                 } catch (err) {
                     console.warn(`⚠️ خطأ في إعادة تحميل CSS: ${href}`, err);
@@ -284,7 +471,9 @@ async function reloadAdminCSS() {
                     el.style.display = '';
                 });
                 
-                console.log(`✅ تم إعادة تطبيق الأنماط على ${adminElements.length} عنصر`);
+                if (!silent) {
+                    console.log(`✅ تم إعادة تطبيق الأنماط على ${adminElements.length} عنصر`);
+                }
             } catch (err) {
                 console.warn('⚠️ خطأ في إعادة تطبيق الأنماط:', err);
             }
@@ -304,7 +493,7 @@ async function reloadAdminCSS() {
 
 /**
  * مسح كاش صفحة محددة
- * @param {string} pageName - اسم الصفحة (submissions, submission-details, dashboard)
+ * @param {string} pageName - اسم الصفحة (submissions, submission-details, dashboard, etc.)
  */
 export async function clearPageCache(pageName) {
     try {
@@ -313,7 +502,14 @@ export async function clearPageCache(pageName) {
         const pagePatterns = {
             'submissions': [/submission/i, /submissions/i],
             'submission-details': [/submission.*detail/i, /submission.*details/i],
-            'dashboard': [/dashboard/i, /admin.*dashboard/i]
+            'dashboard': [/dashboard/i, /admin.*dashboard/i],
+            'notifications': [/notification/i, /notifications/i],
+            'users': [/user/i, /users/i],
+            'statistics': [/statistic/i, /statistics/i],
+            'reports': [/report/i, /reports/i],
+            'settings': [/setting/i, /settings/i],
+            'profile': [/profile/i, /admin.*profile/i],
+            'verification-requests': [/verification/i, /verification.*request/i]
         };
         
         const patterns = pagePatterns[pageName] || [];
@@ -354,4 +550,11 @@ export async function clearPageCache(pageName) {
         return { success: false, error: error.message };
     }
 }
+
+// Export all functions
+export {
+    startAutoCacheClearing,
+    stopAutoCacheClearing,
+    clearCacheOnPageLoad
+};
 

@@ -131,6 +131,10 @@ export function generateAdminSidebarHTML(activePage = 'dashboard') {
                     <i class="fas fa-users"></i>
                     <span>إدارة المستخدمين</span>
                 </a>
+                <a href="/pages/admin/verification-requests.html" class="nav-item ${activePage === 'verification-requests' ? 'active' : ''}">
+                    <i class="fas fa-user-check"></i>
+                    <span>طلبات التوثيق</span>
+                </a>
                 <a href="/pages/admin/statistics.html" class="nav-item ${activePage === 'statistics' ? 'active' : ''}">
                     <i class="fas fa-chart-bar"></i>
                     <span>الإحصائيات</span>

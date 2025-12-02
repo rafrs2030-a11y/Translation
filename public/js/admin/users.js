@@ -28,6 +28,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const user = await requireAdmin();
     if (!user) return;
     
+    // مسح الكاش القديم أولاً - Real-time
+    const { clearCacheOnPageLoad } = await import('../utils/admin-cache-clear.js');
+    await clearCacheOnPageLoad();
+    
     initElements();
     initEventListeners();
     await loadUsers();

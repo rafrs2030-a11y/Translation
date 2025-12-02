@@ -7,8 +7,14 @@ import { initChatDropdown } from '../utils/chat-dropdown.js';
 import badgeManager from '../utils/badge-manager.js';
 import authStore from '../stores/authStore.js';
 import { requireAdmin } from '../utils/auth-guard.js';
+import { 
+    clearCacheOnPageLoad, 
+    startAutoCacheClearing,
+    clearAdminCache 
+} from '../utils/admin-cache-clear.js';
 
 let isInitialized = false;
+let cacheClearingInitialized = false;
 
 /**
  * Initialize common admin features
@@ -20,6 +26,31 @@ export async function initAdminCommon() {
     try {
         const user = await requireAdmin();
         if (!user) return;
+        
+        // Initialize cache clearing system - Real-time
+        if (!cacheClearingInitialized) {
+            try {
+                // مسح الكاش عند تحميل الصفحة
+                await clearCacheOnPageLoad();
+                
+                // بدء مسح الكاش التلقائي كل 5 دقائق
+                startAutoCacheClearing(5);
+                
+                // مسح الكاش عند التنقل بين الصفحات
+                const links = document.querySelectorAll('a[href*="/admin/"]');
+                links.forEach(link => {
+                    link.addEventListener('click', async (e) => {
+                        // مسح الكاش قبل الانتقال
+                        await clearAdminCache({ silent: true, clearAll: false, preserveAuth: true });
+                    });
+                });
+                
+                cacheClearingInitialized = true;
+                console.log('✅ تم تفعيل نظام مسح الكاش التلقائي (Real-time) لجميع صفحات الأدمن');
+            } catch (error) {
+                console.error('Error initializing cache clearing:', error);
+            }
+        }
         
         // Initialize chat dropdown with retry
         const chatBtn = document.getElementById('chat-btn');
