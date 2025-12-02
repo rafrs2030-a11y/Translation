@@ -77,6 +77,25 @@ class AuthStore {
         return;
       }
 
+      // مزامنة حالة التحقق من البريد الإلكتروني
+      const authEmailVerified = session.user.email_confirmed_at !== null;
+      if (authEmailVerified && !userData.email_verified) {
+        try {
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ email_verified: true, updated_at: new Date().toISOString() })
+            .eq('id', session.user.id);
+          
+          if (!updateError) {
+            userData.email_verified = true;
+          } else {
+            console.error('Error syncing email_verified:', updateError);
+          }
+        } catch (syncError) {
+          console.error('Error syncing email verification:', syncError);
+        }
+      }
+
       this.setState({
         user: userData,
         session,
@@ -538,7 +557,7 @@ class AuthStore {
     this.setState({ loading: true, error: null });
 
     try {
-      const { error } = await supabase.auth.verifyOtp({
+      const { data: verifyData, error } = await supabase.auth.verifyOtp({
         token_hash: token,
         type: 'email',
       });
@@ -546,11 +565,23 @@ class AuthStore {
       if (error) throw error;
 
       // تحديث حالة التحقق في قاعدة البيانات
-      if (this.state.user) {
-        await supabase
+      const userId = verifyData?.user?.id || this.state.user?.id;
+      if (userId) {
+        const { error: updateError } = await supabase
           .from('users')
-          .update({ email_verified: true })
-          .eq('id', this.state.user.id);
+          .update({ 
+            email_verified: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId);
+
+        if (updateError) {
+          console.error('Error updating email_verified:', updateError);
+        } else if (this.state.user && this.state.user.id === userId) {
+          this.setState({
+            user: { ...this.state.user, email_verified: true }
+          });
+        }
       }
 
       this.setState({ loading: false });

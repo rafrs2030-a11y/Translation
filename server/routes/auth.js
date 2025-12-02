@@ -53,6 +53,24 @@ router.post('/login', async (req, res, next) => {
       });
     }
 
+    // مزامنة حالة التحقق من البريد الإلكتروني
+    const authEmailVerified = data.user.email_confirmed_at !== null;
+    if (authEmailVerified && !userData.email_verified) {
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ 
+          email_verified: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', data.user.id);
+      
+      if (!updateError) {
+        userData.email_verified = true;
+      } else {
+        console.error('Error syncing email_verified on login:', updateError);
+      }
+    }
+
     res.json({
       success: true,
       user: userData,
@@ -185,7 +203,7 @@ router.post('/verify-email', async (req, res, next) => {
       });
     }
 
-    const { error } = await supabase.auth.verifyOtp({
+    const { data: verifyData, error } = await supabase.auth.verifyOtp({
       token_hash: token,
       type: 'email'
     });
@@ -195,6 +213,21 @@ router.post('/verify-email', async (req, res, next) => {
         success: false,
         error: error.message
       });
+    }
+
+    // تحديث حالة التحقق في جدول users
+    if (verifyData && verifyData.user) {
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ 
+          email_verified: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', verifyData.user.id);
+
+      if (updateError) {
+        console.error('Error updating email_verified:', updateError);
+      }
     }
 
     res.json({
