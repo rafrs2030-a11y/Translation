@@ -103,18 +103,52 @@ function initEventListeners() {
 async function loadVerificationRequests() {
     try {
         showLoading(true);
+        console.log('🔄 بدء جلب طلبات التوثيق...');
         
-        // Fetch all researchers
-        const { data, error } = await supabase
+        // Fetch all researchers with better error handling
+        const { data, error, count } = await supabase
             .from('users')
-            .select('*')
+            .select('*', { count: 'exact' })
             .eq('role', 'researcher')
             .order('created_at', { ascending: false });
         
-        if (error) throw error;
+        if (error) {
+            console.error('❌ خطأ في جلب البيانات:', error);
+            throw error;
+        }
         
-        allRequests = data || [];
+        console.log(`✅ تم جلب ${data?.length || 0} باحث من قاعدة البيانات`);
+        
+        // معالجة البيانات والتأكد من أن email_verified ليس null
+        // email_verified يمكن أن يكون: true, false, null, 1, 0
+        allRequests = (data || []).map(user => {
+            // معالجة email_verified: إذا كان null أو undefined، اعتباره false
+            let emailVerified = false;
+            if (user.email_verified === true || user.email_verified === 1 || user.email_verified === 'true') {
+                emailVerified = true;
+            } else if (user.email_verified === false || user.email_verified === 0 || user.email_verified === 'false') {
+                emailVerified = false;
+            } else {
+                // null أو undefined = false
+                emailVerified = false;
+            }
+            
+            return {
+                ...user,
+                email_verified: emailVerified,
+                email: user.email || '',
+                username: user.username || 'غير محدد',
+                phone: user.phone || null,
+                national_id: user.national_id || null,
+                created_at: user.created_at || new Date().toISOString()
+            };
+        });
+        
         filteredRequests = [...allRequests];
+        
+        console.log(`📊 عدد الطلبات: ${allRequests.length}`);
+        console.log(`✅ موثّق: ${allRequests.filter(u => u.email_verified).length}`);
+        console.log(`⏳ غير موثّق: ${allRequests.filter(u => !u.email_verified).length}`);
         
         // Update stats
         updateStats();
@@ -123,11 +157,20 @@ async function loadVerificationRequests() {
         renderRequests();
         
         showLoading(false);
-        tableContainer.style.display = 'block';
+        
+        // التأكد من إظهار الجدول إذا كانت هناك بيانات
+        if (allRequests.length > 0) {
+            if (tableContainer) tableContainer.style.display = 'block';
+            if (emptyState) emptyState.style.display = 'none';
+        } else {
+            if (tableContainer) tableContainer.style.display = 'none';
+            if (emptyState) emptyState.style.display = 'block';
+        }
         
     } catch (error) {
-        console.error('Error loading verification requests:', error);
-        showError('فشل في تحميل طلبات التوثيق: ' + error.message);
+        console.error('❌ خطأ في تحميل طلبات التوثيق:', error);
+        showLoading(false);
+        showError('فشل في تحميل طلبات التوثيق: ' + (error.message || 'خطأ غير معروف. يرجى التحقق من اتصالك بالإنترنت أو الاتصال بالدعم الفني.'));
     }
 }
 
@@ -136,12 +179,26 @@ async function loadVerificationRequests() {
  */
 function updateStats() {
     const total = allRequests.length;
-    const verified = allRequests.filter(u => u.email_verified).length;
+    // التأكد من معالجة القيم null/undefined بشكل صحيح
+    const verified = allRequests.filter(u => {
+        return u.email_verified === true || u.email_verified === 1 || u.email_verified === 'true';
+    }).length;
     const pending = total - verified;
     
-    if (totalResearchersEl) totalResearchersEl.textContent = total;
-    if (verifiedCountEl) verifiedCountEl.textContent = verified;
-    if (pendingCountEl) pendingCountEl.textContent = pending;
+    console.log(`📈 الإحصائيات - الإجمالي: ${total}, موثّق: ${verified}, معلق: ${pending}`);
+    
+    if (totalResearchersEl) {
+        totalResearchersEl.textContent = total;
+        totalResearchersEl.style.opacity = '1';
+    }
+    if (verifiedCountEl) {
+        verifiedCountEl.textContent = verified;
+        verifiedCountEl.style.opacity = '1';
+    }
+    if (pendingCountEl) {
+        pendingCountEl.textContent = pending;
+        pendingCountEl.style.opacity = '1';
+    }
 }
 
 /**
@@ -172,17 +229,32 @@ function renderRequests() {
         return div.innerHTML;
     };
     
-    requestsTableBody.innerHTML = filteredRequests.map(user => {
-        const username = escapeHtml(user.username || 'غير محدد');
-        const email = escapeHtml(user.email || '-');
-        const phone = user.phone ? escapeHtml(user.phone) : null;
-        const nationalId = user.national_id ? escapeHtml(user.national_id) : null;
-        const createdDate = formatDate(user.created_at);
-        const isVerified = user.email_verified === true;
-        const initials = getInitialsFn(user.username || 'غير محدد');
-        const userId = user.id;
-        
-        return `
+    console.log(`🎨 بدء عرض ${filteredRequests.length} طلب في الجدول...`);
+    
+    if (filteredRequests.length === 0) {
+        console.warn('⚠️ لا توجد طلبات للعرض');
+        if (tableContainer) tableContainer.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
+        return;
+    }
+    
+    requestsTableBody.innerHTML = filteredRequests.map((user, index) => {
+        try {
+            const username = escapeHtml(user.username || 'غير محدد');
+            const email = escapeHtml(user.email || '-');
+            const phone = user.phone ? escapeHtml(String(user.phone)) : null;
+            const nationalId = user.national_id ? escapeHtml(String(user.national_id)) : null;
+            const createdDate = formatDate(user.created_at);
+            // معالجة حالة email_verified بشكل صحيح (قد يكون null, false, true, أو 0/1)
+            const isVerified = user.email_verified === true || user.email_verified === 1 || user.email_verified === 'true';
+            const initials = getInitialsFn(user.username || 'غير محدد');
+            const userId = user.id || '';
+            
+            if (!userId) {
+                console.warn(`⚠️ طلب بدون ID في الفهرس ${index}:`, user);
+            }
+            
+            return `
         <tr data-user-id="${userId}">
             <td>
                 <div class="user-info">
@@ -241,7 +313,13 @@ function renderRequests() {
             </td>
         </tr>
         `;
-    }).join('');
+        } catch (err) {
+            console.error(`❌ خطأ في عرض الطلب في الفهرس ${index}:`, err, user);
+            return '';
+        }
+    }).filter(html => html.trim().length > 0).join('');
+    
+    console.log(`✅ تم عرض ${filteredRequests.length} طلب بنجاح في الجدول`);
 }
 
 /**
@@ -259,12 +337,12 @@ function handleFilterChange() {
             user.email.toLowerCase().includes(searchTerm) ||
             (user.phone && user.phone.includes(searchTerm));
         
-        // Status
+        // Status - معالجة أفضل للحالات المختلفة
         let matchStatus = true;
         if (statusValue === 'verified') {
-            matchStatus = user.email_verified === true;
+            matchStatus = user.email_verified === true || user.email_verified === 1 || user.email_verified === 'true';
         } else if (statusValue === 'unverified') {
-            matchStatus = user.email_verified === false;
+            matchStatus = !(user.email_verified === true || user.email_verified === 1 || user.email_verified === 'true');
         }
         
         // Date filter
@@ -303,12 +381,16 @@ window.openEditUser = function(userId) {
     currentEditUser = user;
     
     // Populate form
-    document.getElementById('edit-user-id').value = user.id;
-    document.getElementById('edit-username').value = user.username;
-    document.getElementById('edit-email').value = user.email;
+    const emailVerified = user.email_verified === true || user.email_verified === 1 || user.email_verified === 'true';
+    
+    document.getElementById('edit-user-id').value = user.id || '';
+    document.getElementById('edit-username').value = user.username || '';
+    document.getElementById('edit-email').value = user.email || '';
     document.getElementById('edit-phone').value = user.phone || '';
     document.getElementById('edit-national-id').value = user.national_id || '';
-    document.getElementById('edit-email-verified').checked = user.email_verified || false;
+    document.getElementById('edit-email-verified').checked = emailVerified;
+    
+    console.log(`📋 فتح نافذة التعديل للمستخدم: ${user.username}, حالة التوثيق الحالية: ${emailVerified}`);
     
     // Show modal
     editUserModal.classList.add('active');
@@ -332,44 +414,58 @@ async function handleEditUser(e) {
         const userId = document.getElementById('edit-user-id').value;
         const emailVerified = document.getElementById('edit-email-verified').checked;
         
+        if (!userId) {
+            throw new Error('معرف المستخدم غير موجود');
+        }
+        
+        console.log(`🔄 بدء تحديث حالة التوثيق للمستخدم: ${userId}, الحالة الجديدة: ${emailVerified}`);
+        
         // Show loading
         const submitBtn = document.getElementById('submit-edit-btn');
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>جاري الحفظ...</span>';
         
-        // Update user
+        // تحديث حالة التوثيق في قاعدة البيانات
+        // التأكد من أن القيمة boolean صحيحة
+        const updateData = { 
+            email_verified: emailVerified === true || emailVerified === 'true' || emailVerified === 1,
+            updated_at: new Date().toISOString()
+        };
+        
+        console.log('📝 بيانات التحديث:', updateData);
+        
         const { data, error } = await supabase
             .from('users')
-            .update({ 
-                email_verified: emailVerified,
-                updated_at: new Date().toISOString()
-            })
+            .update(updateData)
             .eq('id', userId)
             .select()
             .single();
         
-        if (error) throw error;
-        
-        // Update local state
-        const index = allRequests.findIndex(u => u.id === userId);
-        if (index !== -1) {
-            allRequests[index] = data;
-            handleFilterChange();
+        if (error) {
+            console.error('❌ خطأ في تحديث قاعدة البيانات:', error);
+            throw error;
         }
         
-        // Update stats
-        updateStats();
+        if (!data) {
+            throw new Error('لم يتم العثور على المستخدم بعد التحديث');
+        }
+        
+        console.log('✅ تم تحديث المستخدم بنجاح:', data);
+        
+        // إعادة جلب البيانات للتأكد من أن كل شيء محدث
+        await loadVerificationRequests();
         
         // Close modal
         closeEditUserModal();
         
         // Show success message
-        showSuccess('تم تحديث حالة التوثيق بنجاح');
+        const statusText = emailVerified ? 'موثّق' : 'غير موثّق';
+        showSuccess(`تم تحديث حالة التوثيق بنجاح - الحالة: ${statusText}`);
         
         // Create notification for user if verified
         if (emailVerified) {
             try {
-                await supabase
+                const { error: notifError } = await supabase
                     .from('notifications')
                     .insert([{
                         user_id: userId,
@@ -377,19 +473,28 @@ async function handleEditUser(e) {
                         message: 'تم توثيق حسابك بنجاح. يمكنك الآن استخدام جميع ميزات المنصة.',
                         is_read: false
                     }]);
+                
+                if (notifError) {
+                    console.warn('⚠️ لم يتم إنشاء الإشعار:', notifError);
+                } else {
+                    console.log('✅ تم إنشاء إشعار للمستخدم بنجاح');
+                }
             } catch (notifError) {
-                console.error('Error creating notification:', notifError);
+                console.error('❌ خطأ في إنشاء الإشعار:', notifError);
+                // لا نوقف العملية إذا فشل إنشاء الإشعار
             }
         }
         
     } catch (error) {
-        console.error('Error updating user:', error);
-        showError('حدث خطأ أثناء تحديث حالة التوثيق: ' + error.message);
+        console.error('❌ خطأ في تحديث حالة التوثيق:', error);
+        showError('حدث خطأ أثناء تحديث حالة التوثيق: ' + (error.message || 'خطأ غير معروف'));
         
         // Reset button
         const submitBtn = document.getElementById('submit-edit-btn');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-save"></i> <span>حفظ التغييرات</span>';
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> <span>حفظ التغييرات</span>';
+        }
     }
 }
 
@@ -398,6 +503,26 @@ async function handleEditUser(e) {
  */
 window.refreshList = function() {
     loadVerificationRequests();
+}
+
+/**
+ * Debug function - يمكن استخدامها في console للتحقق من البيانات
+ */
+window.debugVerificationRequests = function() {
+    console.log('📊 حالة طلبات التوثيق:');
+    console.log('الطلبات الكاملة:', allRequests);
+    console.log('الطلبات المفلترة:', filteredRequests);
+    console.log('عدد الإجمالي:', allRequests.length);
+    console.log('عدد المفلترة:', filteredRequests.length);
+    return {
+        all: allRequests,
+        filtered: filteredRequests,
+        stats: {
+            total: allRequests.length,
+            verified: allRequests.filter(u => u.email_verified).length,
+            pending: allRequests.filter(u => !u.email_verified).length
+        }
+    };
 }
 
 /**
@@ -418,11 +543,17 @@ function showLoading(show) {
  * Show error state
  */
 function showError(message) {
-    loadingState.style.display = 'none';
-    errorState.style.display = 'flex';
-    document.getElementById('error-message').textContent = message;
-    tableContainer.style.display = 'none';
-    emptyState.style.display = 'none';
+    console.error('❌ عرض رسالة الخطأ:', message);
+    if (loadingState) loadingState.style.display = 'none';
+    if (errorState) {
+        errorState.style.display = 'flex';
+        const errorMessageEl = document.getElementById('error-message');
+        if (errorMessageEl) {
+            errorMessageEl.textContent = message || 'حدث خطأ غير معروف';
+        }
+    }
+    if (tableContainer) tableContainer.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'none';
 }
 
 /**

@@ -128,6 +128,9 @@ async function loadProfileData() {
         
         // Load stats
         await loadStats();
+
+        // Load notification preferences
+        await loadNotificationPreferences();
         
     } catch (error) {
         console.error('Error loading profile:', error);
@@ -240,6 +243,46 @@ async function loadStats() {
         
     } catch (error) {
         console.error('Error loading stats:', error);
+    }
+}
+
+/**
+ * Load notification preferences and update checkboxes
+ */
+async function loadNotificationPreferences() {
+    try {
+        const { data, error } = await supabase
+            .from('notification_preferences')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .maybeSingle();
+
+        // If there's a real error (not just "no rows"), log it but don't break the page
+        if (error) {
+            console.error('Error loading notification preferences:', error);
+            return;
+        }
+
+        if (!data) {
+            // No preferences saved yet - keep default values from HTML
+            return;
+        }
+
+        const emailNotifications = document.getElementById('email-notifications');
+        const statusNotifications = document.getElementById('status-notifications');
+        const commentNotifications = document.getElementById('comment-notifications');
+
+        if (emailNotifications) {
+            emailNotifications.checked = !!data.email_enabled;
+        }
+        if (statusNotifications) {
+            statusNotifications.checked = !!data.status_change_email;
+        }
+        if (commentNotifications) {
+            commentNotifications.checked = !!data.comments_email;
+        }
+    } catch (error) {
+        console.error('Error loading notification preferences:', error);
     }
 }
 
