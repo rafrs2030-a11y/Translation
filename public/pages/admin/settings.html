@@ -242,7 +242,7 @@
                         <h4>اسم المنصة</h4>
                         <p>الاسم الرسمي للمنصة الذي يظهر في كل مكان</p>
                     </div>
-                    <input type="text" class="form-input" value="منصة نشر الأبحاث العربية" style="max-width: 300px;">
+                    <input type="text" id="platform-name-input" class="form-input" value="منصة نشر الأبحاث العربية" style="max-width: 300px;">
                 </div>
                 
                 <div class="setting-item">
@@ -250,7 +250,31 @@
                         <h4>البريد الإلكتروني للتواصل</h4>
                         <p>البريد الإلكتروني الرسمي للمنصة</p>
                     </div>
-                    <input type="email" class="form-input" value="contact@arabresearch.com" style="max-width: 300px;">
+                    <input type="email" id="contact-email-input" class="form-input" value="contact@arabresearch.com" style="max-width: 300px;">
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>رقم الهاتف</h4>
+                        <p>رقم الهاتف للتواصل</p>
+                    </div>
+                    <input type="tel" id="contact-phone-input" class="form-input" value="+966 58 000 2284" style="max-width: 300px;">
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>رقم الواتساب</h4>
+                        <p>رقم الواتساب للتواصل (بدون +)</p>
+                    </div>
+                    <input type="tel" id="whatsapp-number-input" class="form-input" value="966580002284" style="max-width: 300px;">
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>العنوان</h4>
+                        <p>العنوان الكامل للمنصة</p>
+                    </div>
+                    <input type="text" id="contact-address-input" class="form-input" value="3727 ريحانة بنت زيد - 8602 حي النرجس ، 13339" style="max-width: 400px;">
                 </div>
                 
                 <div class="setting-item">
@@ -425,6 +449,25 @@
                     <button class="btn btn-primary" id="create-backup-btn">
                         <i class="fas fa-download"></i>
                         إنشاء نسخة احتياطية الآن
+                    </button>
+                </div>
+            </div>
+
+            <!-- Settings Cache Management -->
+            <div class="settings-section">
+                <h3>
+                    <i class="fas fa-sync-alt"></i>
+                    إدارة كاش الإعدادات
+                </h3>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>مسح كاش الإعدادات</h4>
+                        <p>مسح الكاش القديم وإعادة تحميل الإعدادات من قاعدة البيانات</p>
+                    </div>
+                    <button class="btn btn-primary" id="clear-settings-cache-btn">
+                        <i class="fas fa-sync-alt"></i>
+                        تحديث من قاعدة البيانات
                     </button>
                 </div>
             </div>

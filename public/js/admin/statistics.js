@@ -171,7 +171,7 @@ function initCharts() {
         new Chart(categoriesCtx, {
             type: 'polarArea',
             data: {
-                labels: ['علوم الحاسوب', 'الهندسة', 'الطب', 'الاقتصاد المالي', 'العلوم الاجتماعية'],
+                labels: ['علوم الحاسوب', 'الهندسة', 'الطب', 'الاقتصاد والمال', 'العلوم الاجتماعية'],
                 datasets: [{
                     data: [25, 20, 15, 10, 30],
                     backgroundColor: [

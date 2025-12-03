@@ -148,9 +148,9 @@
                                 <option value="">جميع التصنيفات</option>
                                 <option value="الهندسة وتقنية المعلومات">الهندسة وتقنية المعلومات</option>
                                 <option value="العلوم الصحية">العلوم الصحية</option>
-                                <option value="الاقتصاد المالي">الاقتصاد المالي</option>
+                                <option value="الاقتصاد والمال">الاقتصاد والمال</option>
                                 <option value="الدراسات الإسلامية العربية">الدراسات الإسلامية العربية</option>
-                                <option value="التاريخ">التاريخ</option>
+                                <option value="التاريخ والتراث">التاريخ والتراث</option>
                             </select>
                         </div>
                         
@@ -379,6 +379,46 @@
             gap: var(--spacing-md);
             justify-content: flex-end;
             margin-top: var(--spacing-lg);
+        }
+        
+        .filters-row {
+            display: grid;
+            grid-template-columns: 200px 200px 1fr;
+            gap: var(--spacing-md);
+            align-items: end;
+        }
+        
+        .filters-row .form-group {
+            margin-bottom: 0;
+        }
+        
+        .filters-row .form-label {
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+        
+        .filters-row .form-select,
+        .filters-row .form-input {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            height: auto;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            padding-left: 2.5rem;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
         }
         
         @media (max-width: 768px) {

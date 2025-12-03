@@ -16,6 +16,15 @@ import {
     clearCacheAndReload 
 } from './utils/clear-cache.js';
 
+// Import platform name utility
+import { initPlatformName } from './utils/platform-name.js';
+
+// Import contact email utility
+import { initContactEmail } from './utils/contact-email.js';
+
+// Import contact info utility
+import { initContactInfo } from './utils/contact-info.js';
+
 // ========================================
 // Global State
 // ========================================
@@ -528,6 +537,15 @@ window.clearCache = async () => {
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('App initialized');
+    
+    // Initialize platform name
+    initPlatformName();
+    
+    // Initialize contact email
+    initContactEmail();
+    
+    // Initialize contact info (phone, whatsapp, address)
+    initContactInfo();
     
     // Initialize user menu dropdown
     initUserMenuDropdown();

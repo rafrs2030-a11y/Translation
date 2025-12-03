@@ -217,20 +217,44 @@
             justify-content: flex-end;
         }
 
-        .filter-bar {
-            background: white;
-            border-radius: var(--radius-xl);
-            padding: var(--spacing-xl);
-            margin-bottom: var(--spacing-xl);
-            display: flex;
+        .filters-row {
+            display: grid;
+            grid-template-columns: 200px 200px 1fr;
             gap: var(--spacing-md);
-            flex-wrap: wrap;
-            align-items: center;
+            align-items: end;
         }
-
-        .filter-group {
-            flex: 1;
-            min-width: 200px;
+        
+        .filters-row .form-group {
+            margin-bottom: 0;
+        }
+        
+        .filters-row .form-label {
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+        
+        .filters-row .form-select,
+        .filters-row .form-input {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            height: auto;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            padding-left: 2.5rem;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
         }
 
         .stats-bar {
@@ -293,12 +317,8 @@
                 overflow-x: auto;
             }
 
-            .filter-bar {
-                flex-direction: column;
-            }
-
-            .filter-group {
-                width: 100%;
+            .filters-row {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -436,29 +456,44 @@
             </div>
 
             <!-- Filters -->
-            <div class="filter-bar">
-                <div class="filter-group">
-                    <input 
-                        type="text" 
-                        class="form-input" 
-                        id="search-input" 
-                        placeholder="🔍 بحث (اسم، بريد، هاتف...)"
-                    >
-                </div>
-                <div class="filter-group">
-                    <select class="form-select" id="role-filter">
-                        <option value="">جميع الأدوار</option>
-                        <option value="researcher">باحث</option>
-                        <option value="admin">مسؤول</option>
-                        <option value="super_admin">مسؤول أعلى</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <select class="form-select" id="verified-filter">
-                        <option value="">جميع الحالات</option>
-                        <option value="true">موثّق</option>
-                        <option value="false">غير موثّق</option>
-                    </select>
+            <div class="card">
+                <div class="card-body">
+                    <div class="filters-row">
+                        <!-- Status Filter -->
+                        <div class="form-group">
+                            <label class="form-label">الحالة</label>
+                            <select class="form-select" id="verified-filter">
+                                <option value="">جميع الحالات</option>
+                                <option value="true">موثّق</option>
+                                <option value="false">غير موثّق</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Role Filter -->
+                        <div class="form-group">
+                            <label class="form-label">الدور</label>
+                            <select class="form-select" id="role-filter">
+                                <option value="">جميع الأدوار</option>
+                                <option value="researcher">باحث</option>
+                                <option value="admin">مسؤول</option>
+                                <option value="super_admin">مسؤول أعلى</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Search -->
+                        <div class="form-group">
+                            <label class="form-label">البحث</label>
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input 
+                                    type="text" 
+                                    class="form-input" 
+                                    id="search-input" 
+                                    placeholder="بحث (اسم، بريد، هاتف...)"
+                                >
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

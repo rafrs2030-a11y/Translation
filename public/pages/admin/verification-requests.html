@@ -167,14 +167,42 @@
 
         .filters-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--spacing-lg);
+            grid-template-columns: 200px 200px 1fr;
+            gap: var(--spacing-md);
+            align-items: end;
         }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-sm);
+        
+        .filters-row .form-group {
+            margin-bottom: 0;
+        }
+        
+        .filters-row .form-label {
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+        
+        .filters-row .form-select,
+        .filters-row .form-input {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            height: auto;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            padding-left: 2.5rem;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
         }
 
         /* صف إحصائيات طلبات التوثيق */
@@ -195,11 +223,6 @@
             }
         }
 
-        .filter-group label {
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 0.875rem;
-        }
 
         .table-responsive {
             overflow-x: auto;
@@ -354,31 +377,39 @@
             <div class="card">
                 <div class="card-body">
                     <div class="filters-row">
-                        <div class="filter-group">
-                            <label for="search-input">بحث</label>
-                            <input 
-                                type="text" 
-                                id="search-input" 
-                                class="form-input" 
-                                placeholder="ابحث بالاسم أو البريد الإلكتروني..."
-                            >
-                        </div>
-                        <div class="filter-group">
-                            <label for="status-filter">الحالة</label>
-                            <select id="status-filter" class="form-select">
-                                <option value="">الكل</option>
-                                <option value="unverified">غير موثّق</option>
-                                <option value="verified">موثّق</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="date-filter">التاريخ</label>
+                        <!-- Date Filter -->
+                        <div class="form-group">
+                            <label class="form-label">التاريخ</label>
                             <select id="date-filter" class="form-select">
                                 <option value="">الكل</option>
                                 <option value="today">اليوم</option>
                                 <option value="week">هذا الأسبوع</option>
                                 <option value="month">هذا الشهر</option>
                             </select>
+                        </div>
+                        
+                        <!-- Status Filter -->
+                        <div class="form-group">
+                            <label class="form-label">الحالة</label>
+                            <select id="status-filter" class="form-select">
+                                <option value="">الكل</option>
+                                <option value="unverified">غير موثّق</option>
+                                <option value="verified">موثّق</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Search -->
+                        <div class="form-group">
+                            <label class="form-label">بحث</label>
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input 
+                                    type="text" 
+                                    id="search-input" 
+                                    class="form-input" 
+                                    placeholder="ابحث بالاسم أو البريد الإلكتروني..."
+                                >
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -218,7 +218,7 @@ class NotificationsStore {
         };
       }
 
-      // Build query
+      // Build query - simplify first to ensure data is fetched
       let query = supabase
         .from('notifications')
         .select('*, submission:submissions(reference_number)', { count: 'exact' })
@@ -249,7 +249,17 @@ class NotificationsStore {
 
       const { data, error, count } = await query;
 
-      if (error) throw error;
+      console.log('📊 Notifications query result:', {
+        dataLength: data?.length,
+        count,
+        error: error?.message,
+        hasData: !!data
+      });
+
+      if (error) {
+        console.error('❌ Error fetching notifications:', error);
+        throw error;
+      }
 
       // Calculate counts
       const { count: totalCount } = await supabase
@@ -263,7 +273,13 @@ class NotificationsStore {
         .eq('user_id', user.id)
         .eq('is_read', false);
 
-      const hasMore = count && (from + data.length) < count;
+      const hasMore = count && data && (from + data.length) < count;
+
+      console.log('📈 Counts calculated:', {
+        total: totalCount,
+        unread: unreadCount,
+        hasMore
+      });
 
       this.setState({
         notifications: data || [],
@@ -271,7 +287,7 @@ class NotificationsStore {
         loading: false,
       });
 
-      return { 
+      const result = { 
         success: true, 
         data: data || [],
         counts: {
@@ -280,6 +296,14 @@ class NotificationsStore {
         },
         hasMore
       };
+
+      console.log('✅ Returning notifications result:', {
+        success: result.success,
+        dataLength: result.data.length,
+        counts: result.counts
+      });
+
+      return result;
 
     } catch (error) {
       console.error('Error fetching notifications:', error);

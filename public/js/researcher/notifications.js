@@ -164,10 +164,19 @@ async function loadNotifications(append = false) {
             }
         }
         
+        console.log('🔍 Loading notifications with filters:', filters);
         const result = await notificationsStore.fetchNotifications(filters);
         
+        console.log('📥 Fetch result:', {
+            success: result?.success,
+            dataLength: result?.data?.length,
+            hasData: !!result?.data,
+            counts: result?.counts,
+            error: result?.error
+        });
+        
         if (!result) {
-            console.error('No result from fetchNotifications');
+            console.error('❌ No result from fetchNotifications');
             if (!append) {
                 showError('فشل تحميل الإشعارات');
             }
@@ -175,24 +184,27 @@ async function loadNotifications(append = false) {
         }
         
         if (!result.success) {
-            console.error('Fetch notifications failed:', result.error);
+            console.error('❌ Fetch notifications failed:', result.error);
             if (!append) {
                 showError(result.error || 'حدث خطأ أثناء تحميل الإشعارات');
             }
             return;
         }
         
+        // Update counters even if no data
+        if (result.counts) {
+            updateCounters(result.counts);
+        }
+        
         if (!result.data || result.data.length === 0) {
+            console.log('📭 No notifications found');
             if (!append) {
                 showEmpty();
-            }
-            // Still update counters even if no data
-            if (result.counts) {
-                updateCounters(result.counts);
             }
             return;
         }
         
+        console.log('✅ Rendering notifications:', result.data.length);
         if (append) {
             appendNotifications(result.data);
         } else {
@@ -219,24 +231,42 @@ async function loadNotifications(append = false) {
  * Render notifications
  */
 function renderNotifications(notifications) {
+    console.log('🎨 Rendering notifications:', notifications.length);
+    
     if (!notifications || notifications.length === 0) {
+        console.log('📭 No notifications to render, showing empty state');
         showEmpty();
         return;
     }
     
-    // Create notifications list wrapper
-    notificationsContainer.innerHTML = `
-        <div class="notifications-list">
-            ${notifications.map(notification => 
-                createNotificationHTML(notification)
-            ).join('')}
-        </div>
-    `;
-    
-    // Add click listeners
-    document.querySelectorAll('.notification-item').forEach(item => {
-        item.addEventListener('click', () => handleNotificationClick(item.dataset.id));
-    });
+    try {
+        // Create notifications list wrapper
+        const notificationsHTML = notifications.map(notification => {
+            console.log('📋 Processing notification:', notification.id, notification.type);
+            return createNotificationHTML(notification);
+        }).join('');
+        
+        notificationsContainer.innerHTML = `
+            <div class="notifications-list">
+                ${notificationsHTML}
+            </div>
+        `;
+        
+        console.log('✅ Notifications HTML created, length:', notificationsHTML.length);
+        
+        // Add click listeners
+        document.querySelectorAll('.notification-item').forEach(item => {
+            const notificationId = item.dataset.id;
+            if (notificationId) {
+                item.addEventListener('click', () => handleNotificationClick(notificationId));
+            }
+        });
+        
+        console.log('✅ Click listeners added');
+    } catch (error) {
+        console.error('❌ Error rendering notifications:', error);
+        showError('حدث خطأ أثناء عرض الإشعارات: ' + error.message);
+    }
 }
 
 /**
@@ -272,19 +302,25 @@ function appendNotifications(notifications) {
  * Create notification HTML
  */
 function createNotificationHTML(notification) {
+    if (!notification) {
+        console.error('❌ Cannot create HTML for null notification');
+        return '';
+    }
+    
     const isUnread = !notification.is_read;
     const icon = getNotificationIcon(notification.type);
-    const time = formatTimeAgo(notification.created_at);
+    const time = formatTimeAgo(notification.created_at || new Date().toISOString());
     const title = getNotificationTitle(notification);
     const message = escapeHtml(notification.message || '');
+    const notificationId = escapeHtml(notification.id || '');
     
     // Get submission reference if available
     // Handle both single object and array (Supabase can return either)
     let submissionRef = '';
     if (notification.submission) {
         if (Array.isArray(notification.submission) && notification.submission.length > 0) {
-            submissionRef = notification.submission[0].reference_number || '';
-        } else if (notification.submission.reference_number) {
+            submissionRef = notification.submission[0]?.reference_number || '';
+        } else if (notification.submission?.reference_number) {
             submissionRef = notification.submission.reference_number;
         }
     }
@@ -292,38 +328,43 @@ function createNotificationHTML(notification) {
         submissionRef = 'طلب';
     }
     
-    return `
-        <div class="notification-item ${isUnread ? 'unread' : ''}" data-id="${notification.id}">
-            <div class="notification-icon ${notification.type || 'system'}">
-                <i class="fas ${icon}"></i>
-            </div>
-            <div class="notification-content">
-                <div class="notification-header">
-                    <h4 class="notification-title">${title}</h4>
-                    <span class="notification-time">${time}</span>
+    try {
+        return `
+            <div class="notification-item ${isUnread ? 'unread' : ''}" data-id="${notificationId}">
+                <div class="notification-icon ${escapeHtml(notification.type || 'system')}">
+                    <i class="fas ${icon}"></i>
                 </div>
-                <p class="notification-message">${message}</p>
-                ${submissionRef ? `
-                    <div class="notification-meta">
-                        <span>
-                            <i class="fas fa-file-alt"></i>
-                            ${submissionRef}
-                        </span>
+                <div class="notification-content">
+                    <div class="notification-header">
+                        <h4 class="notification-title">${escapeHtml(title)}</h4>
+                        <span class="notification-time">${escapeHtml(time)}</span>
                     </div>
-                ` : ''}
-            </div>
-            <div class="notification-actions">
-                ${isUnread ? `
-                    <button class="btn btn-sm btn-ghost" onclick="window.markAsRead('${notification.id}', event)" title="تعليم كمقروء">
-                        <i class="fas fa-check"></i>
+                    <p class="notification-message">${message}</p>
+                    ${submissionRef ? `
+                        <div class="notification-meta">
+                            <span>
+                                <i class="fas fa-file-alt"></i>
+                                ${escapeHtml(submissionRef)}
+                            </span>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="notification-actions">
+                    ${isUnread ? `
+                        <button class="btn btn-sm btn-ghost" onclick="window.markAsRead('${notificationId}', event)" title="تعليم كمقروء">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    ` : ''}
+                    <button class="btn btn-sm btn-ghost" onclick="window.deleteNotification('${notificationId}', event)" title="حذف">
+                        <i class="fas fa-times"></i>
                     </button>
-                ` : ''}
-                <button class="btn btn-sm btn-ghost" onclick="window.deleteNotification('${notification.id}', event)" title="حذف">
-                    <i class="fas fa-times"></i>
-                </button>
+                </div>
             </div>
-        </div>
-    `;
+        `;
+    } catch (error) {
+        console.error('❌ Error creating notification HTML:', error, notification);
+        return '';
+    }
 }
 
 /**
