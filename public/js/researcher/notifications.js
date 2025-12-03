@@ -25,10 +25,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const user = await requireResearcher();
         if (!user) return;
         
-        // مسح الكاش القديم أولاً - Real-time
-        const { clearCacheOnPageLoad } = await import('../utils/researcher-cache-clear.js');
-        await clearCacheOnPageLoad();
-        
         console.log('🔔 Initializing notifications for researcher:', user.id);
         
         // Initialize notifications store first
@@ -228,9 +224,14 @@ function renderNotifications(notifications) {
         return;
     }
     
-    notificationsContainer.innerHTML = notifications.map(notification => 
-        createNotificationHTML(notification)
-    ).join('');
+    // Create notifications list wrapper
+    notificationsContainer.innerHTML = `
+        <div class="notifications-list">
+            ${notifications.map(notification => 
+                createNotificationHTML(notification)
+            ).join('')}
+        </div>
+    `;
     
     // Add click listeners
     document.querySelectorAll('.notification-item').forEach(item => {
@@ -242,11 +243,21 @@ function renderNotifications(notifications) {
  * Append notifications
  */
 function appendNotifications(notifications) {
+    // Find or create notifications list container
+    let listContainer = notificationsContainer.querySelector('.notifications-list');
+    
+    if (!listContainer) {
+        // Create list container if it doesn't exist
+        listContainer = document.createElement('div');
+        listContainer.className = 'notifications-list';
+        notificationsContainer.appendChild(listContainer);
+    }
+    
     const html = notifications.map(notification => 
         createNotificationHTML(notification)
     ).join('');
     
-    notificationsContainer.insertAdjacentHTML('beforeend', html);
+    listContainer.insertAdjacentHTML('beforeend', html);
     
     // Add click listeners to new items
     document.querySelectorAll('.notification-item[data-id]').forEach(item => {
@@ -264,27 +275,42 @@ function createNotificationHTML(notification) {
     const isUnread = !notification.is_read;
     const icon = getNotificationIcon(notification.type);
     const time = formatTimeAgo(notification.created_at);
+    const title = getNotificationTitle(notification);
+    const message = escapeHtml(notification.message || '');
+    
+    // Get submission reference if available
+    // Handle both single object and array (Supabase can return either)
+    let submissionRef = '';
+    if (notification.submission) {
+        if (Array.isArray(notification.submission) && notification.submission.length > 0) {
+            submissionRef = notification.submission[0].reference_number || '';
+        } else if (notification.submission.reference_number) {
+            submissionRef = notification.submission.reference_number;
+        }
+    }
+    if (!submissionRef && notification.submission_id) {
+        submissionRef = 'طلب';
+    }
     
     return `
         <div class="notification-item ${isUnread ? 'unread' : ''}" data-id="${notification.id}">
-            <div class="notification-icon ${notification.type}">
+            <div class="notification-icon ${notification.type || 'system'}">
                 <i class="fas ${icon}"></i>
             </div>
             <div class="notification-content">
-                <h4 class="notification-title">${getNotificationTitle(notification)}</h4>
-                <p class="notification-message">${notification.message}</p>
-                <div class="notification-meta">
-                    <span>
-                        <i class="fas fa-clock"></i>
-                        ${time}
-                    </span>
-                    ${notification.submission_id ? `
+                <div class="notification-header">
+                    <h4 class="notification-title">${title}</h4>
+                    <span class="notification-time">${time}</span>
+                </div>
+                <p class="notification-message">${message}</p>
+                ${submissionRef ? `
+                    <div class="notification-meta">
                         <span>
                             <i class="fas fa-file-alt"></i>
-                            ${notification.submission?.reference_number || 'طلب'}
+                            ${submissionRef}
                         </span>
-                    ` : ''}
-                </div>
+                    </div>
+                ` : ''}
             </div>
             <div class="notification-actions">
                 ${isUnread ? `
@@ -548,6 +574,16 @@ function formatTimeAgo(dateString) {
 }
 
 /**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
  * Show loading
  */
 function showLoading() {
@@ -579,7 +615,7 @@ function showError(message) {
     notificationsContainer.innerHTML = `
         <div class="error-state">
             <i class="fas fa-exclamation-circle"></i>
-            <p>${message}</p>
+            <p>${escapeHtml(message)}</p>
         </div>
     `;
 }
