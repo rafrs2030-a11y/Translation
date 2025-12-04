@@ -226,21 +226,64 @@ window.addEventListener('beforeunload', () => {
 /**
  * Clear old cache and reload from Supabase
  */
+/**
+ * Clear all settings cache from localStorage and reload from Supabase
+ * مسح جميع الكاش القديم وإعادة التحميل من Supabase
+ */
 async function clearSettingsCache() {
     try {
-        // Remove old cache from localStorage
-        localStorage.removeItem('platform_name');
-        localStorage.removeItem('contact_email');
-        localStorage.removeItem('contact_phone');
-        localStorage.removeItem('whatsapp_number');
-        localStorage.removeItem('contact_address');
-        localStorage.removeItem('allow_submissions');
-        localStorage.removeItem('auto_review');
-        localStorage.removeItem('max_file_size');
-        localStorage.removeItem('allowed_file_formats');
-        localStorage.removeItem('email_notifications');
-        localStorage.removeItem('email_new_submission');
-        localStorage.removeItem('email_status_change');
+        console.log('🧹 بدء مسح الكاش القديم...');
+        
+        // Get all settings keys from Supabase to ensure we clear everything
+        const { data: allSettings } = await supabase
+            .from('platform_settings')
+            .select('setting_key');
+        
+        // Remove all known settings from localStorage
+        const knownSettings = [
+            'platform_name',
+            'contact_email',
+            'contact_phone',
+            'whatsapp_number',
+            'contact_address',
+            'allow_submissions',
+            'auto_review',
+            'max_file_size',
+            'allowed_file_formats',
+            'email_notifications',
+            'email_new_submission',
+            'email_status_change'
+        ];
+        
+        // Clear known settings
+        knownSettings.forEach(key => {
+            localStorage.removeItem(key);
+            console.log(`  ✓ Removed: ${key}`);
+        });
+        
+        // Clear any additional settings from database
+        if (allSettings && allSettings.length > 0) {
+            allSettings.forEach(({ setting_key }) => {
+                if (!knownSettings.includes(setting_key)) {
+                    localStorage.removeItem(setting_key);
+                    console.log(`  ✓ Removed (from DB): ${setting_key}`);
+                }
+            });
+        }
+        
+        // Clear all platform_settings related keys (catch any we might have missed)
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('platform_') || 
+                key.startsWith('contact_') || 
+                key.startsWith('allow_') || 
+                key.startsWith('auto_') || 
+                key.startsWith('max_') || 
+                key.startsWith('allowed_') || 
+                key.startsWith('email_')) {
+                localStorage.removeItem(key);
+                console.log(`  ✓ Removed (wildcard): ${key}`);
+            }
+        });
         
         // Clear cache in utility modules
         if (typeof window !== 'undefined') {
@@ -250,16 +293,20 @@ async function clearSettingsCache() {
             window.dispatchEvent(new CustomEvent('clearContactEmailCache'));
             // Clear contact info cache
             window.dispatchEvent(new CustomEvent('clearContactInfoCache'));
+            // Dispatch general cache cleared event
+            window.dispatchEvent(new CustomEvent('settingsCacheCleared'));
         }
         
-        console.log('✅ تم مسح الكاش القديم');
+        console.log('✅ تم مسح الكاش القديم بنجاح');
         
-        // Reload settings from Supabase
+        // Reload settings from Supabase (fresh data)
         await loadSettings();
+        
+        console.log('✅ تم إعادة تحميل الإعدادات من Supabase');
         
         return true;
     } catch (error) {
-        console.error('Error clearing cache:', error);
+        console.error('❌ خطأ في مسح الكاش:', error);
         return false;
     }
 }

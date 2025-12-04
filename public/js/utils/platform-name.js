@@ -6,6 +6,7 @@
 import { supabase } from '../config/supabase.js';
 
 let platformNameCache = null;
+let isUpdating = false; // Flag to prevent infinite loops
 
 // Listen for cache clear event
 if (typeof window !== 'undefined') {
@@ -63,45 +64,59 @@ export function getPlatformNameSync() {
 
 /**
  * Update platform name in current page
+ * @param {boolean} skipEvent - Skip dispatching event to prevent infinite loops
  */
-export function updatePagePlatformName() {
-    const platformName = getPlatformNameSync();
-    
-    // Update document title
-    const currentTitle = document.title;
-    if (currentTitle.includes(' - ')) {
-        const titleParts = currentTitle.split(' - ');
-        // Keep the page-specific title and update platform name
-        if (titleParts.length > 1 && titleParts[titleParts.length - 1] !== platformName) {
-            titleParts[titleParts.length - 1] = platformName;
-            document.title = titleParts.join(' - ');
-        }
-    } else if (!currentTitle.includes(platformName)) {
-        document.title = `${currentTitle} - ${platformName}`;
+export function updatePagePlatformName(skipEvent = false) {
+    // Prevent infinite loops
+    if (isUpdating) {
+        return;
     }
     
-    // Update meta description if exists
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-        const desc = metaDescription.getAttribute('content');
-        if (desc && desc.includes('منصة نشر الأبحاث العربية')) {
-            metaDescription.setAttribute('content', desc.replace('منصة نشر الأبحاث العربية', platformName));
-        }
-    }
+    isUpdating = true;
     
-    // Update footer copyright if exists
-    const footerCopyright = document.querySelector('.footer-copyright, footer p, [class*="copyright"]');
-    if (footerCopyright) {
-        const text = footerCopyright.textContent;
-        if (text && text.includes('منصة نشر الأبحاث العربية')) {
-            footerCopyright.textContent = text.replace('منصة نشر الأبحاث العربية', platformName);
+    try {
+        const platformName = getPlatformNameSync();
+        
+        // Update document title
+        const currentTitle = document.title;
+        if (currentTitle.includes(' - ')) {
+            const titleParts = currentTitle.split(' - ');
+            // Keep the page-specific title and update platform name
+            if (titleParts.length > 1 && titleParts[titleParts.length - 1] !== platformName) {
+                titleParts[titleParts.length - 1] = platformName;
+                document.title = titleParts.join(' - ');
+            }
+        } else if (!currentTitle.includes(platformName)) {
+            document.title = `${currentTitle} - ${platformName}`;
         }
+        
+        // Update meta description if exists
+        const metaDescription = document.querySelector('meta[name="description"]');
+        if (metaDescription) {
+            const desc = metaDescription.getAttribute('content');
+            if (desc && desc.includes('منصة نشر الأبحاث العربية')) {
+                metaDescription.setAttribute('content', desc.replace('منصة نشر الأبحاث العربية', platformName));
+            }
+        }
+        
+        // Update footer copyright if exists
+        const footerCopyright = document.querySelector('.footer-copyright, footer p, [class*="copyright"]');
+        if (footerCopyright) {
+            const text = footerCopyright.textContent;
+            if (text && text.includes('منصة نشر الأبحاث العربية')) {
+                footerCopyright.textContent = text.replace('منصة نشر الأبحاث العربية', platformName);
+            }
+        }
+        
+        // Dispatch custom event for other components to listen (only if not skipping)
+        if (!skipEvent) {
+            window.dispatchEvent(new CustomEvent('platformNameUpdated', { 
+                detail: { name: platformName } 
+            }));
+        }
+    } finally {
+        isUpdating = false;
     }
-    
-    // Dispatch custom event for other components to listen
-    window.dispatchEvent(new CustomEvent('platformNameUpdated', { 
-        detail: { name: platformName } 
-    }));
 }
 
 /**
@@ -127,7 +142,8 @@ export async function initPlatformName() {
         if (e.detail?.name) {
             platformNameCache = e.detail.name;
         }
-        updatePagePlatformName();
+        // Skip event dispatch to prevent infinite loop
+        updatePagePlatformName(true);
     });
 }
 
