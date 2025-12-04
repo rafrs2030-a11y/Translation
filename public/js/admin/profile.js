@@ -25,6 +25,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     const { clearCacheOnPageLoad } = await import('../utils/admin-cache-clear.js');
     await clearCacheOnPageLoad();
     
+    // مسح كاش الإشعارات بشكل إضافي
+    try {
+        const cacheKeys = [
+            'notification_preferences',
+            'notifications',
+            'notifications_unread',
+            'notifications_last_fetch',
+            'notification_cache'
+        ];
+        
+        cacheKeys.forEach(key => {
+            try {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            } catch (e) {
+                // Ignore individual cache errors
+            }
+        });
+        
+        console.log('✅ Cleared notification cache on page load');
+    } catch (cacheError) {
+        console.warn('Could not clear notification cache:', cacheError);
+    }
+    
     initElements();
     initEventListeners();
     await loadProfileData();
@@ -257,7 +281,29 @@ async function loadStats() {
  */
 async function loadNotificationPreferences() {
     try {
-        const { data, error } = await supabase
+        // Clear any cached preferences first to ensure fresh data
+        try {
+            const cacheKeys = [
+                'notification_preferences',
+                'notifications',
+                'notifications_unread',
+                'notifications_last_fetch',
+                'notification_cache'
+            ];
+            
+            cacheKeys.forEach(key => {
+                try {
+                    localStorage.removeItem(key);
+                    sessionStorage.removeItem(key);
+                } catch (e) {
+                    // Ignore individual cache errors
+                }
+            });
+        } catch (cacheError) {
+            // Ignore cache errors
+        }
+        
+        let { data, error } = await supabase
             .from('notification_preferences')
             .select('*')
             .eq('user_id', currentUser.id)
@@ -269,24 +315,63 @@ async function loadNotificationPreferences() {
             return;
         }
 
+        // If preferences don't exist, create default ones
         if (!data) {
-            // No preferences saved yet - keep default values from HTML
-            return;
+            console.log('No notification preferences found, creating default preferences for admin...');
+            try {
+                const { data: newPrefs, error: createError } = await supabase
+                    .from('notification_preferences')
+                    .insert({
+                        user_id: currentUser.id,
+                        email_enabled: true,
+                        in_app_enabled: true,
+                        status_change_email: true,
+                        comments_email: true,
+                        reminders_email: true,
+                        news_email: true
+                    })
+                    .select()
+                    .single();
+                
+                if (createError) {
+                    console.error('Error creating default preferences:', createError);
+                    // Continue with default values (data will remain null)
+                } else {
+                    console.log('✅ Created default notification preferences for admin');
+                    // Use the newly created preferences
+                    data = newPrefs;
+                }
+            } catch (createErr) {
+                console.error('Exception creating default preferences:', createErr);
+            }
         }
+
+        // Update checkboxes based on saved preferences
+        // Default to true if preferences don't exist
+        const emailEnabled = data?.email_enabled ?? true;
+        const statusChangeEmail = data?.status_change_email ?? true;
+        const commentsEmail = data?.comments_email ?? true;
 
         const emailNotifications = document.getElementById('email-notifications');
         const statusNotifications = document.getElementById('status-notifications');
         const commentNotifications = document.getElementById('comment-notifications');
 
         if (emailNotifications) {
-            emailNotifications.checked = !!data.email_enabled;
+            emailNotifications.checked = emailEnabled;
         }
         if (statusNotifications) {
-            statusNotifications.checked = !!data.status_change_email;
+            statusNotifications.checked = statusChangeEmail;
         }
         if (commentNotifications) {
-            commentNotifications.checked = !!data.comments_email;
+            commentNotifications.checked = commentsEmail;
         }
+        
+        console.log('✅ Notification preferences loaded:', {
+            email_enabled: emailEnabled,
+            status_change_email: statusChangeEmail,
+            comments_email: commentsEmail,
+            created: !data ? 'new' : 'existing'
+        });
     } catch (error) {
         console.error('Error loading notification preferences:', error);
     }
@@ -430,18 +515,72 @@ async function handleNotificationSettings(e) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
         
-        // Update or insert notification preferences
-        const { data, error } = await supabase
+        // Check if preferences exist first, then update or insert
+        const { data: existingPrefs } = await supabase
             .from('notification_preferences')
-            .upsert({ 
-                user_id: currentUser.id,
-                ...settings,
-                updated_at: new Date().toISOString()
-            })
-            .select()
-            .single();
+            .select('id')
+            .eq('user_id', currentUser.id)
+            .maybeSingle();
+        
+        let data, error;
+        
+        if (existingPrefs) {
+            // Update existing preferences
+            const result = await supabase
+                .from('notification_preferences')
+                .update({ 
+                    ...settings,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('user_id', currentUser.id)
+                .select()
+                .single();
+            data = result.data;
+            error = result.error;
+        } else {
+            // Insert new preferences
+            const result = await supabase
+                .from('notification_preferences')
+                .insert({ 
+                    user_id: currentUser.id,
+                    ...settings,
+                    updated_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+            data = result.data;
+            error = result.error;
+        }
         
         if (error) throw error;
+        
+        // Clear notification preferences cache to force reload from database
+        try {
+            // Clear all possible cache keys related to notifications
+            const cacheKeys = [
+                'notification_preferences',
+                'notifications',
+                'notifications_unread',
+                'notifications_last_fetch',
+                'notification_cache'
+            ];
+            
+            cacheKeys.forEach(key => {
+                try {
+                    localStorage.removeItem(key);
+                    sessionStorage.removeItem(key);
+                } catch (e) {
+                    // Ignore individual cache errors
+                }
+            });
+            
+            console.log('✅ Cleared notification preferences cache');
+        } catch (cacheError) {
+            console.warn('Could not clear cache:', cacheError);
+        }
+        
+        // Reload preferences to ensure UI is in sync
+        await loadNotificationPreferences();
         
         showAlert('success', 'تم حفظ الإعدادات بنجاح ✓');
         
