@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.33.0";
+import { getEmailSettings, shouldSendEmail } from '../_shared/get-email-settings.ts';
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -283,6 +284,23 @@ async function updateQueueAfterFailure(id: string, attempts: number, errorText: 
 }
 
 async function checkPreferencesAndSend(item: any) {
+  // First, check platform-wide email settings
+  const emailSettings = await getEmailSettings(supabase);
+  
+  // Check if email should be sent based on platform settings
+  // Map item.type to email type for shouldSendEmail function
+  let emailType: 'new_submission' | 'status_change' | 'comment_added' | 'reminder' | 'system' = 'system';
+  if (item.type === 'status_change') emailType = 'status_change';
+  else if (item.type === 'new_submission') emailType = 'new_submission';
+  else if (item.type === 'comment_added') emailType = 'comment_added';
+  else if (item.type === 'reminder') emailType = 'reminder';
+  
+  if (!shouldSendEmail(emailSettings, emailType)) {
+    await logEmail(item, "failed", null, `email_disabled_in_platform_settings:${item.type}`);
+    await updateQueueAfterFailure(item.id, item.attempts || 0, `email_disabled_in_platform_settings:${item.type}`);
+    return;
+  }
+
   // If user_id is present, fetch preferences; otherwise assume allowed
   let preferences = { email_enabled: true };
   if (item.user_id) {

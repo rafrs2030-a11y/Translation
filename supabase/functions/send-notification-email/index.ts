@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { getEmailSettings, shouldSendEmail } from '../_shared/get-email-settings.ts';
 
 interface EmailData {
   to: string;
@@ -59,6 +60,41 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({ error: 'Missing required email data' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check email settings from platform_settings table
+    const emailSettings = await getEmailSettings(supabaseClient);
+    
+    // Check if email should be sent based on settings
+    if (!shouldSendEmail(emailSettings, emailData.type)) {
+      console.log(`Email not sent: ${emailData.type} is disabled in platform settings`);
+      
+      // Log that email was skipped due to settings
+      await supabaseClient
+        .from('email_log')
+        .insert([{
+          user_id: emailData.userId || null,
+          email_type: emailData.type,
+          recipient_email: emailData.to,
+          subject: emailData.subject,
+          status: 'failed',
+          error_message: `Email disabled in platform settings for type: ${emailData.type}`,
+        }]);
+
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: `Email notifications are disabled for type: ${emailData.type}`,
+          skipped: true 
+        }),
+        { 
+          status: 200,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
       );
     }
 

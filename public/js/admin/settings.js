@@ -31,6 +31,13 @@ async function clearSettingsCache() {
         localStorage.removeItem('contact_phone');
         localStorage.removeItem('whatsapp_number');
         localStorage.removeItem('contact_address');
+        localStorage.removeItem('allow_submissions');
+        localStorage.removeItem('auto_review');
+        localStorage.removeItem('max_file_size');
+        localStorage.removeItem('allowed_file_formats');
+        localStorage.removeItem('email_notifications');
+        localStorage.removeItem('email_new_submission');
+        localStorage.removeItem('email_status_change');
         
         // Clear cache in utility modules
         if (typeof window !== 'undefined') {
@@ -65,6 +72,13 @@ async function loadSettings() {
         localStorage.removeItem('contact_phone');
         localStorage.removeItem('whatsapp_number');
         localStorage.removeItem('contact_address');
+        localStorage.removeItem('allow_submissions');
+        localStorage.removeItem('auto_review');
+        localStorage.removeItem('max_file_size');
+        localStorage.removeItem('allowed_file_formats');
+        localStorage.removeItem('email_notifications');
+        localStorage.removeItem('email_new_submission');
+        localStorage.removeItem('email_status_change');
         
         // Load settings from Supabase
         const { data: settings, error } = await supabase
@@ -122,6 +136,55 @@ async function loadSettings() {
         const contactAddressInput = document.getElementById('contact-address-input');
         if (contactAddressInput) {
             contactAddressInput.value = contactAddress;
+        }
+        
+        // Update allow submissions toggle
+        const allowSubmissions = settingsMap['allow_submissions'] === 'true' || settingsMap['allow_submissions'] === true;
+        const allowSubmissionsInput = document.getElementById('allow-submissions');
+        if (allowSubmissionsInput) {
+            allowSubmissionsInput.checked = allowSubmissions;
+        }
+        
+        // Update auto review toggle
+        const autoReview = settingsMap['auto_review'] === 'true' || settingsMap['auto_review'] === true;
+        const autoReviewInput = document.getElementById('auto-review');
+        if (autoReviewInput) {
+            autoReviewInput.checked = autoReview;
+        }
+        
+        // Update max file size input
+        const maxFileSize = settingsMap['max_file_size'] || '10';
+        const maxFileSizeInput = document.getElementById('max-file-size-input');
+        if (maxFileSizeInput) {
+            maxFileSizeInput.value = maxFileSize;
+        }
+        
+        // Update allowed file formats input
+        const allowedFileFormats = settingsMap['allowed_file_formats'] || '.pdf, .doc, .docx';
+        const allowedFileFormatsInput = document.getElementById('allowed-file-formats-input');
+        if (allowedFileFormatsInput) {
+            allowedFileFormatsInput.value = allowedFileFormats;
+        }
+        
+        // Update email notifications toggle
+        const emailNotifications = settingsMap['email_notifications'] === 'true' || settingsMap['email_notifications'] === true;
+        const emailNotificationsInput = document.getElementById('email-notifications');
+        if (emailNotificationsInput) {
+            emailNotificationsInput.checked = emailNotifications;
+        }
+        
+        // Update email new submission toggle
+        const emailNewSubmission = settingsMap['email_new_submission'] === 'true' || settingsMap['email_new_submission'] === true;
+        const emailNewSubmissionInput = document.getElementById('email-new-submission');
+        if (emailNewSubmissionInput) {
+            emailNewSubmissionInput.checked = emailNewSubmission;
+        }
+        
+        // Update email status change toggle
+        const emailStatusChange = settingsMap['email_status_change'] === 'true' || settingsMap['email_status_change'] === true;
+        const emailStatusChangeInput = document.getElementById('email-status-change');
+        if (emailStatusChangeInput) {
+            emailStatusChangeInput.checked = emailStatusChange;
         }
         
         // Update last backup date (if available)
@@ -437,13 +500,244 @@ function initEventListeners() {
         });
     }
     
+    // Track changes to allow submissions toggle (real-time)
+    const allowSubmissionsInput = document.getElementById('allow-submissions');
+    if (allowSubmissionsInput) {
+        allowSubmissionsInput.addEventListener('change', async (e) => {
+            const value = e.target.checked ? 'true' : 'false';
+            
+            // Save to localStorage immediately (cache)
+            localStorage.setItem('allow_submissions', value);
+            
+            // Save to Supabase
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const { error } = await supabase
+                    .from('platform_settings')
+                    .upsert({
+                        setting_key: 'allow_submissions',
+                        setting_value: value,
+                        updated_by: user?.id
+                    }, {
+                        onConflict: 'setting_key'
+                    });
+                
+                if (error) {
+                    console.error('Error saving allow submissions to Supabase:', error);
+                }
+            } catch (error) {
+                console.error('Error saving allow submissions:', error);
+            }
+        });
+    }
+    
+    // Track changes to auto review toggle (real-time)
+    const autoReviewInput = document.getElementById('auto-review');
+    if (autoReviewInput) {
+        autoReviewInput.addEventListener('change', async (e) => {
+            const value = e.target.checked ? 'true' : 'false';
+            
+            // Save to localStorage immediately (cache)
+            localStorage.setItem('auto_review', value);
+            
+            // Save to Supabase
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const { error } = await supabase
+                    .from('platform_settings')
+                    .upsert({
+                        setting_key: 'auto_review',
+                        setting_value: value,
+                        updated_by: user?.id
+                    }, {
+                        onConflict: 'setting_key'
+                    });
+                
+                if (error) {
+                    console.error('Error saving auto review to Supabase:', error);
+                }
+            } catch (error) {
+                console.error('Error saving auto review:', error);
+            }
+        });
+    }
+    
+    // Track changes to max file size input (real-time)
+    const maxFileSizeInput = document.getElementById('max-file-size-input');
+    if (maxFileSizeInput) {
+        let maxFileSizeTimeout;
+        maxFileSizeInput.addEventListener('input', (e) => {
+            const value = e.target.value.trim();
+            if (!value) return;
+            
+            // Debounce: Update after 500ms of no typing
+            clearTimeout(maxFileSizeTimeout);
+            maxFileSizeTimeout = setTimeout(async () => {
+                // Save to localStorage immediately (cache)
+                localStorage.setItem('max_file_size', value);
+                
+                // Save to Supabase
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    const { error } = await supabase
+                        .from('platform_settings')
+                        .upsert({
+                            setting_key: 'max_file_size',
+                            setting_value: value,
+                            updated_by: user?.id
+                        }, {
+                            onConflict: 'setting_key'
+                        });
+                    
+                    if (error) {
+                        console.error('Error saving max file size to Supabase:', error);
+                    }
+                } catch (error) {
+                    console.error('Error saving max file size:', error);
+                }
+            }, 500);
+        });
+    }
+    
+    // Track changes to allowed file formats input (real-time)
+    const allowedFileFormatsInput = document.getElementById('allowed-file-formats-input');
+    if (allowedFileFormatsInput) {
+        let allowedFileFormatsTimeout;
+        allowedFileFormatsInput.addEventListener('input', (e) => {
+            const value = e.target.value.trim();
+            if (!value) return;
+            
+            // Debounce: Update after 500ms of no typing
+            clearTimeout(allowedFileFormatsTimeout);
+            allowedFileFormatsTimeout = setTimeout(async () => {
+                // Save to localStorage immediately (cache)
+                localStorage.setItem('allowed_file_formats', value);
+                
+                // Save to Supabase
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    const { error } = await supabase
+                        .from('platform_settings')
+                        .upsert({
+                            setting_key: 'allowed_file_formats',
+                            setting_value: value,
+                            updated_by: user?.id
+                        }, {
+                            onConflict: 'setting_key'
+                        });
+                    
+                    if (error) {
+                        console.error('Error saving allowed file formats to Supabase:', error);
+                    }
+                } catch (error) {
+                    console.error('Error saving allowed file formats:', error);
+                }
+            }, 500);
+        });
+    }
+    
+    // Track changes to email notifications toggle (real-time)
+    const emailNotificationsInput = document.getElementById('email-notifications');
+    if (emailNotificationsInput) {
+        emailNotificationsInput.addEventListener('change', async (e) => {
+            const value = e.target.checked ? 'true' : 'false';
+            
+            // Save to localStorage immediately (cache)
+            localStorage.setItem('email_notifications', value);
+            
+            // Save to Supabase
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const { error } = await supabase
+                    .from('platform_settings')
+                    .upsert({
+                        setting_key: 'email_notifications',
+                        setting_value: value,
+                        updated_by: user?.id
+                    }, {
+                        onConflict: 'setting_key'
+                    });
+                
+                if (error) {
+                    console.error('Error saving email notifications to Supabase:', error);
+                }
+            } catch (error) {
+                console.error('Error saving email notifications:', error);
+            }
+        });
+    }
+    
+    // Track changes to email new submission toggle (real-time)
+    const emailNewSubmissionInput = document.getElementById('email-new-submission');
+    if (emailNewSubmissionInput) {
+        emailNewSubmissionInput.addEventListener('change', async (e) => {
+            const value = e.target.checked ? 'true' : 'false';
+            
+            // Save to localStorage immediately (cache)
+            localStorage.setItem('email_new_submission', value);
+            
+            // Save to Supabase
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const { error } = await supabase
+                    .from('platform_settings')
+                    .upsert({
+                        setting_key: 'email_new_submission',
+                        setting_value: value,
+                        updated_by: user?.id
+                    }, {
+                        onConflict: 'setting_key'
+                    });
+                
+                if (error) {
+                    console.error('Error saving email new submission to Supabase:', error);
+                }
+            } catch (error) {
+                console.error('Error saving email new submission:', error);
+            }
+        });
+    }
+    
+    // Track changes to email status change toggle (real-time)
+    const emailStatusChangeInput = document.getElementById('email-status-change');
+    if (emailStatusChangeInput) {
+        emailStatusChangeInput.addEventListener('change', async (e) => {
+            const value = e.target.checked ? 'true' : 'false';
+            
+            // Save to localStorage immediately (cache)
+            localStorage.setItem('email_status_change', value);
+            
+            // Save to Supabase
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const { error } = await supabase
+                    .from('platform_settings')
+                    .upsert({
+                        setting_key: 'email_status_change',
+                        setting_value: value,
+                        updated_by: user?.id
+                    }, {
+                        onConflict: 'setting_key'
+                    });
+                
+                if (error) {
+                    console.error('Error saving email status change to Supabase:', error);
+                }
+            } catch (error) {
+                console.error('Error saving email status change:', error);
+            }
+        });
+    }
+    
     // Track changes to other text inputs
     document.querySelectorAll('.form-input, .form-select').forEach(input => {
         if (input.id !== 'platform-name-input' && 
             input.id !== 'contact-email-input' && 
             input.id !== 'contact-phone-input' && 
             input.id !== 'whatsapp-number-input' && 
-            input.id !== 'contact-address-input') {
+            input.id !== 'contact-address-input' &&
+            input.id !== 'max-file-size-input' &&
+            input.id !== 'allowed-file-formats-input') {
             input.addEventListener('change', () => {
                 // Settings tracked in memory
             });
@@ -481,13 +775,43 @@ async function saveAllSettings() {
         // Get current user for audit
         const { data: { user } } = await supabase.auth.getUser();
         
+        // Get submission settings
+        const allowSubmissionsInput = document.getElementById('allow-submissions');
+        const allowSubmissions = allowSubmissionsInput?.checked ? 'true' : 'false';
+        
+        const autoReviewInput = document.getElementById('auto-review');
+        const autoReview = autoReviewInput?.checked ? 'true' : 'false';
+        
+        const maxFileSizeInput = document.getElementById('max-file-size-input');
+        const maxFileSize = maxFileSizeInput?.value || '10';
+        
+        const allowedFileFormatsInput = document.getElementById('allowed-file-formats-input');
+        const allowedFileFormats = allowedFileFormatsInput?.value || '.pdf, .doc, .docx';
+        
+        // Get email settings
+        const emailNotificationsInput = document.getElementById('email-notifications');
+        const emailNotifications = emailNotificationsInput?.checked ? 'true' : 'false';
+        
+        const emailNewSubmissionInput = document.getElementById('email-new-submission');
+        const emailNewSubmission = emailNewSubmissionInput?.checked ? 'true' : 'false';
+        
+        const emailStatusChangeInput = document.getElementById('email-status-change');
+        const emailStatusChange = emailStatusChangeInput?.checked ? 'true' : 'false';
+        
         // Save platform settings to Supabase
         const platformSettingsToSave = [
             { setting_key: 'platform_name', setting_value: platformName, updated_by: user?.id },
             { setting_key: 'contact_email', setting_value: contactEmail, updated_by: user?.id },
             { setting_key: 'contact_phone', setting_value: contactPhone, updated_by: user?.id },
             { setting_key: 'whatsapp_number', setting_value: whatsappNumber, updated_by: user?.id },
-            { setting_key: 'contact_address', setting_value: contactAddress, updated_by: user?.id }
+            { setting_key: 'contact_address', setting_value: contactAddress, updated_by: user?.id },
+            { setting_key: 'allow_submissions', setting_value: allowSubmissions, updated_by: user?.id },
+            { setting_key: 'auto_review', setting_value: autoReview, updated_by: user?.id },
+            { setting_key: 'max_file_size', setting_value: maxFileSize, updated_by: user?.id },
+            { setting_key: 'allowed_file_formats', setting_value: allowedFileFormats, updated_by: user?.id },
+            { setting_key: 'email_notifications', setting_value: emailNotifications, updated_by: user?.id },
+            { setting_key: 'email_new_submission', setting_value: emailNewSubmission, updated_by: user?.id },
+            { setting_key: 'email_status_change', setting_value: emailStatusChange, updated_by: user?.id }
         ];
         
         // Other settings (for future use)
