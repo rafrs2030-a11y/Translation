@@ -505,8 +505,25 @@ async function handleNotificationSettings(e) {
         
         // Clear notification preferences cache to force reload from database
         try {
-            localStorage.removeItem('notification_preferences');
-            sessionStorage.removeItem('notification_preferences');
+            // Clear all possible cache keys related to notifications
+            const cacheKeys = [
+                'notification_preferences',
+                'notifications',
+                'notifications_unread',
+                'notifications_last_fetch',
+                'notification_cache'
+            ];
+            
+            cacheKeys.forEach(key => {
+                try {
+                    localStorage.removeItem(key);
+                    sessionStorage.removeItem(key);
+                } catch (e) {
+                    // Ignore individual cache errors
+                }
+            });
+            
+            console.log('✅ Cleared notification preferences cache');
         } catch (cacheError) {
             console.warn('Could not clear cache:', cacheError);
         }
