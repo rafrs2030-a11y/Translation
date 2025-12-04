@@ -250,6 +250,14 @@ function populateForms() {
  */
 async function loadNotificationPreferences() {
     try {
+        // Clear any cached preferences first to ensure fresh data
+        try {
+            localStorage.removeItem('notification_preferences');
+            sessionStorage.removeItem('notification_preferences');
+        } catch (cacheError) {
+            // Ignore cache errors
+        }
+        
         const { data: preferences, error } = await supabase
             .from('notification_preferences')
             .select('*')
@@ -280,6 +288,12 @@ async function loadNotificationPreferences() {
         if (commentNotificationsCheckbox) {
             commentNotificationsCheckbox.checked = commentsEmail;
         }
+        
+        console.log('✅ Notification preferences loaded:', {
+            email_enabled: emailEnabled,
+            status_change_email: statusChangeEmail,
+            comments_email: commentsEmail
+        });
         
     } catch (error) {
         console.error('Error loading notification preferences:', error);
@@ -488,6 +502,14 @@ async function handleNotificationSettings(e) {
         }
         
         if (error) throw error;
+        
+        // Clear notification preferences cache to force reload from database
+        try {
+            localStorage.removeItem('notification_preferences');
+            sessionStorage.removeItem('notification_preferences');
+        } catch (cacheError) {
+            console.warn('Could not clear cache:', cacheError);
+        }
         
         // Reload preferences to ensure UI is in sync
         await loadNotificationPreferences();
