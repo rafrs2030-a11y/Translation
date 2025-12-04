@@ -138,6 +138,9 @@ async function loadProfileData() {
         populateProfileHeader();
         populateForms();
         
+        // Load notification preferences
+        await loadNotificationPreferences();
+        
         // Load stats
         await loadStats();
         
@@ -240,6 +243,47 @@ function populateForms() {
     // Contact info
     document.getElementById('phone').value = currentUser.phone || '';
     document.getElementById('national-id').value = currentUser.national_id || '';
+}
+
+/**
+ * Load notification preferences from database
+ */
+async function loadNotificationPreferences() {
+    try {
+        const { data: preferences, error } = await supabase
+            .from('notification_preferences')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .maybeSingle();
+        
+        if (error) {
+            console.error('Error loading notification preferences:', error);
+            return;
+        }
+        
+        // Update checkboxes based on saved preferences
+        // Default to true if preferences don't exist
+        const emailEnabled = preferences?.email_enabled ?? true;
+        const statusChangeEmail = preferences?.status_change_email ?? true;
+        const commentsEmail = preferences?.comments_email ?? true;
+        
+        const emailNotificationsCheckbox = document.getElementById('email-notifications');
+        const statusNotificationsCheckbox = document.getElementById('status-notifications');
+        const commentNotificationsCheckbox = document.getElementById('comment-notifications');
+        
+        if (emailNotificationsCheckbox) {
+            emailNotificationsCheckbox.checked = emailEnabled;
+        }
+        if (statusNotificationsCheckbox) {
+            statusNotificationsCheckbox.checked = statusChangeEmail;
+        }
+        if (commentNotificationsCheckbox) {
+            commentNotificationsCheckbox.checked = commentsEmail;
+        }
+        
+    } catch (error) {
+        console.error('Error loading notification preferences:', error);
+    }
 }
 
 /**
@@ -444,6 +488,9 @@ async function handleNotificationSettings(e) {
         }
         
         if (error) throw error;
+        
+        // Reload preferences to ensure UI is in sync
+        await loadNotificationPreferences();
         
         showAlert('success', 'تم حفظ الإعدادات بنجاح ✓');
         
