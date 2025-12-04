@@ -11,6 +11,8 @@ let contactInfoCache = {
     address: null
 };
 
+let isUpdating = false; // Flag to prevent infinite loops
+
 /**
  * Get contact phone from storage
  */
@@ -129,55 +131,69 @@ export function getContactInfoSync() {
 
 /**
  * Update contact info in current page
+ * @param {boolean} skipEvent - Skip dispatching event to prevent infinite loops
  */
-export function updatePageContactInfo() {
-    const contactInfo = getContactInfoSync();
+export function updatePageContactInfo(skipEvent = false) {
+    // Prevent infinite loops
+    if (isUpdating) {
+        return;
+    }
     
-    // Update phone links
-    const phoneLinks = document.querySelectorAll('a[href^="tel:"]');
-    phoneLinks.forEach(link => {
-        const href = link.getAttribute('href');
-        if (href && (href.includes('966580002284') || href.includes('+966580002284') || href.includes('+966 58 000 2284'))) {
-            // Format phone for tel: link (remove spaces and +)
-            const phoneForLink = contactInfo.phone.replace(/\s+/g, '').replace(/\+/g, '');
-            link.setAttribute('href', `tel:+${phoneForLink}`);
-            
-            // Update text if it contains the old phone
-            if (link.textContent.includes('966580002284') || 
-                link.textContent.includes('+966 58 000 2284') ||
-                link.textContent.includes('+966580002284')) {
-                link.textContent = link.textContent.replace(/966580002284|\+966580002284|\+966\s*58\s*000\s*2284/g, contactInfo.phone);
+    isUpdating = true;
+    
+    try {
+        const contactInfo = getContactInfoSync();
+        
+        // Update phone links
+        const phoneLinks = document.querySelectorAll('a[href^="tel:"]');
+        phoneLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && (href.includes('966580002284') || href.includes('+966580002284') || href.includes('+966 58 000 2284'))) {
+                // Format phone for tel: link (remove spaces and +)
+                const phoneForLink = contactInfo.phone.replace(/\s+/g, '').replace(/\+/g, '');
+                link.setAttribute('href', `tel:+${phoneForLink}`);
+                
+                // Update text if it contains the old phone
+                if (link.textContent.includes('966580002284') || 
+                    link.textContent.includes('+966 58 000 2284') ||
+                    link.textContent.includes('+966580002284')) {
+                    link.textContent = link.textContent.replace(/966580002284|\+966580002284|\+966\s*58\s*000\s*2284/g, contactInfo.phone);
+                }
             }
-        }
-    });
-    
-    // Update WhatsApp links
-    const whatsappLinks = document.querySelectorAll('a[href*="wa.me/"]');
-    whatsappLinks.forEach(link => {
-        const href = link.getAttribute('href');
-        if (href && href.includes('966580002284')) {
-            link.setAttribute('href', `https://wa.me/${contactInfo.whatsapp}`);
-        }
-    });
-    
-    // Update address text
-    const addressElements = document.querySelectorAll('span, p, div');
-    addressElements.forEach(element => {
-        const text = element.textContent;
-        if (text && (text.includes('3727 ريحانة بنت زيد') || 
-                     text.includes('8602 حي النرجس') ||
-                     text.includes('13339'))) {
-            // Check if this is likely an address element
-            if (text.includes('ريحانة') || text.includes('النرجس') || text.includes('13339')) {
-                element.textContent = contactInfo.address;
+        });
+        
+        // Update WhatsApp links
+        const whatsappLinks = document.querySelectorAll('a[href*="wa.me/"]');
+        whatsappLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && href.includes('966580002284')) {
+                link.setAttribute('href', `https://wa.me/${contactInfo.whatsapp}`);
             }
+        });
+        
+        // Update address text
+        const addressElements = document.querySelectorAll('span, p, div');
+        addressElements.forEach(element => {
+            const text = element.textContent;
+            if (text && (text.includes('3727 ريحانة بنت زيد') || 
+                         text.includes('8602 حي النرجس') ||
+                         text.includes('13339'))) {
+                // Check if this is likely an address element
+                if (text.includes('ريحانة') || text.includes('النرجس') || text.includes('13339')) {
+                    element.textContent = contactInfo.address;
+                }
+            }
+        });
+        
+        // Dispatch custom event (only if not skipping)
+        if (!skipEvent) {
+            window.dispatchEvent(new CustomEvent('contactInfoUpdated', { 
+                detail: contactInfo 
+            }));
         }
-    });
-    
-    // Dispatch custom event
-    window.dispatchEvent(new CustomEvent('contactInfoUpdated', { 
-        detail: contactInfo 
-    }));
+    } finally {
+        isUpdating = false;
+    }
 }
 
 /**
@@ -217,7 +233,8 @@ export async function initContactInfo() {
                 contactInfoCache.address = e.detail.value || e.detail.address;
             }
         }
-        updatePageContactInfo();
+        // Skip event dispatch to prevent infinite loop
+        updatePageContactInfo(true);
     });
     
     // Listen for cache clear event
