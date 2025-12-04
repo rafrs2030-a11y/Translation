@@ -11,6 +11,9 @@ import { clearCompleteCache, clearCacheAndReload } from '../utils/clear-cache.js
 // Settings object
 const settings = {};
 
+// Realtime subscription for platform_settings
+let settingsRealtimeSubscription = null;
+
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
     const user = await requireAdmin();
@@ -18,6 +21,206 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     await loadSettings();
     initEventListeners();
+    subscribeToSettingsRealtime();
+});
+
+/**
+ * Subscribe to Realtime changes in platform_settings
+ * الاشتراك في التغييرات الفورية لإعدادات المنصة
+ */
+function subscribeToSettingsRealtime() {
+    // Unsubscribe from previous subscription if exists
+    if (settingsRealtimeSubscription) {
+        supabase.removeChannel(settingsRealtimeSubscription);
+    }
+    
+    // Create new subscription
+    settingsRealtimeSubscription = supabase
+        .channel('platform_settings_changes')
+        .on(
+            'postgres_changes',
+            {
+                event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+                schema: 'public',
+                table: 'platform_settings',
+            },
+            (payload) => {
+                console.log('🔄 Realtime update received:', payload);
+                handleRealtimeSettingsUpdate(payload);
+            }
+        )
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                console.log('✅ Subscribed to platform_settings Realtime updates');
+            } else if (status === 'CHANNEL_ERROR') {
+                console.error('❌ Error subscribing to platform_settings Realtime');
+            }
+        });
+}
+
+/**
+ * Handle Realtime settings update
+ * معالجة تحديث الإعدادات الفوري
+ */
+function handleRealtimeSettingsUpdate(payload) {
+    // Supabase Realtime uses 'eventType' in the payload
+    const eventType = payload.eventType || payload.event;
+    const newRecord = payload.new;
+    const oldRecord = payload.old;
+    
+    console.log('🔄 Realtime payload:', { eventType, newRecord, oldRecord });
+    
+    if ((eventType === 'UPDATE' || eventType === 'update') && newRecord) {
+        const settingKey = newRecord.setting_key;
+        const settingValue = newRecord.setting_value;
+        
+        console.log(`📝 Setting updated via Realtime: ${settingKey} = ${settingValue}`);
+        
+        // Update localStorage cache
+        localStorage.setItem(settingKey, settingValue);
+        
+        // Update UI based on setting key
+        updateSettingInUI(settingKey, settingValue);
+        
+        // Dispatch custom events for other components
+        if (settingKey === 'platform_name') {
+            window.dispatchEvent(new CustomEvent('platformNameUpdated', {
+                detail: { name: settingValue }
+            }));
+        } else if (settingKey === 'contact_email') {
+            window.dispatchEvent(new CustomEvent('contactEmailUpdated', {
+                detail: { email: settingValue }
+            }));
+        }
+    } else if ((eventType === 'INSERT' || eventType === 'insert') && newRecord) {
+        // New setting added
+        const settingKey = newRecord.setting_key;
+        const settingValue = newRecord.setting_value;
+        
+        console.log(`➕ New setting added via Realtime: ${settingKey} = ${settingValue}`);
+        
+        // Update localStorage and UI
+        localStorage.setItem(settingKey, settingValue);
+        updateSettingInUI(settingKey, settingValue);
+    }
+}
+
+/**
+ * Update setting in UI based on key
+ * تحديث الإعداد في الواجهة بناءً على المفتاح
+ */
+function updateSettingInUI(settingKey, settingValue) {
+    switch (settingKey) {
+        case 'platform_name':
+            const platformNameInput = document.getElementById('platform-name-input');
+            if (platformNameInput && platformNameInput.value !== settingValue) {
+                platformNameInput.value = settingValue;
+            }
+            break;
+            
+        case 'contact_email':
+            const contactEmailInput = document.getElementById('contact-email-input');
+            if (contactEmailInput && contactEmailInput.value !== settingValue) {
+                contactEmailInput.value = settingValue;
+            }
+            break;
+            
+        case 'contact_phone':
+            const contactPhoneInput = document.getElementById('contact-phone-input');
+            if (contactPhoneInput && contactPhoneInput.value !== settingValue) {
+                contactPhoneInput.value = settingValue;
+            }
+            break;
+            
+        case 'whatsapp_number':
+            const whatsappNumberInput = document.getElementById('whatsapp-number-input');
+            if (whatsappNumberInput && whatsappNumberInput.value !== settingValue) {
+                whatsappNumberInput.value = settingValue;
+            }
+            break;
+            
+        case 'contact_address':
+            const contactAddressInput = document.getElementById('contact-address-input');
+            if (contactAddressInput && contactAddressInput.value !== settingValue) {
+                contactAddressInput.value = settingValue;
+            }
+            break;
+            
+        case 'allow_submissions':
+            const allowSubmissionsInput = document.getElementById('allow-submissions');
+            if (allowSubmissionsInput) {
+                const newValue = settingValue === 'true';
+                if (allowSubmissionsInput.checked !== newValue) {
+                    allowSubmissionsInput.checked = newValue;
+                }
+            }
+            break;
+            
+        case 'auto_review':
+            const autoReviewInput = document.getElementById('auto-review');
+            if (autoReviewInput) {
+                const newValue = settingValue === 'true';
+                if (autoReviewInput.checked !== newValue) {
+                    autoReviewInput.checked = newValue;
+                }
+            }
+            break;
+            
+        case 'max_file_size':
+            const maxFileSizeInput = document.getElementById('max-file-size-input');
+            if (maxFileSizeInput && maxFileSizeInput.value !== settingValue) {
+                maxFileSizeInput.value = settingValue;
+            }
+            break;
+            
+        case 'allowed_file_formats':
+            const allowedFileFormatsInput = document.getElementById('allowed-file-formats-input');
+            if (allowedFileFormatsInput && allowedFileFormatsInput.value !== settingValue) {
+                allowedFileFormatsInput.value = settingValue;
+            }
+            break;
+            
+        case 'email_notifications':
+            const emailNotificationsInput = document.getElementById('email-notifications');
+            if (emailNotificationsInput) {
+                const newValue = settingValue === 'true';
+                if (emailNotificationsInput.checked !== newValue) {
+                    emailNotificationsInput.checked = newValue;
+                }
+            }
+            break;
+            
+        case 'email_new_submission':
+            const emailNewSubmissionInput = document.getElementById('email-new-submission');
+            if (emailNewSubmissionInput) {
+                const newValue = settingValue === 'true';
+                if (emailNewSubmissionInput.checked !== newValue) {
+                    emailNewSubmissionInput.checked = newValue;
+                }
+            }
+            break;
+            
+        case 'email_status_change':
+            const emailStatusChangeInput = document.getElementById('email-status-change');
+            if (emailStatusChangeInput) {
+                const newValue = settingValue === 'true';
+                if (emailStatusChangeInput.checked !== newValue) {
+                    emailStatusChangeInput.checked = newValue;
+                }
+            }
+            break;
+    }
+}
+
+/**
+ * Cleanup Realtime subscription on page unload
+ * تنظيف الاشتراك عند إغلاق الصفحة
+ */
+window.addEventListener('beforeunload', () => {
+    if (settingsRealtimeSubscription) {
+        supabase.removeChannel(settingsRealtimeSubscription);
+        settingsRealtimeSubscription = null;
+    }
 });
 
 /**
