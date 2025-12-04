@@ -406,16 +406,42 @@ async function handleNotificationSettings(e) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
         
-        // Update or insert notification preferences
-        const { data, error } = await supabase
+        // Check if preferences exist first, then update or insert
+        const { data: existingPrefs } = await supabase
             .from('notification_preferences')
-            .upsert({ 
-                user_id: currentUser.id,
-                ...settings,
-                updated_at: new Date().toISOString()
-            })
-            .select()
-            .single();
+            .select('id')
+            .eq('user_id', currentUser.id)
+            .maybeSingle();
+        
+        let data, error;
+        
+        if (existingPrefs) {
+            // Update existing preferences
+            const result = await supabase
+                .from('notification_preferences')
+                .update({ 
+                    ...settings,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('user_id', currentUser.id)
+                .select()
+                .single();
+            data = result.data;
+            error = result.error;
+        } else {
+            // Insert new preferences
+            const result = await supabase
+                .from('notification_preferences')
+                .insert({ 
+                    user_id: currentUser.id,
+                    ...settings,
+                    updated_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+            data = result.data;
+            error = result.error;
+        }
         
         if (error) throw error;
         

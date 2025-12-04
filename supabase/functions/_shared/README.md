@@ -1,4 +1,4 @@
-# Email Settings Utility
+# Shared Email Utilities
 
 ## نظرة عامة
 
@@ -83,17 +83,126 @@ if (shouldSendEmail(emailSettings, 'status_change')) {
 }
 ```
 
+---
+
+## 2. تفضيلات المستخدم (User Preferences)
+
+### الملف: `get-user-preferences.ts`
+
+يوفر وظائف للوصول إلى تفضيلات إشعارات المستخدم من جدول `notification_preferences` في Supabase.
+
+### الاستخدام
+
+#### 1. استيراد الدوال
+
+```typescript
+import { getUserPreferences, shouldSendEmailToUser } from '../_shared/get-user-preferences.ts';
+```
+
+#### 2. الحصول على تفضيلات المستخدم
+
+```typescript
+const userPreferences = await getUserPreferences(supabaseClient, userId);
+
+// userPreferences يحتوي على:
+// {
+//   email_enabled: boolean,           // التحكم الرئيسي
+//   in_app_enabled: boolean,          // إشعارات داخل التطبيق
+//   status_change_email: boolean,     // إشعار عند تغيير الحالة
+//   comments_email: boolean,          // إشعار عند إضافة تعليق
+//   reminders_email: boolean,         // تذكيرات
+//   news_email: boolean               // أخبار
+// }
+```
+
+#### 3. التحقق من إمكانية الإرسال للمستخدم
+
+```typescript
+// قبل إرسال البريد، تحقق من تفضيلات المستخدم
+if (!shouldSendEmailToUser(userPreferences, 'status_change')) {
+  // لا ترسل البريد - المستخدم عطل هذا النوع من الإشعارات
+  return;
+}
+
+// يمكنك المتابعة في إرسال البريد
+```
+
+### أنواع البريد المدعومة
+
+- `'status_change'` → يتحقق من `status_change_email`
+- `'comment_added'` → يتحقق من `comments_email`
+- `'reminder'` → يتحقق من `reminders_email`
+- `'system'` → يتحقق من `news_email`
+- `'new_submission'` → يتحقق من `email_enabled` (التحكم الرئيسي)
+
+### منطق التحقق
+
+1. **التحقق الرئيسي**: إذا كان `email_enabled` معطلاً، لن يتم إرسال أي بريد إلكتروني.
+2. **التحقق المحدد**: كل نوع بريد يتحقق من التفضيل المحدد له.
+
+### القيم الافتراضية
+
+إذا لم توجد تفضيلات للمستخدم أو فشل الجلب، يتم استخدام القيم الافتراضية (جميعها مفعلة):
+- `email_enabled: true`
+- `status_change_email: true`
+- `comments_email: true`
+- `reminders_email: true`
+- `news_email: true`
+- `in_app_enabled: true`
+
+---
+
 ## التكامل مع Edge Functions
 
 تم دمج هذه الوظائف في:
-- `send-notification-email` - للتحقق قبل إرسال إشعارات البريد
-- `send-welcome-emails` - للتحقق قبل إرسال رسائل الترحيب
+- `send-notification-email` - يتحقق من إعدادات المنصة **ثم** تفضيلات المستخدم
+- `send-welcome-emails` - يتحقق من إعدادات المنصة **ثم** تفضيلات المستخدم
+
+### ترتيب التحقق (Hierarchy)
+
+1. **أولاً**: التحقق من إعدادات المنصة (`platform_settings`)
+   - إذا كانت معطلة → لا ترسل لأي مستخدم
+   
+2. **ثانياً**: التحقق من تفضيلات المستخدم (`notification_preferences`)
+   - إذا كانت معطلة → لا ترسل لهذا المستخدم فقط
+
+### مثال كامل
+
+```typescript
+import { getEmailSettings, shouldSendEmail } from '../_shared/get-email-settings.ts';
+import { getUserPreferences, shouldSendEmailToUser } from '../_shared/get-user-preferences.ts';
+
+// 1. التحقق من إعدادات المنصة أولاً
+const emailSettings = await getEmailSettings(supabase);
+if (!shouldSendEmail(emailSettings, 'status_change')) {
+  return; // إعدادات المنصة معطلة
+}
+
+// 2. التحقق من تفضيلات المستخدم ثانياً
+if (userId) {
+  const userPreferences = await getUserPreferences(supabase, userId);
+  if (!shouldSendEmailToUser(userPreferences, 'status_change')) {
+    return; // المستخدم عطل هذا النوع من الإشعارات
+  }
+}
+
+// 3. إرسال البريد
+await sendEmail(...);
+```
+
+---
 
 ## تحديث الإعدادات
 
-يمكن تحديث إعدادات البريد من:
+### إعدادات المنصة
+يمكن تحديثها من:
 - صفحة الإعدادات في لوحة التحكم (`/pages/admin/settings.html`)
 - جدول `platform_settings` في Supabase مباشرة
+
+### تفضيلات المستخدم
+يمكن تحديثها من:
+- صفحة الملف الشخصي للباحث (`/pages/researcher/profile.html`)
+- جدول `notification_preferences` في Supabase مباشرة
 
 التغييرات فورية وتؤثر على جميع Edge Functions التي تستخدم هذه الوظائف.
 

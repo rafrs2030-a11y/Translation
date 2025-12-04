@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { getEmailSettings, shouldSendEmail } from '../_shared/get-email-settings.ts';
+import { getUserPreferences, shouldSendEmailToUser } from '../_shared/get-user-preferences.ts';
 
 interface EmailData {
   to: string;
@@ -63,14 +64,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Check email settings from platform_settings table
+    // Step 1: Check email settings from platform_settings table (Master Switch)
     const emailSettings = await getEmailSettings(supabaseClient);
     
-    // Check if email should be sent based on settings
+    // Check if email should be sent based on platform settings
     if (!shouldSendEmail(emailSettings, emailData.type)) {
       console.log(`Email not sent: ${emailData.type} is disabled in platform settings`);
       
-      // Log that email was skipped due to settings
+      // Log that email was skipped due to platform settings
       await supabaseClient
         .from('email_log')
         .insert([{
@@ -85,7 +86,7 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: `Email notifications are disabled for type: ${emailData.type}`,
+          message: `Email notifications are disabled for type: ${emailData.type} in platform settings`,
           skipped: true 
         }),
         { 
@@ -96,6 +97,43 @@ Deno.serve(async (req: Request) => {
           },
         }
       );
+    }
+
+    // Step 2: Check user preferences if userId is provided
+    if (emailData.userId) {
+      const userPreferences = await getUserPreferences(supabaseClient, emailData.userId);
+      
+      // Check if email should be sent based on user preferences
+      if (!shouldSendEmailToUser(userPreferences, emailData.type)) {
+        console.log(`Email not sent: ${emailData.type} is disabled in user preferences for user ${emailData.userId}`);
+        
+        // Log that email was skipped due to user preferences
+        await supabaseClient
+          .from('email_log')
+          .insert([{
+            user_id: emailData.userId,
+            email_type: emailData.type,
+            recipient_email: emailData.to,
+            subject: emailData.subject,
+            status: 'failed',
+            error_message: `Email disabled in user preferences for type: ${emailData.type}`,
+          }]);
+
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: `Email notifications are disabled in user preferences for type: ${emailData.type}`,
+            skipped: true 
+          }),
+          { 
+            status: 200,
+            headers: { 
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            },
+          }
+        );
+      }
     }
 
     // Generate HTML email based on type
