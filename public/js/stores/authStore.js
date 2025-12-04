@@ -369,7 +369,7 @@ class AuthStore {
         type: 'signup',
         email: email,
         options: {
-          emailRedirectTo: `${window.location.origin}/pages/login.html?verified=true`,
+          emailRedirectTo: `${window.location.origin}/pages/verify-email.html`,
         }
       });
 

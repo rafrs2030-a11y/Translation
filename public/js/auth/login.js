@@ -14,6 +14,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     initElements();
     initEventListeners();
+    
+    // Check for verification messages
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('registered') === 'true') {
+        showAlert('تم إنشاء حسابك بنجاح! يرجى التحقق من بريدك الإلكتروني والنقر على رابط التحقق.', 'success');
+    }
+    if (urlParams.get('verify_email') === 'true') {
+        showAlert('يرجى التحقق من بريدك الإلكتروني والنقر على رابط التحقق لإكمال عملية التسجيل.', 'info');
+    }
+    if (urlParams.get('verified') === 'true') {
+        showAlert('تم التحقق من بريدك الإلكتروني بنجاح! يمكنك الآن تسجيل الدخول.', 'success');
+    }
 });
 
 /**

@@ -988,9 +988,9 @@ function initEventListeners() {
             input.id !== 'contact-address-input' &&
             input.id !== 'max-file-size-input' &&
             input.id !== 'allowed-file-formats-input') {
-            input.addEventListener('change', () => {
-                // Settings tracked in memory
-            });
+        input.addEventListener('change', () => {
+            // Settings tracked in memory
+        });
         }
     });
 }

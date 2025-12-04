@@ -427,24 +427,55 @@ async function handleEditUser(e) {
         
         // تحديث حالة التوثيق في قاعدة البيانات
         // التأكد من أن القيمة boolean صحيحة
+        const emailVerifiedValue = emailVerified === true || emailVerified === 'true' || emailVerified === 1;
         const updateData = { 
-            email_verified: emailVerified === true || emailVerified === 'true' || emailVerified === 1,
+            email_verified: emailVerifiedValue,
             updated_at: new Date().toISOString()
         };
         
-        console.log('📝 بيانات التحديث:', updateData);
+        console.log('📝 بيانات التحديث:', {
+            userId,
+            email_verified: emailVerifiedValue,
+            updateData
+        });
         
-        const { error } = await supabase
+        // Get current user for audit
+        const { data: { user: currentAdmin } } = await supabase.auth.getUser();
+        
+        // Update user verification status
+        const { data: updatedUser, error } = await supabase
             .from('users')
             .update(updateData)
-            .eq('id', userId);
+            .eq('id', userId)
+            .select()
+            .single();
         
         if (error) {
             console.error('❌ خطأ في تحديث قاعدة البيانات:', error);
             throw error;
         }
         
-        console.log('✅ تم تحديث المستخدم بنجاح في قاعدة البيانات');
+        console.log('✅ تم تحديث المستخدم بنجاح في قاعدة البيانات:', updatedUser);
+        
+        // Log audit action
+        try {
+            await supabase
+                .from('audit_logs')
+                .insert([{
+                    actor_id: currentAdmin?.id,
+                    action: emailVerifiedValue ? 'verify_user' : 'unverify_user',
+                    target_type: 'user',
+                    target_id: userId,
+                    diff: {
+                        email_verified: {
+                            old: currentEditUser?.email_verified || false,
+                            new: emailVerifiedValue
+                        }
+                    }
+                }]);
+        } catch (auditError) {
+            console.warn('⚠️ لم يتم تسجيل الإجراء في audit_log:', auditError);
+        }
         
         // إعادة جلب البيانات للتأكد من أن كل شيء محدث
         await loadVerificationRequests();

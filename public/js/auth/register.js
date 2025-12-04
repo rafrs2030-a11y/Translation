@@ -428,6 +428,19 @@ async function handleSubmit(e) {
         const result = await authStore.register(registerData);
         
         if (result.success) {
+            // إرسال بريد التحقق من البريد الإلكتروني
+            try {
+                const resendResult = await authStore.resendVerificationEmail(formData.email);
+                if (resendResult.success) {
+                    console.log('✅ تم إرسال بريد التحقق بنجاح');
+                } else {
+                    console.warn('⚠️ فشل إرسال بريد التحقق:', resendResult.error);
+                }
+            } catch (verifyError) {
+                // لا نمنع إكمال التسجيل إذا فشل إرسال بريد التحقق
+                console.error('Failed to send verification email:', verifyError);
+            }
+
             // Try to send welcome email in real-time (non-blocking for the user)
             try {
                 const userId = result.data?.user?.id || null;
@@ -451,14 +464,14 @@ async function handleSubmit(e) {
 
             // Show success message
             showAlert(
-                'تم إنشاء حسابك بنجاح! تم إرسال رسالة ترحيبية إلى بريدك الإلكتروني.',
+                'تم إنشاء حسابك بنجاح! تم إرسال بريد التحقق ورسالة ترحيبية إلى بريدك الإلكتروني. يرجى التحقق من بريدك والنقر على رابط التحقق.',
                 'success'
             );
             
-            // Redirect to login after 3 seconds
+            // Redirect to login after 5 seconds (زيادة الوقت لإعطاء المستخدم وقت لقراءة الرسالة)
             setTimeout(() => {
-                window.location.href = '/pages/login.html?registered=true';
-            }, 3000);
+                window.location.href = '/pages/login.html?registered=true&verify_email=true';
+            }, 5000);
         } else {
             showAlert(result.error || 'فشل إنشاء الحساب', 'error');
         }

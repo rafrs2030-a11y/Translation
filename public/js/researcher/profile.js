@@ -89,6 +89,9 @@ function initEventListeners() {
     // Avatar upload
     document.getElementById('avatar-upload')?.addEventListener('change', handleAvatarUpload);
     
+    // Resend verification email
+    document.getElementById('resend-verification-email-btn')?.addEventListener('click', handleResendVerificationEmail);
+    
     // Password toggle
     document.querySelectorAll('.toggle-password').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -160,6 +163,7 @@ function populateProfileHeader() {
     const verifiedBadge = document.getElementById('email-verified-badge');
     const verificationStatusText = document.getElementById('verification-status-text');
     const verifyBtn = document.getElementById('request-verification-btn');
+    const resendEmailBtn = document.getElementById('resend-verification-email-btn');
 
     if (currentUser.email_verified) {
         verifiedBadge.textContent = 'موثّق';
@@ -173,17 +177,25 @@ function populateProfileHeader() {
             verifyBtn.classList.add('btn-disabled');
             verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> حسابك موثّق بالفعل';
         }
+        if (resendEmailBtn) {
+            resendEmailBtn.style.display = 'none';
+        }
     } else {
         verifiedBadge.textContent = 'غير موثّق';
         verifiedBadge.className = 'badge badge-warning';
 
         if (verificationStatusText) {
-            verificationStatusText.textContent = 'لم يتم توثيق حسابك بعد. يرجى استكمال بياناتك ثم إرسال طلب التوثيق ليقوم فريق المنصة بمراجعته.';
+            verificationStatusText.innerHTML = 'لم يتم توثيق حسابك بعد. يمكنك:<br>1. إعادة إرسال بريد التحقق للتحقق من بريدك الإلكتروني<br>2. إرسال طلب توثيق الحساب ليقوم فريق المنصة بمراجعته';
         }
         if (verifyBtn) {
             verifyBtn.disabled = false;
             verifyBtn.classList.remove('btn-disabled');
             verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> إرسال طلب توثيق الحساب';
+        }
+        if (resendEmailBtn) {
+            resendEmailBtn.style.display = 'inline-flex';
+            resendEmailBtn.disabled = false;
+            resendEmailBtn.classList.remove('btn-disabled');
         }
     }
     
@@ -885,6 +897,60 @@ function getInitials(username) {
         return parts[0][0] + parts[1][0];
     }
     return username.substring(0, 2).toUpperCase();
+}
+
+/**
+ * إعادة إرسال بريد التحقق من البريد الإلكتروني
+ */
+async function handleResendVerificationEmail() {
+    if (!currentUser || !currentUser.email) {
+        showAlert('error', 'لا يمكن إرسال بريد التحقق: معلومات المستخدم غير متوفرة');
+        return;
+    }
+
+    const resendBtn = document.getElementById('resend-verification-email-btn');
+    if (!resendBtn) return;
+
+    // تعطيل الزر أثناء الإرسال
+    resendBtn.disabled = true;
+    const originalHTML = resendBtn.innerHTML;
+    resendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+
+    try {
+        const result = await authStore.resendVerificationEmail(currentUser.email);
+
+        if (result.success) {
+            showAlert('success', 'تم إرسال بريد التحقق بنجاح! يرجى التحقق من بريدك الإلكتروني (والبريد غير المرغوب فيه) والنقر على الرابط للتحقق من حسابك.');
+            
+            // تحديث نص الحالة
+            const verificationStatusText = document.getElementById('verification-status-text');
+            if (verificationStatusText) {
+                verificationStatusText.innerHTML = 'تم إرسال بريد التحقق إلى <strong>' + currentUser.email + '</strong>. يرجى التحقق من بريدك والنقر على الرابط للتحقق من حسابك.';
+            }
+
+            // تعطيل الزر لمدة 60 ثانية لتجنب الإرسال المتكرر
+            let countdown = 60;
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    resendBtn.innerHTML = `<i class="fas fa-clock"></i> إعادة الإرسال (${countdown}ث)`;
+                } else {
+                    clearInterval(countdownInterval);
+                    resendBtn.disabled = false;
+                    resendBtn.innerHTML = originalHTML;
+                }
+            }, 1000);
+        } else {
+            showAlert('error', 'فشل إرسال بريد التحقق: ' + (result.error || 'خطأ غير معروف'));
+            resendBtn.disabled = false;
+            resendBtn.innerHTML = originalHTML;
+        }
+    } catch (error) {
+        console.error('Error resending verification email:', error);
+        showAlert('error', 'حدث خطأ أثناء إرسال بريد التحقق: ' + (error.message || 'خطأ غير معروف'));
+        resendBtn.disabled = false;
+        resendBtn.innerHTML = originalHTML;
+    }
 }
 
 /**

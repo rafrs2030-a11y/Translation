@@ -505,11 +505,15 @@
                                 <div class="info-value" id="verification-status-text" style="font-size: 0.9rem; color: var(--text-secondary);">
                                     لم يتم توثيق حسابك بعد. يرجى استكمال بياناتك ثم إرسال طلب التوثيق ليقوم فريق المنصة بمراجعته.
                                 </div>
-                            </div>
-                            <div class="info-item" style="margin-top: var(--spacing-md);">
+                            </div>                            <div class="info-item" style="margin-top: var(--spacing-md);"></div>
+                            <div class="info-item" style="margin-top: var(--spacing-md); display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
                                 <button class="btn btn-secondary" id="request-verification-btn">
                                     <i class="fas fa-check-circle"></i>
                                     إرسال طلب توثيق الحساب
+                                </button>
+                                <button class="btn btn-outline" id="resend-verification-email-btn" style="display: none;">
+                                    <i class="fas fa-envelope"></i>
+                                    إعادة إرسال بريد التحقق
                                 </button>
                             </div>
                             <div class="info-item" style="margin-top: var(--spacing-lg);">
