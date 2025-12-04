@@ -25,28 +25,103 @@ document.addEventListener('DOMContentLoaded', async () => {
     const { clearCacheOnPageLoad } = await import('../utils/admin-cache-clear.js');
     await clearCacheOnPageLoad();
     
-    // مسح كاش الإشعارات بشكل إضافي
+    // مسح كاش شامل لجميع أنواع الكاش المحتملة
     try {
-        const cacheKeys = [
+        console.log('🔄 Starting comprehensive cache clear for admin profile...');
+        
+        // 1. مسح كاش الإشعارات
+        const notificationCacheKeys = [
             'notification_preferences',
             'notifications',
             'notifications_unread',
             'notifications_last_fetch',
-            'notification_cache'
+            'notification_cache',
+            'admin_notifications',
+            'admin_notification_preferences'
         ];
         
-        cacheKeys.forEach(key => {
+        // 2. مسح كاش المستخدم والملف الشخصي
+        const profileCacheKeys = [
+            'admin_profile',
+            'admin_user_data',
+            'admin_profile_data',
+            'user_profile_cache',
+            'profile_cache'
+        ];
+        
+        // 3. مسح كاش Supabase (مع الحفاظ على auth tokens)
+        const allLocalStorageKeys = Object.keys(localStorage);
+        const supabaseCacheKeys = allLocalStorageKeys.filter(key => 
+            (key.startsWith('sb-') || 
+             key.startsWith('supabase.') ||
+             key.includes('supabase') ||
+             key.includes('_cache') ||
+             key.includes('_preferences')) &&
+            !key.includes('auth.token') &&
+            !key.includes('auth.refresh')
+        );
+        
+        // جمع جميع المفاتيح
+        const allCacheKeys = [
+            ...notificationCacheKeys,
+            ...profileCacheKeys,
+            ...supabaseCacheKeys
+        ];
+        
+        let clearedCount = 0;
+        
+        // مسح من localStorage
+        allCacheKeys.forEach(key => {
             try {
-                localStorage.removeItem(key);
-                sessionStorage.removeItem(key);
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    clearedCount++;
+                }
             } catch (e) {
                 // Ignore individual cache errors
             }
         });
         
-        console.log('✅ Cleared notification cache on page load');
+        // مسح من sessionStorage
+        notificationCacheKeys.forEach(key => {
+            try {
+                if (sessionStorage.getItem(key)) {
+                    sessionStorage.removeItem(key);
+                    clearedCount++;
+                }
+            } catch (e) {
+                // Ignore individual cache errors
+            }
+        });
+        
+        // مسح Service Worker Cache إذا كان متاحاً
+        if ('caches' in window) {
+            try {
+                const cacheNames = await caches.keys();
+                const adminCacheNames = cacheNames.filter(name => 
+                    name.includes('admin') || 
+                    name.includes('profile') ||
+                    name.includes('notification')
+                );
+                
+                await Promise.all(
+                    adminCacheNames.map(async (cacheName) => {
+                        try {
+                            await caches.delete(cacheName);
+                            clearedCount++;
+                        } catch (err) {
+                            // Ignore errors
+                        }
+                    })
+                );
+            } catch (cacheError) {
+                // Ignore cache API errors
+            }
+        }
+        
+        console.log(`✅ Cleared ${clearedCount} cache entries for admin profile`);
     } catch (cacheError) {
-        console.warn('Could not clear notification cache:', cacheError);
+        console.warn('Could not clear all cache:', cacheError);
     }
     
     initElements();
@@ -315,7 +390,7 @@ async function loadNotificationPreferences() {
             return;
         }
 
-        // If preferences don't exist, create default ones
+        // If preferences don't exist, create default ones (with duplicate key handling)
         if (!data) {
             console.log('No notification preferences found, creating default preferences for admin...');
             try {
@@ -334,8 +409,24 @@ async function loadNotificationPreferences() {
                     .single();
                 
                 if (createError) {
-                    console.error('Error creating default preferences:', createError);
-                    // Continue with default values (data will remain null)
+                    // If duplicate key error, try to fetch existing preferences
+                    if (createError.code === '23505') {
+                        console.log('Preferences already exist, fetching them...');
+                        const { data: existingData, error: fetchError } = await supabase
+                            .from('notification_preferences')
+                            .select('*')
+                            .eq('user_id', currentUser.id)
+                            .single();
+                        
+                        if (!fetchError && existingData) {
+                            data = existingData;
+                            console.log('✅ Fetched existing notification preferences');
+                        } else {
+                            console.error('Error fetching existing preferences:', fetchError);
+                        }
+                    } else {
+                        console.error('Error creating default preferences:', createError);
+                    }
                 } else {
                     console.log('✅ Created default notification preferences for admin');
                     // Use the newly created preferences
@@ -515,8 +606,9 @@ async function handleNotificationSettings(e) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
         
-        // Check if preferences exist first, then update or insert
-        const { data: existingPrefs } = await supabase
+        // Use upsert with conflict handling to avoid duplicate key errors
+        // First, try to update existing preferences
+        const { data: existingPrefs, error: checkError } = await supabase
             .from('notification_preferences')
             .select('id')
             .eq('user_id', currentUser.id)
@@ -524,7 +616,12 @@ async function handleNotificationSettings(e) {
         
         let data, error;
         
-        if (existingPrefs) {
+        if (checkError && checkError.code !== 'PGRST116') {
+            // Real error (not just "no rows found")
+            throw checkError;
+        }
+        
+        if (existingPrefs && existingPrefs.id) {
             // Update existing preferences
             const result = await supabase
                 .from('notification_preferences')
@@ -538,7 +635,7 @@ async function handleNotificationSettings(e) {
             data = result.data;
             error = result.error;
         } else {
-            // Insert new preferences
+            // Insert new preferences (with error handling for duplicate key)
             const result = await supabase
                 .from('notification_preferences')
                 .insert({ 
@@ -548,8 +645,25 @@ async function handleNotificationSettings(e) {
                 })
                 .select()
                 .single();
-            data = result.data;
-            error = result.error;
+            
+            // If insert fails due to duplicate key, try update instead
+            if (result.error && result.error.code === '23505') {
+                console.log('Duplicate key detected, updating instead...');
+                const updateResult = await supabase
+                    .from('notification_preferences')
+                    .update({ 
+                        ...settings,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('user_id', currentUser.id)
+                    .select()
+                    .single();
+                data = updateResult.data;
+                error = updateResult.error;
+            } else {
+                data = result.data;
+                error = result.error;
+            }
         }
         
         if (error) throw error;
