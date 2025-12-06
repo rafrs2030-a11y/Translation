@@ -503,20 +503,71 @@ async function handleEditUser(e) {
             national_id: currentEditUser?.national_id || null
         };
         
-        // Update user data
-        const { data: updatedUser, error } = await supabase
-            .from('users')
-            .update(updateData)
-            .eq('id', userId)
-            .select()
-            .single();
-        
-        if (error) {
-            console.error('❌ خطأ في تحديث قاعدة البيانات:', error);
-            throw error;
+        // التحقق من أن المستخدم الحالي هو admin
+        const { data: { user: currentAdminUser } } = await supabase.auth.getUser();
+        if (!currentAdminUser) {
+            throw new Error('يجب تسجيل الدخول كمشرف لتعديل بيانات المستخدمين');
         }
         
-        console.log('✅ تم تحديث المستخدم بنجاح في قاعدة البيانات:', updatedUser);
+        // التحقق من role في جدول users
+        const { data: adminCheck, error: adminCheckError } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', currentAdminUser.id)
+            .single();
+        
+        if (adminCheckError || !adminCheck) {
+            console.error('❌ خطأ في التحقق من صلاحيات المشرف:', adminCheckError);
+            throw new Error('فشل التحقق من صلاحيات المشرف');
+        }
+        
+        if (adminCheck.role !== 'admin' && adminCheck.role !== 'super_admin') {
+            throw new Error('ليس لديك صلاحية لتعديل بيانات المستخدمين');
+        }
+        
+        console.log('✅ التحقق من صلاحيات المشرف ناجح:', adminCheck.role);
+        
+        // استخدام backend API بدلاً من التحديث المباشر
+        // هذا يتجاوز RLS باستخدام service role key في backend
+        console.log('🔄 محاولة تحديث المستخدم عبر API:', {
+            userId,
+            updateData,
+            adminId: currentAdminUser.id,
+            adminRole: adminCheck.role
+        });
+        
+        // الحصول على session token
+        const { data: sessionData } = await supabase.auth.getSession();
+        const authToken = sessionData?.session?.access_token;
+        
+        if (!authToken) {
+            throw new Error('لم يتم العثور على رمز المصادقة. يرجى تسجيل الدخول مرة أخرى.');
+        }
+        
+        // تحديث البيانات عبر backend API
+        const response = await fetch(`/api/admin/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+                username,
+                phone,
+                national_id: nationalId,
+                email_verified: emailVerifiedValue
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+            console.error('❌ خطأ في تحديث المستخدم:', result);
+            throw new Error(result.error || 'فشل تحديث بيانات المستخدم');
+        }
+        
+        const updatedUser = result.user;
+        console.log('✅ تم تحديث المستخدم بنجاح عبر API:', updatedUser);
         
         // Log audit action
         try {

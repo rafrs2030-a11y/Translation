@@ -1,122 +1,235 @@
 /**
  * Admin Routes
- * مسارات المسؤول
+ * مسارات المشرفين
  */
 
 const express = require('express');
 const router = express.Router();
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { supabase } = require('../config/supabase');
+const { requireAuth } = require('../middleware/auth');
 
-// Apply admin authentication to all routes
-router.use(requireAuth, requireAdmin);
+// Apply authentication middleware to all admin routes
+router.use(requireAuth);
 
 /**
- * GET /api/admin/submissions
- * جلب جميع الطلبات
+ * PUT /api/admin/users/:id/verification
+ * تحديث حالة توثيق المستخدم
  */
-router.get('/submissions', async (req, res, next) => {
-  // TODO: Implement get all submissions logic
-  res.json({ message: 'Get all submissions endpoint - To be implemented' });
+router.put('/users/:id/verification', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { email_verified } = req.body;
+
+    // التحقق من الحقول المطلوبة
+    if (email_verified === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'حالة التوثيق مطلوبة'
+      });
+    }
+
+    // الحصول على token من header
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({
+        success: false,
+        error: 'رمز المصادقة مطلوب'
+      });
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // التحقق من أن المستخدم الحالي هو admin
+    const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !currentUser) {
+      return res.status(401).json({
+        success: false,
+        error: 'رمز المصادقة غير صحيح'
+      });
+    }
+
+    // التحقق من role في جدول users
+    const { data: adminCheck, error: adminCheckError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', currentUser.id)
+      .single();
+
+    if (adminCheckError || !adminCheck) {
+      return res.status(500).json({
+        success: false,
+        error: 'فشل التحقق من صلاحيات المشرف'
+      });
+    }
+
+    if (adminCheck.role !== 'admin' && adminCheck.role !== 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'ليس لديك صلاحية لتعديل بيانات المستخدمين'
+      });
+    }
+
+    // تحديث حالة التوثيق باستخدام service role (يتجاوز RLS)
+    const { data: updatedUser, error } = await supabase
+      .from('users')
+      .update({ 
+        email_verified: email_verified === true || email_verified === 'true',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating user verification:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'فشل تحديث حالة التوثيق'
+      });
+    }
+
+    // تسجيل في audit log
+    try {
+      await supabase
+        .from('audit_log')
+        .insert([{
+          admin_id: currentUser.id,
+          action: 'update_verification',
+          entity_type: 'user',
+          entity_id: id,
+          details: {
+            email_verified: email_verified === true || email_verified === 'true'
+          }
+        }]);
+    } catch (auditError) {
+      console.warn('Failed to log audit action:', auditError);
+    }
+
+    res.json({
+      success: true,
+      user: updatedUser,
+      message: 'تم تحديث حالة التوثيق بنجاح'
+    });
+
+  } catch (error) {
+    console.error('Update verification error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'حدث خطأ أثناء تحديث حالة التوثيق'
+    });
+  }
 });
 
 /**
- * GET /api/admin/submissions/:id
- * جلب تفاصيل طلب محدد
+ * PUT /api/admin/users/:id
+ * تحديث بيانات المستخدم (شامل)
  */
-router.get('/submissions/:id', async (req, res, next) => {
-  // TODO: Implement get submission details logic
-  res.json({ message: 'Get submission details endpoint - To be implemented' });
-});
+router.put('/users/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { username, phone, national_id, email_verified } = req.body;
 
-/**
- * PUT /api/admin/submissions/:id/status
- * تحديث حالة الطلب
- */
-router.put('/submissions/:id/status', async (req, res, next) => {
-  // TODO: Implement update submission status logic
-  res.json({ message: 'Update submission status endpoint - To be implemented' });
-});
+    // الحصول على token من header
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({
+        success: false,
+        error: 'رمز المصادقة مطلوب'
+      });
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // التحقق من أن المستخدم الحالي هو admin
+    const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !currentUser) {
+      return res.status(401).json({
+        success: false,
+        error: 'رمز المصادقة غير صحيح'
+      });
+    }
 
-/**
- * POST /api/admin/submissions/:id/comment
- * إضافة تعليق
- */
-router.post('/submissions/:id/comment', async (req, res, next) => {
-  // TODO: Implement add comment logic
-  res.json({ message: 'Add comment endpoint - To be implemented' });
-});
+    // التحقق من role في جدول users
+    const { data: adminCheck, error: adminCheckError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', currentUser.id)
+      .single();
 
-/**
- * GET /api/admin/submissions/:id/comments
- * جلب جميع التعليقات
- */
-router.get('/submissions/:id/comments', async (req, res, next) => {
-  // TODO: Implement get comments logic
-  res.json({ message: 'Get comments endpoint - To be implemented' });
-});
+    if (adminCheckError || !adminCheck) {
+      return res.status(500).json({
+        success: false,
+        error: 'فشل التحقق من صلاحيات المشرف'
+      });
+    }
 
-/**
- * PUT /api/admin/comments/:id
- * تعديل تعليق
- */
-router.put('/comments/:id', async (req, res, next) => {
-  // TODO: Implement update comment logic
-  res.json({ message: 'Update comment endpoint - To be implemented' });
-});
+    if (adminCheck.role !== 'admin' && adminCheck.role !== 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'ليس لديك صلاحية لتعديل بيانات المستخدمين'
+      });
+    }
 
-/**
- * DELETE /api/admin/comments/:id
- * حذف تعليق
- */
-router.delete('/comments/:id', async (req, res, next) => {
-  // TODO: Implement delete comment logic
-  res.json({ message: 'Delete comment endpoint - To be implemented' });
-});
+    // بناء بيانات التحديث
+    const updateData = {
+      updated_at: new Date().toISOString()
+    };
 
-/**
- * GET /api/admin/stats
- * جلب الإحصائيات
- */
-router.get('/stats', async (req, res, next) => {
-  // TODO: Implement get statistics logic
-  res.json({ message: 'Get statistics endpoint - To be implemented' });
-});
+    if (username !== undefined) updateData.username = username;
+    if (phone !== undefined) updateData.phone = phone || null;
+    if (national_id !== undefined) updateData.national_id = national_id || null;
+    if (email_verified !== undefined) {
+      updateData.email_verified = email_verified === true || email_verified === 'true';
+    }
 
-/**
- * GET /api/admin/users
- * جلب قائمة المستخدمين
- */
-router.get('/users', async (req, res, next) => {
-  // TODO: Implement get users logic
-  res.json({ message: 'Get users endpoint - To be implemented' });
-});
+    // تحديث البيانات
+    const { data: updatedUser, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
 
-/**
- * POST /api/admin/users
- * إضافة مسؤول جديد
- */
-router.post('/users', async (req, res, next) => {
-  // TODO: Implement create admin logic
-  res.json({ message: 'Create admin endpoint - To be implemented' });
-});
+    if (error) {
+      console.error('Error updating user:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'فشل تحديث بيانات المستخدم'
+      });
+    }
 
-/**
- * GET /api/admin/audit-log
- * جلب سجل التدقيق
- */
-router.get('/audit-log', async (req, res, next) => {
-  // TODO: Implement get audit log logic
-  res.json({ message: 'Get audit log endpoint - To be implemented' });
-});
+    // تسجيل في audit log
+    try {
+      await supabase
+        .from('audit_log')
+        .insert([{
+          admin_id: currentUser.id,
+          action: 'update_user',
+          entity_type: 'user',
+          entity_id: id,
+          details: {
+            changes: updateData
+          }
+        }]);
+    } catch (auditError) {
+      console.warn('Failed to log audit action:', auditError);
+    }
 
-/**
- * GET /api/admin/export/submissions
- * تصدير الطلبات
- */
-router.get('/export/submissions', async (req, res, next) => {
-  // TODO: Implement export submissions logic
-  res.json({ message: 'Export submissions endpoint - To be implemented' });
+    res.json({
+      success: true,
+      user: updatedUser,
+      message: 'تم تحديث بيانات المستخدم بنجاح'
+    });
+
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'حدث خطأ أثناء تحديث بيانات المستخدم'
+    });
+  }
 });
 
 module.exports = router;
-
