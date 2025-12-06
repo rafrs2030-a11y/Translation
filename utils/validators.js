@@ -5,6 +5,9 @@
 
 import { REGEX_PATTERNS, ERROR_MESSAGES } from '../config/constants';
 
+// Cache for minimum password length (fetched from settings)
+let cachedMinPasswordLength = 8;
+
 /**
  * التحقق من البريد الإلكتروني
  */
@@ -21,15 +24,68 @@ export const validateEmail = (email) => {
 };
 
 /**
- * التحقق من كلمة المرور
+ * Get minimum password length from settings (async)
+ */
+export const getMinimumPasswordLength = async () => {
+  try {
+    // Check if we're in browser environment
+    if (typeof window === 'undefined') {
+      return 8; // Default for server-side
+    }
+    
+    // Check localStorage cache first
+    const cached = localStorage.getItem('minimum_password_length');
+    if (cached) {
+      const length = parseInt(cached, 10);
+      if (!isNaN(length) && length >= 6 && length <= 32) {
+        cachedMinPasswordLength = length;
+        return length;
+      }
+    }
+    
+    // Try to fetch from Supabase if available
+    if (typeof window.supabase !== 'undefined') {
+      const { data, error } = await window.supabase
+        .from('platform_settings')
+        .select('setting_value')
+        .eq('setting_key', 'minimum_password_length')
+        .single();
+      
+      if (!error && data && data.setting_value) {
+        const length = parseInt(data.setting_value, 10);
+        if (!isNaN(length) && length >= 6 && length <= 32) {
+          cachedMinPasswordLength = length;
+          localStorage.setItem('minimum_password_length', length.toString());
+          return length;
+        }
+      }
+    }
+    
+    // Return cached value or default
+    return cachedMinPasswordLength;
+  } catch (error) {
+    console.error('Error fetching minimum password length:', error);
+    return cachedMinPasswordLength; // Return cached or default
+  }
+};
+
+/**
+ * التحقق من كلمة المرور (sync version - uses cached/default value)
  */
 export const validatePassword = (password) => {
+  return validatePasswordWithLength(password, cachedMinPasswordLength);
+};
+
+/**
+ * التحقق من كلمة المرور مع طول محدد
+ */
+export const validatePasswordWithLength = (password, minLength = 8) => {
   if (!password) {
     return { valid: false, error: ERROR_MESSAGES.REQUIRED_FIELD };
   }
   
-  if (password.length < 8) {
-    return { valid: false, error: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' };
+  if (password.length < minLength) {
+    return { valid: false, error: `كلمة المرور يجب أن تكون ${minLength} أحرف على الأقل` };
   }
   
   // التحقق من وجود حرف كبير وصغير ورقم
@@ -45,6 +101,14 @@ export const validatePassword = (password) => {
   }
   
   return { valid: true };
+};
+
+/**
+ * التحقق من كلمة المرور (async version - fetches from settings)
+ */
+export const validatePasswordAsync = async (password) => {
+  const minLength = await getMinimumPasswordLength();
+  return validatePasswordWithLength(password, minLength);
 };
 
 /**

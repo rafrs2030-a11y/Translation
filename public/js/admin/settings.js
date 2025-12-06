@@ -209,6 +209,30 @@ function updateSettingInUI(settingKey, settingValue) {
                 }
             }
             break;
+            
+        case 'two_factor_auth':
+            const twoFactorAuthInput = document.getElementById('two-factor-auth');
+            if (twoFactorAuthInput) {
+                const newValue = settingValue === 'true';
+                if (twoFactorAuthInput.checked !== newValue) {
+                    twoFactorAuthInput.checked = newValue;
+                }
+            }
+            break;
+            
+        case 'session_duration_hours':
+            const sessionDurationInput = document.getElementById('session-duration-input');
+            if (sessionDurationInput && sessionDurationInput.value !== settingValue) {
+                sessionDurationInput.value = settingValue;
+            }
+            break;
+            
+        case 'minimum_password_length':
+            const minimumPasswordLengthInput = document.getElementById('minimum-password-length-input');
+            if (minimumPasswordLengthInput && minimumPasswordLengthInput.value !== settingValue) {
+                minimumPasswordLengthInput.value = settingValue;
+            }
+            break;
     }
 }
 
@@ -252,7 +276,10 @@ async function clearSettingsCache() {
             'allowed_file_formats',
             'email_notifications',
             'email_new_submission',
-            'email_status_change'
+            'email_status_change',
+            'two_factor_auth',
+            'session_duration_hours',
+            'minimum_password_length'
         ];
         
         // Clear known settings
@@ -329,6 +356,9 @@ async function loadSettings() {
         localStorage.removeItem('email_notifications');
         localStorage.removeItem('email_new_submission');
         localStorage.removeItem('email_status_change');
+        localStorage.removeItem('two_factor_auth');
+        localStorage.removeItem('session_duration_hours');
+        localStorage.removeItem('minimum_password_length');
         
         // Load settings from Supabase
         const { data: settings, error } = await supabase
@@ -435,6 +465,27 @@ async function loadSettings() {
         const emailStatusChangeInput = document.getElementById('email-status-change');
         if (emailStatusChangeInput) {
             emailStatusChangeInput.checked = emailStatusChange;
+        }
+        
+        // Update two-factor authentication toggle
+        const twoFactorAuth = settingsMap['two_factor_auth'] === 'true' || settingsMap['two_factor_auth'] === true;
+        const twoFactorAuthInput = document.getElementById('two-factor-auth');
+        if (twoFactorAuthInput) {
+            twoFactorAuthInput.checked = twoFactorAuth;
+        }
+        
+        // Update session duration input
+        const sessionDurationHours = settingsMap['session_duration_hours'] || '24';
+        const sessionDurationInput = document.getElementById('session-duration-input');
+        if (sessionDurationInput) {
+            sessionDurationInput.value = sessionDurationHours;
+        }
+        
+        // Update minimum password length input
+        const minimumPasswordLength = settingsMap['minimum_password_length'] || '8';
+        const minimumPasswordLengthInput = document.getElementById('minimum-password-length-input');
+        if (minimumPasswordLengthInput) {
+            minimumPasswordLengthInput.value = minimumPasswordLength;
         }
         
         // Update last backup date (if available)
@@ -948,36 +999,164 @@ function initEventListeners() {
         });
     }
     
-    // Track changes to email status change toggle (real-time)
-    const emailStatusChangeInput = document.getElementById('email-status-change');
-    if (emailStatusChangeInput) {
-        emailStatusChangeInput.addEventListener('change', async (e) => {
-            const value = e.target.checked ? 'true' : 'false';
-            
-            // Save to localStorage immediately (cache)
-            localStorage.setItem('email_status_change', value);
-            
-            // Save to Supabase
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                const { error } = await supabase
-                    .from('platform_settings')
-                    .upsert({
-                        setting_key: 'email_status_change',
-                        setting_value: value,
-                        updated_by: user?.id
-                    }, {
-                        onConflict: 'setting_key'
-                    });
+        // Track changes to email status change toggle (real-time)
+        const emailStatusChangeInput = document.getElementById('email-status-change');
+        if (emailStatusChangeInput) {
+            emailStatusChangeInput.addEventListener('change', async (e) => {
+                const value = e.target.checked ? 'true' : 'false';
                 
-                if (error) {
-                    console.error('Error saving email status change to Supabase:', error);
+                // Save to localStorage immediately (cache)
+                localStorage.setItem('email_status_change', value);
+                
+                // Save to Supabase
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    const { error } = await supabase
+                        .from('platform_settings')
+                        .upsert({
+                            setting_key: 'email_status_change',
+                            setting_value: value,
+                            updated_by: user?.id
+                        }, {
+                            onConflict: 'setting_key'
+                        });
+                    
+                    if (error) {
+                        console.error('Error saving email status change to Supabase:', error);
+                    }
+                } catch (error) {
+                    console.error('Error saving email status change:', error);
                 }
-            } catch (error) {
-                console.error('Error saving email status change:', error);
-            }
-        });
-    }
+            });
+        }
+        
+        // Track changes to two-factor authentication toggle (real-time)
+        const twoFactorAuthInput = document.getElementById('two-factor-auth');
+        if (twoFactorAuthInput) {
+            twoFactorAuthInput.addEventListener('change', async (e) => {
+                const value = e.target.checked ? 'true' : 'false';
+                
+                // Save to localStorage immediately (cache)
+                localStorage.setItem('two_factor_auth', value);
+                
+                // Save to Supabase
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    const { error } = await supabase
+                        .from('platform_settings')
+                        .upsert({
+                            setting_key: 'two_factor_auth',
+                            setting_value: value,
+                            updated_by: user?.id
+                        }, {
+                            onConflict: 'setting_key'
+                        });
+                    
+                    if (error) {
+                        console.error('Error saving two-factor auth to Supabase:', error);
+                    } else {
+                        // Dispatch event for other components
+                        window.dispatchEvent(new CustomEvent('twoFactorAuthUpdated', {
+                            detail: { enabled: e.target.checked }
+                        }));
+                    }
+                } catch (error) {
+                    console.error('Error saving two-factor auth:', error);
+                }
+            });
+        }
+        
+        // Track changes to session duration input (real-time)
+        const sessionDurationInput = document.getElementById('session-duration-input');
+        if (sessionDurationInput) {
+            let sessionDurationTimeout;
+            sessionDurationInput.addEventListener('input', (e) => {
+                const value = e.target.value.trim();
+                if (!value) return;
+                
+                // Validate: must be between 1 and 168 hours (1 week)
+                const numValue = parseInt(value, 10);
+                if (isNaN(numValue) || numValue < 1 || numValue > 168) return;
+                
+                // Debounce: Update after 500ms of no typing
+                clearTimeout(sessionDurationTimeout);
+                sessionDurationTimeout = setTimeout(async () => {
+                    // Save to localStorage immediately (cache)
+                    localStorage.setItem('session_duration_hours', value);
+                    
+                    // Save to Supabase
+                    try {
+                        const { data: { user } } = await supabase.auth.getUser();
+                        const { error } = await supabase
+                            .from('platform_settings')
+                            .upsert({
+                                setting_key: 'session_duration_hours',
+                                setting_value: value,
+                                updated_by: user?.id
+                            }, {
+                                onConflict: 'setting_key'
+                            });
+                        
+                        if (error) {
+                            console.error('Error saving session duration to Supabase:', error);
+                        } else {
+                            // Dispatch event for other components
+                            window.dispatchEvent(new CustomEvent('sessionDurationUpdated', {
+                                detail: { hours: numValue }
+                            }));
+                        }
+                    } catch (error) {
+                        console.error('Error saving session duration:', error);
+                    }
+                }, 500);
+            });
+        }
+        
+        // Track changes to minimum password length input (real-time)
+        const minimumPasswordLengthInput = document.getElementById('minimum-password-length-input');
+        if (minimumPasswordLengthInput) {
+            let minimumPasswordLengthTimeout;
+            minimumPasswordLengthInput.addEventListener('input', (e) => {
+                const value = e.target.value.trim();
+                if (!value) return;
+                
+                // Validate: must be between 6 and 32 characters
+                const numValue = parseInt(value, 10);
+                if (isNaN(numValue) || numValue < 6 || numValue > 32) return;
+                
+                // Debounce: Update after 500ms of no typing
+                clearTimeout(minimumPasswordLengthTimeout);
+                minimumPasswordLengthTimeout = setTimeout(async () => {
+                    // Save to localStorage immediately (cache)
+                    localStorage.setItem('minimum_password_length', value);
+                    
+                    // Save to Supabase
+                    try {
+                        const { data: { user } } = await supabase.auth.getUser();
+                        const { error } = await supabase
+                            .from('platform_settings')
+                            .upsert({
+                                setting_key: 'minimum_password_length',
+                                setting_value: value,
+                                updated_by: user?.id
+                            }, {
+                                onConflict: 'setting_key'
+                            });
+                        
+                        if (error) {
+                            console.error('Error saving minimum password length to Supabase:', error);
+                        } else {
+                            // Dispatch event for other components
+                            window.dispatchEvent(new CustomEvent('minimumPasswordLengthUpdated', {
+                                detail: { length: numValue }
+                            }));
+                        }
+                    } catch (error) {
+                        console.error('Error saving minimum password length:', error);
+                    }
+                }, 500);
+            });
+        }
     
     // Track changes to other text inputs
     document.querySelectorAll('.form-input, .form-select').forEach(input => {
@@ -1063,6 +1242,23 @@ async function saveAllSettings() {
             { setting_key: 'email_new_submission', setting_value: emailNewSubmission, updated_by: user?.id },
             { setting_key: 'email_status_change', setting_value: emailStatusChange, updated_by: user?.id }
         ];
+        
+        // Get security settings
+        const twoFactorAuthInput = document.getElementById('two-factor-auth');
+        const twoFactorAuth = twoFactorAuthInput?.checked ? 'true' : 'false';
+        
+        const sessionDurationInput = document.getElementById('session-duration-input');
+        const sessionDurationHours = sessionDurationInput?.value || '24';
+        
+        const minimumPasswordLengthInput = document.getElementById('minimum-password-length-input');
+        const minimumPasswordLength = minimumPasswordLengthInput?.value || '8';
+        
+        // Add security settings to save list
+        platformSettingsToSave.push(
+            { setting_key: 'two_factor_auth', setting_value: twoFactorAuth, updated_by: user?.id },
+            { setting_key: 'session_duration_hours', setting_value: sessionDurationHours, updated_by: user?.id },
+            { setting_key: 'minimum_password_length', setting_value: minimumPasswordLength, updated_by: user?.id }
+        );
         
         // Other settings (for future use)
         const otherSettings = {

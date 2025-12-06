@@ -105,6 +105,27 @@ async function loadVerificationRequests() {
         showLoading(true);
         console.log('🔄 بدء جلب طلبات التوثيق...');
         
+        // مسح الكاش القديم قبل جلب البيانات الجديدة
+        try {
+            const cacheKeys = [
+                'verification_requests',
+                'users_cache',
+                'admin_users_cache',
+                'verification_requests_cache'
+            ];
+            
+            cacheKeys.forEach(key => {
+                try {
+                    localStorage.removeItem(key);
+                    sessionStorage.removeItem(key);
+                } catch (e) {
+                    // Ignore cache errors
+                }
+            });
+        } catch (cacheError) {
+            console.warn('⚠️ خطأ في مسح الكاش قبل الجلب:', cacheError);
+        }
+        
         // Fetch all researchers with better error handling
         const { data, error, count } = await supabase
             .from('users')
@@ -374,11 +395,32 @@ function handleFilterChange() {
 /**
  * Open edit user modal
  */
-window.openEditUser = function(userId) {
+window.openEditUser = async function(userId) {
     const user = allRequests.find(u => u.id === userId);
     if (!user) return;
     
     currentEditUser = user;
+    
+    // مسح الكاش القديم قبل فتح النافذة لضمان البيانات المحدثة
+    try {
+        const cacheKeys = [
+            `user_${userId}`,
+            `user_${userId}_cache`,
+            'verification_requests',
+            'users_cache'
+        ];
+        
+        cacheKeys.forEach(key => {
+            try {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            } catch (e) {
+                // Ignore cache errors
+            }
+        });
+    } catch (cacheError) {
+        console.warn('⚠️ خطأ في مسح الكاش:', cacheError);
+    }
     
     // Populate form
     const emailVerified = user.email_verified === true || user.email_verified === 1 || user.email_verified === 'true';
@@ -413,36 +455,55 @@ async function handleEditUser(e) {
     try {
         const userId = document.getElementById('edit-user-id').value;
         const emailVerified = document.getElementById('edit-email-verified').checked;
+        const username = document.getElementById('edit-username').value.trim();
+        const phone = document.getElementById('edit-phone').value.trim();
+        const nationalId = document.getElementById('edit-national-id').value.trim();
         
         if (!userId) {
             throw new Error('معرف المستخدم غير موجود');
         }
         
-        console.log(`🔄 بدء تحديث حالة التوثيق للمستخدم: ${userId}, الحالة الجديدة: ${emailVerified}`);
+        // Validate required fields
+        if (!username) {
+            showError('اسم المستخدم مطلوب');
+            return;
+        }
+        
+        console.log(`🔄 بدء تحديث بيانات المستخدم: ${userId}`);
+        console.log('📝 البيانات الجديدة:', {
+            email_verified: emailVerified,
+            username,
+            phone,
+            national_id: nationalId
+        });
         
         // Show loading
         const submitBtn = document.getElementById('submit-edit-btn');
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>جاري الحفظ...</span>';
         
-        // تحديث حالة التوثيق في قاعدة البيانات
-        // التأكد من أن القيمة boolean صحيحة
+        // تحديث بيانات المستخدم في قاعدة البيانات
         const emailVerifiedValue = emailVerified === true || emailVerified === 'true' || emailVerified === 1;
         const updateData = { 
             email_verified: emailVerifiedValue,
+            username: username,
+            phone: phone || null,
+            national_id: nationalId || null,
             updated_at: new Date().toISOString()
         };
-        
-        console.log('📝 بيانات التحديث:', {
-            userId,
-            email_verified: emailVerifiedValue,
-            updateData
-        });
         
         // Get current user for audit
         const { data: { user: currentAdmin } } = await supabase.auth.getUser();
         
-        // Update user verification status
+        // Get old values for audit log
+        const oldValues = {
+            email_verified: currentEditUser?.email_verified || false,
+            username: currentEditUser?.username || '',
+            phone: currentEditUser?.phone || null,
+            national_id: currentEditUser?.national_id || null
+        };
+        
+        // Update user data
         const { data: updatedUser, error } = await supabase
             .from('users')
             .update(updateData)
@@ -459,22 +520,76 @@ async function handleEditUser(e) {
         
         // Log audit action
         try {
-            await supabase
-                .from('audit_logs')
-                .insert([{
-                    actor_id: currentAdmin?.id,
-                    action: emailVerifiedValue ? 'verify_user' : 'unverify_user',
-                    target_type: 'user',
-                    target_id: userId,
-                    diff: {
-                        email_verified: {
-                            old: currentEditUser?.email_verified || false,
-                            new: emailVerifiedValue
+            const diff = {};
+            if (oldValues.email_verified !== emailVerifiedValue) {
+                diff.email_verified = { old: oldValues.email_verified, new: emailVerifiedValue };
+            }
+            if (oldValues.username !== username) {
+                diff.username = { old: oldValues.username, new: username };
+            }
+            if (oldValues.phone !== phone) {
+                diff.phone = { old: oldValues.phone, new: phone };
+            }
+            if (oldValues.national_id !== nationalId) {
+                diff.national_id = { old: oldValues.national_id, new: nationalId };
+            }
+            
+            if (Object.keys(diff).length > 0) {
+                await supabase
+                    .from('audit_log')
+                    .insert([{
+                        admin_id: currentAdmin?.id,
+                        action: 'update_user',
+                        entity_type: 'user',
+                        entity_id: userId,
+                        details: {
+                            changes: diff,
+                            verification_changed: oldValues.email_verified !== emailVerifiedValue
                         }
-                    }
-                }]);
+                    }]);
+            }
         } catch (auditError) {
             console.warn('⚠️ لم يتم تسجيل الإجراء في audit_log:', auditError);
+        }
+        
+        // Clear cache comprehensively to ensure fresh data
+        try {
+            const { clearPageCache, clearAdminCache } = await import('../utils/admin-cache-clear.js');
+            
+            // مسح كاش صفحة verification-requests
+            await clearPageCache('verification-requests');
+            
+            // مسح كاش شامل للمستخدمين
+            const cacheKeys = [
+                'verification_requests',
+                'users_cache',
+                'admin_users_cache',
+                'verification_requests_cache',
+                'users_list',
+                'researchers_list',
+                'all_users',
+                'filtered_users'
+            ];
+            
+            cacheKeys.forEach(key => {
+                try {
+                    localStorage.removeItem(key);
+                    sessionStorage.removeItem(key);
+                } catch (e) {
+                    // Ignore cache errors
+                }
+            });
+            
+            // مسح كاش شامل لصفحات الإدمن (مع الحفاظ على auth tokens)
+            await clearAdminCache({ 
+                silent: true, 
+                clearAll: false, 
+                preserveAuth: true 
+            });
+            
+            console.log('✅ تم مسح الكاش القديم بشكل شامل');
+        } catch (cacheError) {
+            console.warn('⚠️ خطأ في مسح الكاش:', cacheError);
         }
         
         // إعادة جلب البيانات للتأكد من أن كل شيء محدث
@@ -485,10 +600,10 @@ async function handleEditUser(e) {
         
         // Show success message
         const statusText = emailVerified ? 'موثّق' : 'غير موثّق';
-        showSuccess(`تم تحديث حالة التوثيق بنجاح - الحالة: ${statusText}`);
+        showSuccess(`تم تحديث بيانات المستخدم بنجاح - حالة التوثيق: ${statusText}`);
         
         // Create notification for user if verified
-        if (emailVerified) {
+        if (emailVerified && oldValues.email_verified !== emailVerifiedValue) {
             try {
                 const { error: notifError } = await supabase
                     .from('notifications')
@@ -511,8 +626,8 @@ async function handleEditUser(e) {
         }
         
     } catch (error) {
-        console.error('❌ خطأ في تحديث حالة التوثيق:', error);
-        showError('حدث خطأ أثناء تحديث حالة التوثيق: ' + (error.message || 'خطأ غير معروف'));
+        console.error('❌ خطأ في تحديث بيانات المستخدم:', error);
+        showError('حدث خطأ أثناء تحديث البيانات: ' + (error.message || 'خطأ غير معروف'));
         
         // Reset button
         const submitBtn = document.getElementById('submit-edit-btn');
@@ -526,8 +641,35 @@ async function handleEditUser(e) {
 /**
  * Refresh list
  */
-window.refreshList = function() {
-    loadVerificationRequests();
+window.refreshList = async function() {
+    // مسح الكاش قبل التحديث
+    try {
+        const { clearPageCache } = await import('../utils/admin-cache-clear.js');
+        await clearPageCache('verification-requests');
+        
+        // مسح مفاتيح الكاش الإضافية
+        const cacheKeys = [
+            'verification_requests',
+            'users_cache',
+            'admin_users_cache',
+            'verification_requests_cache'
+        ];
+        
+        cacheKeys.forEach(key => {
+            try {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            } catch (e) {
+                // Ignore cache errors
+            }
+        });
+        
+        console.log('✅ تم مسح الكاش قبل تحديث القائمة');
+    } catch (cacheError) {
+        console.warn('⚠️ خطأ في مسح الكاش:', cacheError);
+    }
+    
+    await loadVerificationRequests();
 }
 
 /**

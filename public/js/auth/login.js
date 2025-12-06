@@ -4,6 +4,7 @@
 
 import authStore from '../stores/authStore.js';
 import { guestOnly } from '../utils/auth-guard.js';
+import { supabase } from '../config/supabase.js';
 
 // DOM Elements
 let form, submitBtn, alertContainer;
@@ -14,6 +15,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     initElements();
     initEventListeners();
+    
+    // Check if 2FA is enabled and update UI accordingly
+    await updateUIForTwoFactor();
     
     // Check for verification messages
     const urlParams = new URLSearchParams(window.location.search);
@@ -27,6 +31,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         showAlert('تم التحقق من بريدك الإلكتروني بنجاح! يمكنك الآن تسجيل الدخول.', 'success');
     }
 });
+
+/**
+ * Update UI based on 2FA setting
+ */
+async function updateUIForTwoFactor() {
+    const twoFactorEnabled = await checkTwoFactorEnabled();
+    
+    if (twoFactorEnabled) {
+        // Hide password field and related options when 2FA is enabled
+        const passwordGroup = document.getElementById('password-group');
+        const formOptions = document.getElementById('form-options');
+        const passwordInput = document.getElementById('password');
+        
+        if (passwordGroup) {
+            passwordGroup.style.display = 'none';
+        }
+        if (formOptions) {
+            formOptions.style.display = 'none';
+        }
+        if (passwordInput) {
+            passwordInput.removeAttribute('required');
+        }
+        
+        // Update header text
+        const headerP = document.querySelector('.auth-header p');
+        if (headerP) {
+            headerP.textContent = 'أدخل بريدك الإلكتروني وسيتم إرسال رمز التحقق إليك';
+        }
+    }
+}
 
 /**
  * Initialize DOM elements
@@ -94,8 +128,11 @@ async function handleSubmit(e) {
     const password = document.getElementById('password').value;
     const remember = document.getElementById('remember').checked;
     
-    // Validate
-    if (!validateForm(email, password)) {
+    // Check if 2FA is enabled
+    const twoFactorEnabled = await checkTwoFactorEnabled();
+    
+    // Validate (password only required if 2FA is disabled)
+    if (!validateForm(email, password, twoFactorEnabled)) {
         return;
     }
     
@@ -103,57 +140,22 @@ async function handleSubmit(e) {
     setLoading(true);
     
     try {
-        // Login
-        const result = await authStore.login(email, password);
+        // Check if 2FA is enabled
+        const twoFactorEnabled = await checkTwoFactorEnabled();
         
-        if (result.success) {
-            // Show success message
-            showAlert('تم تسجيل الدخول بنجاح! جاري التحويل...', 'success');
-            
-            // Wait for authStore to finish updating (setSession completes)
-            await authStore.waitForInitialization();
-            
-            // Get user data - try from state first, then from getCurrentUser
-            let user = authStore.getState().user;
-            
-            if (!user) {
-                // If not in state yet, try getCurrentUser
-                user = await authStore.getCurrentUser();
-            }
-            
-            // If still no user, wait a bit more and try again
-            if (!user) {
-                await new Promise(resolve => setTimeout(resolve, 500));
-                user = authStore.getState().user || await authStore.getCurrentUser();
-            }
-            
-            // Redirect based on role (default to researcher if role not found)
-            setTimeout(() => {
-                if (user?.role === 'admin') {
-                    window.location.href = '/pages/admin/dashboard.html';
-                } else {
-                    window.location.href = '/pages/researcher/dashboard.html';
-                }
-            }, 1000);
+        if (twoFactorEnabled) {
+            // Two-factor authentication flow - email only, no password needed
+            // Hide password field requirement
+            await handleTwoFactorLogin(email, password);
         } else {
-            // عرض رسالة الخطأ من authStore
-            const errorMsg = result.error || 'فشل تسجيل الدخول';
-            showAlert(errorMsg, 'error');
-            console.error('Login failed:', result);
-            
-            // إذا كان الخطأ متعلق بكلمة المرور، عرض خيار إعادة التعيين
-            if (errorMsg.includes('كلمة المرور') || 
-                errorMsg.includes('credentials') || 
-                errorMsg.includes('غير صحيحة')) {
-                showPasswordResetOption(email);
-            }
+            // Regular login flow - email + password
+            await handleRegularLogin(email, password);
         }
     } catch (error) {
         console.error('Login error:', error);
         // عرض رسالة الخطأ إذا كانت موجودة
         const errorMsg = error.message || 'حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.';
         showAlert(errorMsg, 'error');
-    } finally {
         setLoading(false);
     }
 }
@@ -161,10 +163,10 @@ async function handleSubmit(e) {
 /**
  * Validate form
  */
-function validateForm(email, password) {
+function validateForm(email, password, twoFactorEnabled = false) {
     let isValid = true;
     
-    // Validate email
+    // Validate email (always required)
     if (!email) {
         showFieldError('email', 'البريد الإلكتروني مطلوب');
         isValid = false;
@@ -173,13 +175,15 @@ function validateForm(email, password) {
         isValid = false;
     }
     
-    // Validate password
-    if (!password) {
-        showFieldError('password', 'كلمة المرور مطلوبة');
-        isValid = false;
-    } else if (password.length < 6) {
-        showFieldError('password', 'كلمة المرور قصيرة جداً');
-        isValid = false;
+    // Validate password (only required if 2FA is disabled)
+    if (!twoFactorEnabled) {
+        if (!password) {
+            showFieldError('password', 'كلمة المرور مطلوبة');
+            isValid = false;
+        } else if (password.length < 6) {
+            showFieldError('password', 'كلمة المرور قصيرة جداً');
+            isValid = false;
+        }
     }
     
     return isValid;
@@ -351,5 +355,348 @@ async function handlePasswordReset(email) {
 function isValidEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
+}
+
+/**
+ * Check if two-factor authentication is enabled
+ */
+async function checkTwoFactorEnabled() {
+    try {
+        // Check localStorage cache first
+        const cached = localStorage.getItem('two_factor_auth');
+        if (cached !== null) {
+            return cached === 'true';
+        }
+        
+        // Fetch from Supabase
+        const { data, error } = await supabase
+            .from('platform_settings')
+            .select('setting_value')
+            .eq('setting_key', 'two_factor_auth')
+            .single();
+        
+        if (error || !data) {
+            // Default to false if not found
+            return false;
+        }
+        
+        const enabled = data.setting_value === 'true';
+        // Cache the result
+        localStorage.setItem('two_factor_auth', enabled ? 'true' : 'false');
+        
+        return enabled;
+    } catch (error) {
+        console.error('Error checking 2FA setting:', error);
+        return false; // Default to false on error
+    }
+}
+
+/**
+ * Handle regular login (without 2FA)
+ */
+async function handleRegularLogin(email, password) {
+    try {
+        // Login
+        const result = await authStore.login(email, password);
+        
+        if (result.success) {
+            // Show success message
+            showAlert('تم تسجيل الدخول بنجاح! جاري التحويل...', 'success');
+            
+            // Wait for authStore to finish updating (setSession completes)
+            await authStore.waitForInitialization();
+            
+            // Get user data - try from state first, then from getCurrentUser
+            let user = authStore.getState().user;
+            
+            if (!user) {
+                // If not in state yet, try getCurrentUser
+                user = await authStore.getCurrentUser();
+            }
+            
+            // If still no user, wait a bit more and try again
+            if (!user) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                user = authStore.getState().user || await authStore.getCurrentUser();
+            }
+            
+            // Redirect based on role (default to researcher if role not found)
+            setTimeout(() => {
+                if (user?.role === 'admin') {
+                    window.location.href = '/pages/admin/dashboard.html';
+                } else {
+                    window.location.href = '/pages/researcher/dashboard.html';
+                }
+            }, 1000);
+        } else {
+            // عرض رسالة الخطأ من authStore
+            const errorMsg = result.error || 'فشل تسجيل الدخول';
+            showAlert(errorMsg, 'error');
+            console.error('Login failed:', result);
+            
+            // إذا كان الخطأ متعلق بكلمة المرور، عرض خيار إعادة التعيين
+            if (errorMsg.includes('كلمة المرور') || 
+                errorMsg.includes('credentials') || 
+                errorMsg.includes('غير صحيحة')) {
+                showPasswordResetOption(email);
+            }
+            setLoading(false);
+        }
+    } catch (error) {
+        console.error('Regular login error:', error);
+        showAlert(error.message || 'حدث خطأ أثناء تسجيل الدخول', 'error');
+        setLoading(false);
+    }
+}
+
+/**
+ * Handle two-factor authentication login flow
+ * When 2FA is enabled, users login with email only (no password needed)
+ */
+async function handleTwoFactorLogin(email, password) {
+    try {
+        // Check if user exists with this email
+        const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('id, email')
+            .eq('email', email)
+            .single();
+        
+        if (userError || !userData) {
+            showAlert('البريد الإلكتروني غير مسجل في النظام', 'error');
+            setLoading(false);
+            return;
+        }
+        
+        // User exists, now send OTP
+        setLoading(false);
+        
+        // Hide login form and show OTP form
+        showOTPForm(email);
+        
+        // Send OTP via Supabase
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+            email: email,
+            options: {
+                shouldCreateUser: false, // Don't create user, only send OTP for existing users
+                emailRedirectTo: undefined
+            }
+        });
+        
+        if (otpError) {
+            console.error('Error sending OTP:', otpError);
+            showAlert('فشل إرسال رمز التحقق. يرجى المحاولة مرة أخرى.', 'error');
+            hideOTPForm();
+            return;
+        }
+        
+        showAlert('تم إرسال رمز التحقق إلى بريدك الإلكتروني. يرجى التحقق من صندوق الوارد وإدخال الرمز المكون من 6 أرقام.', 'info');
+        
+    } catch (error) {
+        console.error('2FA login error:', error);
+        showAlert(error.message || 'حدث خطأ أثناء تسجيل الدخول', 'error');
+        setLoading(false);
+    }
+}
+
+/**
+ * Show OTP verification form
+ */
+function showOTPForm(email) {
+    // Hide login form
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.style.display = 'none';
+    }
+    
+    // Create or show OTP form
+    let otpForm = document.getElementById('otp-form');
+    if (!otpForm) {
+        otpForm = document.createElement('form');
+        otpForm.id = 'otp-form';
+        otpForm.className = 'auth-form';
+        otpForm.innerHTML = `
+            <div class="form-group">
+                <label for="otp-code" class="form-label required">رمز التحقق</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-key"></i>
+                    <input 
+                        type="text" 
+                        id="otp-code" 
+                        name="otp-code" 
+                        class="form-input"
+                        placeholder="أدخل رمز التحقق المكون من 6 أرقام"
+                        required
+                        maxlength="6"
+                        autocomplete="one-time-code"
+                        pattern="[0-9]{6}"
+                    >
+                </div>
+                <p class="form-help">أدخل الرمز المكون من 6 أرقام المرسل إلى ${email}</p>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-large btn-block" id="verify-otp-btn">
+                <i class="fas fa-check-circle"></i>
+                <span>تحقق من الرمز</span>
+            </button>
+            
+            <button type="button" class="btn btn-outline btn-large btn-block" id="resend-otp-btn" style="margin-top: 1rem;">
+                <i class="fas fa-redo"></i>
+                <span>إعادة إرسال الرمز</span>
+            </button>
+            
+            <button type="button" class="btn btn-ghost btn-block" id="back-to-login-btn" style="margin-top: 0.5rem;">
+                <i class="fas fa-arrow-right"></i>
+                <span>العودة لتسجيل الدخول</span>
+            </button>
+        `;
+        
+        const alertContainer = document.getElementById('alert-container');
+        if (alertContainer && alertContainer.parentNode) {
+            alertContainer.parentNode.insertBefore(otpForm, alertContainer.nextSibling);
+        }
+        
+        // Add event listeners
+        otpForm.addEventListener('submit', handleOTPVerification);
+        document.getElementById('resend-otp-btn').addEventListener('click', () => {
+            resendOTP(email);
+        });
+        document.getElementById('back-to-login-btn').addEventListener('click', hideOTPForm);
+        
+        // Auto-focus OTP input
+        const otpInput = document.getElementById('otp-code');
+        if (otpInput) {
+            otpInput.focus();
+        }
+    } else {
+        otpForm.style.display = 'block';
+    }
+}
+
+/**
+ * Hide OTP form and show login form
+ */
+function hideOTPForm() {
+    const otpForm = document.getElementById('otp-form');
+    if (otpForm) {
+        otpForm.style.display = 'none';
+    }
+    
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.style.display = 'block';
+    }
+    
+    // Clear alerts
+    clearAlerts();
+}
+
+/**
+ * Handle OTP verification
+ */
+async function handleOTPVerification(e) {
+    e.preventDefault();
+    
+    const otpCode = document.getElementById('otp-code').value.trim();
+    const verifyBtn = document.getElementById('verify-otp-btn');
+    
+    if (!otpCode || otpCode.length !== 6) {
+        showAlert('يرجى إدخال رمز التحقق المكون من 6 أرقام', 'error');
+        return;
+    }
+    
+    // Get email from form
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    
+    // Show loading
+    verifyBtn.disabled = true;
+    verifyBtn.innerHTML = '<div class="loading-spinner" style="width: 20px; height: 20px; border-width: 2px;"></div> <span>جاري التحقق...</span>';
+    
+    try {
+        // Verify OTP with Supabase
+        const { data, error } = await supabase.auth.verifyOtp({
+            email: email,
+            token: otpCode,
+            type: 'email'
+        });
+        
+        if (error) {
+            throw error;
+        }
+        
+        if (data && data.user) {
+            // OTP verified successfully
+            showAlert('تم التحقق من الرمز بنجاح! جاري تسجيل الدخول...', 'success');
+            
+            // Wait for authStore to initialize
+            await authStore.waitForInitialization();
+            
+            // Get user data
+            let user = authStore.getState().user;
+            if (!user) {
+                user = await authStore.getCurrentUser();
+            }
+            if (!user) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                user = authStore.getState().user || await authStore.getCurrentUser();
+            }
+            
+            // Redirect based on role
+            setTimeout(() => {
+                if (user?.role === 'admin') {
+                    window.location.href = '/pages/admin/dashboard.html';
+                } else {
+                    window.location.href = '/pages/researcher/dashboard.html';
+                }
+            }, 1000);
+        } else {
+            throw new Error('فشل التحقق من الرمز');
+        }
+        
+    } catch (error) {
+        console.error('OTP verification error:', error);
+        const errorMsg = error.message || 'رمز التحقق غير صحيح. يرجى المحاولة مرة أخرى.';
+        showAlert(errorMsg, 'error');
+        
+        verifyBtn.disabled = false;
+        verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span>تحقق من الرمز</span>';
+        
+        // Clear OTP input on error
+        document.getElementById('otp-code').value = '';
+    }
+}
+
+/**
+ * Resend OTP code
+ */
+async function resendOTP(email) {
+    const resendBtn = document.getElementById('resend-otp-btn');
+    const originalHTML = resendBtn.innerHTML;
+    
+    resendBtn.disabled = true;
+    resendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>جاري الإرسال...</span>';
+    
+    try {
+        const { error } = await supabase.auth.signInWithOtp({
+            email: email,
+            options: {
+                shouldCreateUser: false,
+                emailRedirectTo: undefined
+            }
+        });
+        
+        if (error) {
+            throw error;
+        }
+        
+        showAlert('تم إعادة إرسال رمز التحقق إلى بريدك الإلكتروني', 'success');
+        
+    } catch (error) {
+        console.error('Resend OTP error:', error);
+        showAlert('فشل إعادة إرسال الرمز. يرجى المحاولة مرة أخرى.', 'error');
+    } finally {
+        resendBtn.disabled = false;
+        resendBtn.innerHTML = originalHTML;
+    }
 }
 
