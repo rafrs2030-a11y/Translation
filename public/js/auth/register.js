@@ -19,8 +19,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Clear old cache
     clearOldCache();
     
+    // Initialize elements
     initElements();
-    initEventListeners();
+    
+    // Wait a bit to ensure DOM is fully ready
+    setTimeout(() => {
+        // Re-initialize elements in case they weren't ready
+        initElements();
+        initEventListeners();
+        
+        // Double-check account type options are clickable
+        accountTypeOptions = document.querySelectorAll('.account-type-option');
+        accountTypeOptions.forEach(option => {
+            option.style.pointerEvents = 'auto';
+            option.style.cursor = 'pointer';
+            option.style.userSelect = 'none';
+        });
+        
+    }, 100);
 });
 
 /**
@@ -28,8 +44,6 @@ document.addEventListener('DOMContentLoaded', async () => {
  */
 function clearOldCache() {
     try {
-        console.log('Starting cache cleanup...');
-        
         // Clear all Supabase-related cache
         const supabaseKeys = Object.keys(localStorage).filter(key => 
             key.startsWith('sb-') || 
@@ -38,7 +52,6 @@ function clearOldCache() {
         );
         supabaseKeys.forEach(key => {
             localStorage.removeItem(key);
-            console.log('Removed Supabase key:', key);
         });
         
         // Clear any registration-related cache
@@ -53,15 +66,13 @@ function clearOldCache() {
         );
         registrationKeys.forEach(key => {
             localStorage.removeItem(key);
-            console.log('Removed registration key:', key);
         });
         
         // Clear sessionStorage completely
         try {
             sessionStorage.clear();
-            console.log('SessionStorage cleared');
         } catch (e) {
-            console.warn('Could not clear sessionStorage:', e);
+            // Silent fail
         }
         
         // Clear all form-related cache
@@ -72,15 +83,7 @@ function clearOldCache() {
         );
         formKeys.forEach(key => {
             localStorage.removeItem(key);
-            console.log('Removed form key:', key);
         });
-        
-        const totalCleared = supabaseKeys.length + registrationKeys.length + formKeys.length;
-        if (totalCleared > 0) {
-            console.log(`✅ Cleared ${totalCleared} cache entries total`);
-        } else {
-            console.log('✅ No cache entries found to clear');
-        }
         
         // Force reload CSS/JS files by adding cache busting
         const timestamp = Date.now();
@@ -93,40 +96,30 @@ function clearOldCache() {
                     const url = new URL(link.href);
                     url.searchParams.set('v', timestamp);
                     link.href = url.toString();
-                    console.log('Updated CSS cache bust:', link.href);
                 } catch (e) {
-                    console.warn('Could not update CSS URL:', e);
+                    // Silent fail
                 }
             }
         });
-        
-        // Note: Cannot reload script files that are already loaded
-        // But we can add cache busting to the HTML if needed
         
         // Clear browser cache for this page
         if ('caches' in window) {
             caches.keys().then(names => {
                 names.forEach(name => {
                     if (name.includes('register') || name.includes('auth')) {
-                        caches.delete(name).then(() => {
-                            console.log('Deleted cache:', name);
-                        });
+                        caches.delete(name);
                     }
                 });
             });
         }
         
-        console.log('Cache cleanup completed');
-        
     } catch (error) {
-        console.error('Error clearing cache:', error);
         // Try to clear at least the basic localStorage
         try {
             localStorage.clear();
             sessionStorage.clear();
-            console.log('Emergency cache clear completed');
         } catch (e) {
-            console.error('Could not perform emergency cache clear:', e);
+            // Silent fail
         }
     }
 }
@@ -148,43 +141,105 @@ function initElements() {
     // Re-query account type options to ensure they're available
     accountTypeOptions = document.querySelectorAll('.account-type-option');
     
-    console.log('Account type options found:', accountTypeOptions.length);
+    // Ensure elements exist (will be re-queried if needed)
 }
 
 /**
  * Initialize event listeners
  */
 function initEventListeners() {
+    // Re-query account type options to ensure they're available
+    accountTypeOptions = document.querySelectorAll('.account-type-option');
+    
+    console.log('Initializing event listeners for', accountTypeOptions.length, 'account type options');
+    
     // Account type selection - use event delegation to ensure it works
     if (accountTypeSelection) {
-        accountTypeSelection.addEventListener('click', (e) => {
+        // Add event delegation listener
+        const handleAccountTypeClick = (e) => {
             const option = e.target.closest('.account-type-option');
             if (option) {
+                e.preventDefault();
+                e.stopPropagation();
+                const selectedType = option.dataset.type;
+                console.log('Account type clicked via delegation:', selectedType);
+                if (selectedType) {
+                    selectAccountType(selectedType);
+                }
+                return false;
+            }
+        };
+        
+        accountTypeSelection.addEventListener('click', handleAccountTypeClick, true);
+        
+        // Also add mousedown for better compatibility
+        const handleMouseDown = (e) => {
+            const option = e.target.closest('.account-type-option');
+            if (option) {
+                e.preventDefault();
                 const selectedType = option.dataset.type;
                 if (selectedType) {
                     selectAccountType(selectedType);
                 }
             }
-        });
+        };
+        
+        accountTypeSelection.addEventListener('mousedown', handleMouseDown, true);
     }
     
-    // Also add direct listeners as backup
-    accountTypeOptions.forEach(option => {
-        option.addEventListener('click', (e) => {
+    // Also add direct listeners as backup for each option
+    accountTypeOptions.forEach((option) => {
+        // Ensure pointer events are enabled
+        option.style.pointerEvents = 'auto';
+        option.style.cursor = 'pointer';
+        option.style.userSelect = 'none';
+        
+        // Add click listener
+        const handleClick = (e) => {
             e.preventDefault();
             e.stopPropagation();
+            const selectedType = option.dataset.type;
+            console.log('Account type clicked directly:', selectedType);
+            if (selectedType) {
+                selectAccountType(selectedType);
+            }
+            return false;
+        };
+        
+        option.addEventListener('click', handleClick, true);
+        
+        // Add mousedown listener
+        const handleMouseDown = (e) => {
+            e.preventDefault();
             const selectedType = option.dataset.type;
             if (selectedType) {
                 selectAccountType(selectedType);
             }
-        });
+        };
+        
+        option.addEventListener('mousedown', handleMouseDown, true);
+        
+        // Add touchstart for mobile
+        const handleTouchStart = (e) => {
+            e.preventDefault();
+            const selectedType = option.dataset.type;
+            if (selectedType) {
+                selectAccountType(selectedType);
+            }
+        };
+        
+        option.addEventListener('touchstart', handleTouchStart, { passive: false });
     });
     
     // Form submission
-    form.addEventListener('submit', handleSubmit);
+    if (form) {
+        form.addEventListener('submit', handleSubmit);
+    }
     
     // Password strength checker
-    passwordInput.addEventListener('input', checkPasswordStrength);
+    if (passwordInput) {
+        passwordInput.addEventListener('input', checkPasswordStrength);
+    }
     
     // Toggle password visibility
     document.querySelectorAll('.toggle-password').forEach(btn => {
@@ -192,21 +247,21 @@ function initEventListeners() {
     });
     
     // Clear error on input
-    form.querySelectorAll('input').forEach(input => {
-        input.addEventListener('input', () => {
-            input.classList.remove('error');
-            const errorDiv = input.parentElement.parentElement.querySelector('.form-error');
-            if (errorDiv) errorDiv.remove();
+    if (form) {
+        form.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => {
+                input.classList.remove('error');
+                const errorDiv = input.parentElement.parentElement.querySelector('.form-error');
+                if (errorDiv) errorDiv.remove();
+            });
         });
-    });
+    }
 }
 
 /**
  * Select account type
  */
 function selectAccountType(type) {
-    console.log('Selecting account type:', type);
-    
     // Re-query options to ensure we have the latest DOM
     accountTypeOptions = document.querySelectorAll('.account-type-option');
     
@@ -214,15 +269,25 @@ function selectAccountType(type) {
     accountTypeOptions.forEach(option => {
         if (option.dataset.type === type) {
             option.classList.add('selected');
+            option.style.pointerEvents = 'auto';
+            option.style.cursor = 'pointer';
         } else {
             option.classList.remove('selected');
+            option.style.pointerEvents = 'auto';
+            option.style.cursor = 'pointer';
         }
     });
     
     // Update hidden input
     if (accountTypeInput) {
         accountTypeInput.value = type;
-        console.log('Account type set to:', accountTypeInput.value);
+    } else {
+        console.error('Account type input not found when trying to set value!');
+        // Try to find it again
+        accountTypeInput = document.getElementById('account_type');
+        if (accountTypeInput) {
+            accountTypeInput.value = type;
+        }
     }
     
     // Show/hide fields based on account type
@@ -396,7 +461,7 @@ async function handleSubmit(e) {
     }
     
     // Validate
-    if (!validateForm(formData)) {
+    if (!(await validateForm(formData))) {
         return;
     }
     
@@ -430,22 +495,24 @@ async function handleSubmit(e) {
         if (result.success) {
             // إرسال بريد التحقق من البريد الإلكتروني
             try {
+                console.log('Attempting to send verification email to:', formData.email);
                 const resendResult = await authStore.resendVerificationEmail(formData.email);
                 if (resendResult.success) {
-                    console.log('✅ تم إرسال بريد التحقق بنجاح');
+                    console.log('Verification email sent successfully');
                 } else {
-                    console.warn('⚠️ فشل إرسال بريد التحقق:', resendResult.error);
+                    console.error('Failed to send verification email:', resendResult.error);
                 }
             } catch (verifyError) {
+                console.error('Error sending verification email:', verifyError);
                 // لا نمنع إكمال التسجيل إذا فشل إرسال بريد التحقق
-                console.error('Failed to send verification email:', verifyError);
             }
 
             // Try to send welcome email in real-time (non-blocking for the user)
             try {
                 const userId = result.data?.user?.id || null;
+                console.log('Attempting to send welcome email to:', formData.email, 'User ID:', userId);
                 
-                await supabase.functions.invoke('send-welcome-emails', {
+                const welcomeResponse = await supabase.functions.invoke('send-welcome-emails', {
                     body: {
                         mode: 'realtime',
                         recipient_email: formData.email,
@@ -456,28 +523,52 @@ async function handleSubmit(e) {
                         },
                     },
                 });
+                
+                if (welcomeResponse.error) {
+                    console.error('Welcome email function error:', welcomeResponse.error);
+                } else {
+                    console.log('Welcome email sent successfully:', welcomeResponse.data);
+                }
             } catch (welcomeError) {
+                console.error('Error invoking welcome email function:', welcomeError);
                 // لا نمنع إكمال التسجيل إذا فشل البريد الترحيبي
-                console.error('Failed to send welcome email:', welcomeError);
             } 
             
 
             // Show success message
             showAlert(
-                'تم إنشاء حسابك بنجاح! تم إرسال بريد التحقق ورسالة ترحيبية إلى بريدك الإلكتروني. يرجى التحقق من بريدك والنقر على رابط التحقق.',
+                'تم إنشاء حسابك بنجاح! يرجى التحقق من بريدك الإلكتروني والنقر على رابط التحقق لإكمال عملية التسجيل.',
                 'success'
             );
             
             // Redirect to login after 5 seconds (زيادة الوقت لإعطاء المستخدم وقت لقراءة الرسالة)
             setTimeout(() => {
-                window.location.href = '/pages/login.html?registered=true&verify_email=true';
+                window.location.href = '/pages/login.html?registered=true';
             }, 5000);
         } else {
-            showAlert(result.error || 'فشل إنشاء الحساب', 'error');
+            // عرض رسالة الخطأ بشكل واضح
+            const errorMessage = result.error || 'فشل إنشاء الحساب';
+            showAlert(errorMessage, 'error');
+            
+            // إذا كان الخطأ متعلقاً بكلمة المرور، قم بالتمرير إلى حقل كلمة المرور
+            if (errorMessage.includes('كلمة المرور') || errorMessage.includes('password')) {
+                setTimeout(() => {
+                    passwordInput?.focus();
+                    passwordInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
         }
     } catch (error) {
-        console.error('Registration error:', error);
-        showAlert('حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى.', 'error');
+        const errorMessage = error.message || 'حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى.';
+        showAlert(errorMessage, 'error');
+        
+        // إذا كان الخطأ متعلقاً بكلمة المرور، قم بالتمرير إلى حقل كلمة المرور
+        if (errorMessage.includes('كلمة المرور') || errorMessage.includes('password')) {
+            setTimeout(() => {
+                passwordInput?.focus();
+                passwordInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        }
     } finally {
         setLoading(false);
     }
@@ -486,7 +577,7 @@ async function handleSubmit(e) {
 /**
  * Validate form
  */
-function validateForm(data) {
+async function validateForm(data) {
     let isValid = true;
     
     // Validate based on account type
@@ -586,9 +677,9 @@ function checkPasswordStrength() {
     
     let strength = 0;
     
-    // Length
-    if (password.length >= 8) strength++;
+    // Length (Supabase requires minimum 12 characters)
     if (password.length >= 12) strength++;
+    if (password.length >= 16) strength++;
     
     // Uppercase
     if (/[A-Z]/.test(password)) strength++;
@@ -603,11 +694,15 @@ function checkPasswordStrength() {
     if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
     
     // Determine strength level
+    // Note: Password must be at least 12 characters to be valid
     let level, text;
-    if (strength <= 2) {
+    if (password.length < 12) {
+        level = 'weak';
+        text = 'قصيرة (يجب 12 حرف على الأقل)';
+    } else if (strength <= 3) {
         level = 'weak';
         text = 'ضعيفة';
-    } else if (strength <= 4) {
+    } else if (strength <= 5) {
         level = 'medium';
         text = 'متوسطة';
     } else {

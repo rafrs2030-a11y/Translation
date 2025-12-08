@@ -73,7 +73,6 @@ class AuthStore {
 
       // إذا فشل جلب البيانات من جدول users، استخدم البيانات من auth.users
       if (!userData || fetchError) {
-        console.log('Using fallback user data from auth session');
         
         // محاولة جلب role من auth.users مباشرة
         let role = 'researcher';
@@ -139,14 +138,11 @@ class AuthStore {
 
       // التأكد من أن role موجود وصحيح
       if (!userData.role) {
-        console.warn('⚠️ User role is missing in database, checking auth metadata...');
         // محاولة جلب role من user_metadata كبديل
         const authRole = session.user.user_metadata?.role;
         if (authRole) {
-          console.log('✅ Found role in user_metadata:', authRole);
           userData.role = authRole;
         } else {
-          console.warn('⚠️ No role found, defaulting to researcher');
           userData.role = 'researcher';
         }
       }
@@ -170,15 +166,6 @@ class AuthStore {
         }
       }
 
-      // تسجيل معلومات المستخدم للتشخيص
-      console.log('✅ User session set successfully:', {
-        id: userData.id,
-        email: userData.email,
-        role: userData.role,
-        username: userData.username,
-        email_verified: userData.email_verified
-      });
-
       // تحديث الحالة مع التأكد من role
       this.setState({
         user: userData,
@@ -188,9 +175,6 @@ class AuthStore {
         loading: false,
         error: null,
       });
-      
-      // التأكد من أن role محدث في state
-      console.log('✅ State updated with role:', this.state.role);
     } else {
       this.setState({
         user: null,
@@ -229,42 +213,128 @@ class AuthStore {
 
       // إنشاء حساب في Supabase Auth
       // تعطيل التحقق من البريد الإلكتروني (emailRedirectTo: null)
+      
+      // تحويل 'أفراد' إلى 'فرد' ليتوافق مع constraint في قاعدة البيانات
+      const normalizedAccountType = account_type === 'أفراد' ? 'فرد' : (account_type || 'تجريبي');
+      
       const metadata = {
-        username: username || (account_type === 'أعمال' ? organization_name : username),
+        username: username || (normalizedAccountType === 'أعمال' ? organization_name : username),
         phone: phone || null,
         country: country || null,
-        account_type: account_type || 'تجريبي',
+        account_type: normalizedAccountType,
       };
       
       // Add fields based on account type
-      if (account_type === 'أفراد') {
+      if (normalizedAccountType === 'فرد') {
         metadata.national_id = national_id || null;
         metadata.gender = gender || null;
-      } else if (account_type === 'أعمال') {
+      } else if (normalizedAccountType === 'أعمال') {
         metadata.organization_name = organization_name || null;
         metadata.organization_type = organization_type || null;
       }
       
+      // تنظيف البريد الإلكتروني
+      const cleanEmail = email.trim().toLowerCase();
+      
+      // تنظيف metadata من القيم null و undefined و strings فارغة
+      const cleanMetadata = {};
+      Object.keys(metadata).forEach(key => {
+        const value = metadata[key];
+        if (value !== null && value !== undefined && value !== '') {
+          // تحويل القيم إلى strings إذا لزم الأمر
+          cleanMetadata[key] = typeof value === 'string' ? value.trim() : value;
+        }
+      });
+      
+      // التأكد من وجود username في metadata
+      if (!cleanMetadata.username) {
+        cleanMetadata.username = username || cleanEmail.split('@')[0] || 'user';
+      }
+      
+      console.log('Registering user with data:', {
+        email: cleanEmail,
+        hasPassword: !!password,
+        metadataKeys: Object.keys(cleanMetadata),
+        metadata: cleanMetadata
+      });
+      
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
+        email: cleanEmail,
         password,
         options: {
-          emailRedirectTo: null, // تعطيل إعادة التوجيه للتحقق
-          data: metadata
+          data: cleanMetadata,
+          emailRedirectTo: `${window.location.origin}/pages/verify-email.html`
         }
       });
 
       if (authError) {
+        // Log error details for debugging
         console.error('Supabase Auth Error:', authError);
-        // تحسين رسائل الخطأ
+        console.error('Error details:', {
+          message: authError.message,
+          status: authError.status,
+          statusCode: authError.statusCode,
+          name: authError.name,
+          code: authError.code
+        });
+        
+        // تحسين رسائل الخطأ بناءً على نوع الخطأ الفعلي
         let errorMessage = authError.message;
-        if (authError.message.includes('already registered')) {
+        const errorMsgLower = (authError.message || '').toLowerCase();
+        const errorCode = authError.code || authError.statusCode || authError.status;
+        
+        // معالجة أخطاء البريد الإلكتروني
+        if (errorMsgLower.includes('already registered') || 
+            errorMsgLower.includes('user already registered') ||
+            errorMsgLower.includes('email already exists')) {
           errorMessage = 'هذا البريد الإلكتروني مسجل بالفعل';
-        } else if (authError.message.includes('Invalid email')) {
+        } else if (errorMsgLower.includes('invalid email') || 
+                   errorMsgLower.includes('email format')) {
           errorMessage = 'البريد الإلكتروني غير صحيح';
-        } else if (authError.message.includes('Password')) {
-          errorMessage = 'كلمة المرور غير صحيحة';
+        } 
+        // معالجة أخطاء كلمة المرور بشكل أكثر دقة
+        else if (errorMsgLower.includes('password') || errorCode === 'weak_password') {
+          if (errorMsgLower.includes('too short') || 
+              errorMsgLower.includes('at least') ||
+              errorMsgLower.includes('minimum') ||
+              errorMsgLower.includes('12 characters') ||
+              errorCode === 'weak_password') {
+            errorMessage = 'كلمة المرور قصيرة جداً. يجب أن تحتوي على 12 حرف على الأقل مع أحرف كبيرة وصغيرة وأرقام';
+          } else if (errorMsgLower.includes('too long') || 
+                     errorMsgLower.includes('maximum')) {
+            errorMessage = 'كلمة المرور طويلة جداً';
+          } else if (errorMsgLower.includes('weak') || 
+                     errorMsgLower.includes('strength')) {
+            errorMessage = 'كلمة المرور ضعيفة. يجب أن تحتوي على 12 حرف على الأقل مع أحرف كبيرة وصغيرة وأرقام';
+          } else if (errorMsgLower.includes('invalid') || 
+                     errorMsgLower.includes('incorrect')) {
+            errorMessage = 'كلمة المرور غير صحيحة';
+          } else {
+            // رسالة عامة مع تفاصيل الخطأ للمساعدة في التشخيص
+            errorMessage = `خطأ في كلمة المرور: ${authError.message}`;
+          }
         }
+        // معالجة أخطاء أخرى
+        else if (errorCode === 400 || errorCode === '400') {
+          errorMessage = authError.message || 'البيانات المدخلة غير صحيحة';
+        } else if (errorCode === 422 || errorCode === '422') {
+          // خطأ 422 يعني أن البيانات المرسلة غير صحيحة أو غير مقبولة
+          if (errorMsgLower.includes('password') || errorCode === 'weak_password') {
+            errorMessage = 'كلمة المرور لا تلبي المتطلبات. يجب أن تحتوي على 12 حرف على الأقل مع أحرف كبيرة وصغيرة وأرقام';
+          } else if (errorMsgLower.includes('email')) {
+            errorMessage = 'البريد الإلكتروني غير صحيح أو غير مقبول';
+          } else {
+            errorMessage = authError.message || 'البيانات المدخلة غير صحيحة. يرجى التحقق من جميع الحقول';
+          }
+        } else if (errorCode === 429 || errorCode === '429' || 
+                   errorMsgLower.includes('rate limit') || 
+                   errorMsgLower.includes('too many')) {
+          errorMessage = 'تم تجاوز عدد المحاولات المسموح. يرجى المحاولة لاحقاً';
+        } else {
+          // الاحتفاظ بالرسالة الأصلية إذا لم نتمكن من تحديد نوع الخطأ
+          errorMessage = authError.message || 'حدث خطأ أثناء إنشاء الحساب';
+        }
+        
         throw new Error(errorMessage);
       }
 
@@ -272,16 +342,45 @@ class AuthStore {
         throw new Error('فشل إنشاء الحساب. يرجى المحاولة مرة أخرى');
       }
 
-      // Trigger سينشئ السجل تلقائياً في جدول users باستخدام البيانات من metadata
-      // البيانات (username, national_id, phone, gender, country) موجودة في authData.user.user_metadata
-      // trigger سينشئ السجل تلقائياً عند إنشاء المستخدم في Auth
+      // Trigger handle_new_user() سينشئ السجل تلقائياً في جدول users باستخدام البيانات من metadata
+      // البيانات (username, national_id, phone, gender, country, account_type, organization_name, organization_type) 
+      // موجودة في authData.user.user_metadata وسيتم استخدامها تلقائياً من قبل trigger
       
-      // لا نحتاج لمحاولة إدراج أو تحديث البيانات هنا لأن:
-      // 1. trigger سينشئ السجل تلقائياً من metadata
-      // 2. RLS قد يمنع الإدراج/التحديث إذا لم تكن الجلسة نشطة
-      // 3. البيانات موجودة في metadata ويمكن تحديثها لاحقاً عند تسجيل الدخول
-      
-      console.log('User created successfully. Trigger will create user record in database.');
+      console.log('User created successfully in Auth. Trigger will create user record automatically:', {
+        userId: authData.user.id,
+        email: authData.user.email,
+        metadata: authData.user.user_metadata
+      });
+
+      // التحقق من أن Supabase أرسل بريد التحقق تلقائياً
+      console.log('User created successfully:', {
+        userId: authData.user.id,
+        email: authData.user.email,
+        emailConfirmed: authData.user.email_confirmed_at,
+        confirmationSent: authData.user.confirmation_sent_at
+      });
+
+      // إذا لم يتم إرسال بريد التحقق تلقائياً، حاول إرساله يدوياً
+      if (!authData.user.confirmation_sent_at && !authData.user.email_confirmed_at) {
+        console.log('Confirmation email not sent automatically, attempting manual send...');
+        try {
+          const { error: resendError } = await supabase.auth.resend({
+            type: 'signup',
+            email: cleanEmail,
+            options: {
+              emailRedirectTo: `${window.location.origin}/pages/verify-email.html`,
+            }
+          });
+          
+          if (resendError) {
+            console.error('Failed to resend confirmation email:', resendError);
+          } else {
+            console.log('Confirmation email sent manually');
+          }
+        } catch (resendErr) {
+          console.error('Error resending confirmation email:', resendErr);
+        }
+      }
 
       this.setState({ loading: false });
       return { success: true, data: authData };
@@ -752,11 +851,6 @@ class AuthStore {
       if (userData && userData.role) {
         // تحديث الحالة فقط إذا تغير role
         if (this.state.user?.role !== userData.role) {
-          console.log('User role updated:', {
-            old: this.state.user?.role,
-            new: userData.role
-          });
-          
           this.setState({
             user: userData,
             role: userData.role
@@ -785,11 +879,6 @@ class AuthStore {
     try {
       // إذا كان المستخدم محفوظ بالفعل مع role، أرجعه
       if (this.state.user && this.state.user.role) {
-        console.log('✅ Returning user from state:', {
-          id: this.state.user.id,
-          email: this.state.user.email,
-          role: this.state.user.role
-        });
         return this.state.user;
       }
 
@@ -802,11 +891,11 @@ class AuthStore {
       }
       
       if (!session) {
-        console.warn('⚠️ No session found');
+        // No session found
         return null;
       }
 
-      console.log('🔍 Fetching user data from database for user:', session.user.id);
+      // Fetching user data from database
 
       // الحصول على بيانات المستخدم من قاعدة البيانات
       const { data: userData, error: userError } = await supabase
@@ -826,7 +915,7 @@ class AuthStore {
           email_verified: session.user.email_confirmed_at !== null,
           ...session.user.user_metadata
         };
-        console.log('⚠️ Using fallback user data:', fallbackUser);
+        // Using fallback user data
         
         // تحديث state بالبيانات الاحتياطية
         this.setState({
@@ -839,22 +928,15 @@ class AuthStore {
 
       // التأكد من وجود role
       if (!userData.role) {
-        console.warn('⚠️ User role missing in database, checking metadata...');
         const metadataRole = session.user.user_metadata?.role;
         if (metadataRole) {
-          console.log('✅ Found role in metadata:', metadataRole);
           userData.role = metadataRole;
         } else {
-          console.warn('⚠️ No role found anywhere, defaulting to researcher');
           userData.role = 'researcher';
         }
       }
 
-      console.log('✅ User data fetched successfully:', {
-        id: userData.id,
-        email: userData.email,
-        role: userData.role
-      });
+      // User data fetched successfully
 
       // تحديث الحالة دائماً لضمان التزامن
       this.setState({

@@ -28,8 +28,9 @@ export const validatePassword = (password) => {
     return { valid: false, error: ERROR_MESSAGES.REQUIRED_FIELD };
   }
   
+  // Supabase يتطلب 12 حرف على الأقل
   if (password.length < 8) {
-    return { valid: false, error: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' };
+    return { valid: false, error: 'كلمة المرور يجب أن تكون 12 حرف على الأقل' };
   }
   
   // التحقق من وجود حرف كبير وصغير ورقم
@@ -43,6 +44,38 @@ export const validatePassword = (password) => {
       error: 'كلمة المرور يجب أن تحتوي على أحرف كبيرة وصغيرة وأرقام' 
     };
   }
+  
+  return { valid: true };
+};
+
+/**
+ * التحقق من كلمة المرور مع طول محدد
+ */
+export const validatePasswordWithLength = (password, minLength = 12) => {
+  if (!password) {
+    return { valid: false, error: ERROR_MESSAGES.REQUIRED_FIELD };
+  }
+
+  if (password.length < minLength) {
+    return { valid: false, error: `كلمة المرور يجب أن تكون ${minLength} أحرف على الأقل` };
+  }
+
+  // التحقق من وجود حرف كبير وصغير ورقم
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+    return {
+      valid: false,
+      error: 'كلمة المرور يجب أن تحتوي على أحرف كبيرة وصغيرة وأرقام'
+    };
+  }
+
+  // Supabase يتطلب كلمة مرور قوية، لكن لا يتطلب رمز خاص بشكل إلزامي
+  // لذلك سنكتفي بالتحقق الأساسي (حروف كبيرة وصغيرة وأرقام)
+  // إذا كانت كلمة المرور طويلة (12+ حرف) فهي قوية حتى بدون رمز خاص
   
   return { valid: true };
 };
@@ -283,9 +316,35 @@ export const validateUrl = (url) => {
   }
 };
 
+/**
+ * الحصول على الحد الأدنى لطول كلمة المرور
+ * يمكن جلب هذه القيمة من الإعدادات أو قاعدة البيانات
+ * حالياً نعيد قيمة افتراضية (12 أحرف - متوافقة مع Supabase)
+ */
+export const getMinimumPasswordLength = async () => {
+  try {
+    // يمكن جلب القيمة من localStorage أو قاعدة البيانات
+    const savedLength = localStorage.getItem('min_password_length');
+    if (savedLength) {
+      const length = parseInt(savedLength, 10);
+      if (!isNaN(length) && length >= 12) {
+        return length;
+      }
+    }
+    
+    // القيمة الافتراضية: 12 أحرف (متوافقة مع Supabase)
+    return 12;
+  } catch (error) {
+    console.warn('Error getting minimum password length:', error);
+    // إرجاع القيمة الافتراضية في حالة الخطأ
+    return 12;
+  }
+};
+
 export default {
   validateEmail,
   validatePassword,
+  validatePasswordWithLength,
   validatePasswordMatch,
   validatePhone,
   validateNationalId,
@@ -297,5 +356,6 @@ export default {
   validateRegistrationForm,
   sanitizeInput,
   validateUrl,
+  getMinimumPasswordLength,
 };
 

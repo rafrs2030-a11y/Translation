@@ -780,6 +780,9 @@
 .account-type-selection {
     margin-bottom: var(--spacing-2xl);
     text-align: center;
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
 }
 
 .account-type-title {
@@ -796,6 +799,9 @@
     justify-content: center;
     align-items: center;
     flex-wrap: nowrap;
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
 }
 
 .account-type-option {
@@ -814,6 +820,10 @@
     gap: var(--spacing-md);
     user-select: none;
     box-shadow: var(--shadow-sm);
+    pointer-events: auto;
+    position: relative;
+    z-index: 1;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .account-type-option:hover {
