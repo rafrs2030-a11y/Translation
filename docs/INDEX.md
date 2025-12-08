@@ -140,6 +140,7 @@
 
 ## 🚀 خارطة الطريق
 - **[DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md)** ⭐ - خارطة طريق التطوير الشاملة
+- **[MCP_SUPABASE_VERIFICATION.md](./MCP_SUPABASE_VERIFICATION.md)** ⭐ - التحقق من التعديلات عبر MCP Supabase
 
 ---
 

@@ -406,25 +406,69 @@ async function handleRegularLogin(email, password) {
             // Wait for authStore to finish updating (setSession completes)
             await authStore.waitForInitialization();
             
-            // Get user data - try from state first, then from getCurrentUser
-            let user = authStore.getState().user;
+            // إعطاء وقت إضافي لضمان تحديث البيانات
+            await new Promise(resolve => setTimeout(resolve, 300));
             
-            if (!user) {
-                // If not in state yet, try getCurrentUser
+            // Get user data - try multiple times with different methods
+            let user = null;
+            let userRole = null;
+            
+            // المحاولة الأولى: من state
+            user = authStore.getState().user;
+            if (user && user.role) {
+                userRole = user.role;
+                console.log('✅ Got role from state:', userRole);
+            }
+            
+            // المحاولة الثانية: من getCurrentUser
+            if (!userRole) {
+                console.log('⚠️ Role not in state, trying getCurrentUser...');
                 user = await authStore.getCurrentUser();
+                if (user && user.role) {
+                    userRole = user.role;
+                    console.log('✅ Got role from getCurrentUser:', userRole);
+                }
             }
             
-            // If still no user, wait a bit more and try again
-            if (!user) {
+            // المحاولة الثالثة: انتظار وإعادة المحاولة
+            if (!userRole) {
+                console.warn('⚠️ Role still not found, waiting and retrying...');
                 await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // تحديث البيانات يدوياً
+                const currentState = authStore.getState();
+                if (currentState.session) {
+                    await authStore.setSession(currentState.session);
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+                
                 user = authStore.getState().user || await authStore.getCurrentUser();
+                userRole = user?.role;
+                
+                if (userRole) {
+                    console.log('✅ Got role after retry:', userRole);
+                } else {
+                    console.error('❌ Failed to get role, defaulting to researcher');
+                    userRole = 'researcher';
+                }
             }
-            
-            // Redirect based on role (default to researcher if role not found)
+
+            // Log final role for debugging
+            console.log('🔍 Final user data:', {
+                id: user?.id,
+                email: user?.email,
+                role: userRole,
+                userObject: user
+            });
+
+            // Redirect based on role
             setTimeout(() => {
-                if (user?.role === 'admin') {
+                console.log('🚀 Redirecting user with role:', userRole);
+                if (userRole === 'admin' || userRole === 'super_admin') {
+                    console.log('✅ Redirecting to admin dashboard');
                     window.location.href = '/pages/admin/dashboard.html';
                 } else {
+                    console.log('✅ Redirecting to researcher dashboard');
                     window.location.href = '/pages/researcher/dashboard.html';
                 }
             }, 1000);
@@ -641,9 +685,21 @@ async function handleOTPVerification(e) {
                 user = authStore.getState().user || await authStore.getCurrentUser();
             }
             
+            // التأكد من جلب role بشكل صحيح قبل إعادة التوجيه
+            let userRole = user?.role;
+            
+            // إذا لم يكن role موجوداً، انتظر قليلاً ثم أعد المحاولة
+            if (!userRole) {
+                console.warn('User role not found in 2FA, waiting and retrying...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                const retryUser = await authStore.getCurrentUser();
+                userRole = retryUser?.role || 'researcher';
+            }
+
             // Redirect based on role
             setTimeout(() => {
-                if (user?.role === 'admin') {
+                console.log('Redirecting user with role:', userRole);
+                if (userRole === 'admin' || userRole === 'super_admin') {
                     window.location.href = '/pages/admin/dashboard.html';
                 } else {
                     window.location.href = '/pages/researcher/dashboard.html';

@@ -91,10 +91,35 @@ export async function requireAdmin() {
     }
 
     // التحقق من أن المستخدم admin أو super_admin
-    if (user.role !== 'admin' && user.role !== 'super_admin') {
-      console.log(`User role mismatch. Required: admin or super_admin, Got: ${user.role}`);
+    // التأكد من أن role موجود وصحيح
+    const userRole = user.role || user.user_metadata?.role;
+    
+    if (!userRole) {
+      console.error('User role is missing!', user);
+      // محاولة إعادة جلب البيانات
+      const refreshedUser = await authStore.getCurrentUser();
+      if (refreshedUser && (refreshedUser.role === 'admin' || refreshedUser.role === 'super_admin')) {
+        return refreshedUser;
+      }
       window.location.href = '/pages/login.html';
       return null;
+    }
+
+    if (userRole !== 'admin' && userRole !== 'super_admin') {
+      console.log(`User role mismatch. Required: admin or super_admin, Got: ${userRole}`);
+      // إعادة التوجيه حسب الدور الفعلي
+      if (userRole === 'researcher') {
+        window.location.href = '/pages/researcher/dashboard.html';
+      } else {
+        window.location.href = '/pages/login.html';
+      }
+      return null;
+    }
+
+    // تحديث role في حالة عدم التطابق
+    if (user.role !== userRole) {
+      user.role = userRole;
+      authStore.setState({ user, role: userRole });
     }
 
     return user;

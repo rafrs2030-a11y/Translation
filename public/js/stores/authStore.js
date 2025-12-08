@@ -49,20 +49,72 @@ class AuthStore {
    */
   async setSession(session) {
     if (session) {
-      const { data: userData, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
+      let userData = null;
+      let fetchError = null;
 
-      if (error) {
-        console.error('Error fetching user data in setSession:', error);
-        // Even if user data fetch fails, we still have a valid session
-        // Use basic user info from session.user as fallback
+      // محاولة جلب بيانات المستخدم من جدول users
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          console.warn('Error fetching user data from users table:', error);
+          fetchError = error;
+        } else {
+          userData = data;
+        }
+      } catch (err) {
+        console.warn('Exception fetching user data:', err);
+        fetchError = err;
+      }
+
+      // إذا فشل جلب البيانات من جدول users، استخدم البيانات من auth.users
+      if (!userData || fetchError) {
+        console.log('Using fallback user data from auth session');
+        
+        // محاولة جلب role من auth.users مباشرة
+        let role = 'researcher';
+        try {
+          const { data: authUser, error: authError } = await supabase.auth.getUser();
+          if (!authError && authUser?.user) {
+            // التحقق من user_metadata أولاً
+            role = authUser.user.user_metadata?.role || 'researcher';
+            
+            // إذا لم يكن موجوداً في metadata، حاول جلب من جدول users بطريقة مختلفة
+            if (role === 'researcher') {
+              try {
+                const { data: roleData } = await supabase
+                  .rpc('get_user_role', { user_id: session.user.id })
+                  .single();
+                if (roleData) role = roleData;
+              } catch (rpcError) {
+                // إذا فشل RPC، جرب SELECT مباشرة مع auth.uid()
+                try {
+                  const { data: directRole } = await supabase
+                    .from('users')
+                    .select('role')
+                    .eq('id', session.user.id)
+                    .maybeSingle();
+                  if (directRole?.role) role = directRole.role;
+                } catch (directError) {
+                  console.warn('Could not fetch role directly:', directError);
+                }
+              }
+            }
+          }
+        } catch (getUserError) {
+          console.warn('Error getting user from auth:', getUserError);
+        }
+
         const fallbackUser = {
           id: session.user.id,
           email: session.user.email,
-          role: session.user.user_metadata?.role || 'researcher',
+          username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'مستخدم',
+          role: role,
+          email_verified: session.user.email_confirmed_at !== null,
           ...session.user.user_metadata
         };
         
@@ -70,11 +122,33 @@ class AuthStore {
           user: fallbackUser,
           session,
           isAuthenticated: true,
-          role: fallbackUser.role,
+          role: role,
           loading: false,
-          error: null, // Don't set error here, session is valid
+          error: null,
         });
+        
+        // محاولة تحديث البيانات لاحقاً في الخلفية
+        setTimeout(() => {
+          this.refreshUserData(session.user.id).catch(err => 
+            console.warn('Background user data refresh failed:', err)
+          );
+        }, 1000);
+        
         return;
+      }
+
+      // التأكد من أن role موجود وصحيح
+      if (!userData.role) {
+        console.warn('⚠️ User role is missing in database, checking auth metadata...');
+        // محاولة جلب role من user_metadata كبديل
+        const authRole = session.user.user_metadata?.role;
+        if (authRole) {
+          console.log('✅ Found role in user_metadata:', authRole);
+          userData.role = authRole;
+        } else {
+          console.warn('⚠️ No role found, defaulting to researcher');
+          userData.role = 'researcher';
+        }
       }
 
       // مزامنة حالة التحقق من البريد الإلكتروني
@@ -96,14 +170,27 @@ class AuthStore {
         }
       }
 
+      // تسجيل معلومات المستخدم للتشخيص
+      console.log('✅ User session set successfully:', {
+        id: userData.id,
+        email: userData.email,
+        role: userData.role,
+        username: userData.username,
+        email_verified: userData.email_verified
+      });
+
+      // تحديث الحالة مع التأكد من role
       this.setState({
         user: userData,
         session,
         isAuthenticated: true,
-        role: userData.role,
+        role: userData.role, // التأكد من تحديث role في state
         loading: false,
         error: null,
       });
+      
+      // التأكد من أن role محدث في state
+      console.log('✅ State updated with role:', this.state.role);
     } else {
       this.setState({
         user: null,
@@ -647,23 +734,79 @@ class AuthStore {
   }
 
   /**
+   * تحديث بيانات المستخدم من قاعدة البيانات
+   */
+  async refreshUserData(userId) {
+    try {
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.warn('Error refreshing user data:', error);
+        return null;
+      }
+
+      if (userData && userData.role) {
+        // تحديث الحالة فقط إذا تغير role
+        if (this.state.user?.role !== userData.role) {
+          console.log('User role updated:', {
+            old: this.state.user?.role,
+            new: userData.role
+          });
+          
+          this.setState({
+            user: userData,
+            role: userData.role
+          });
+        } else {
+          // تحديث بيانات المستخدم الأخرى
+          this.setState({
+            user: userData
+          });
+        }
+        
+        return userData;
+      }
+
+      return null;
+    } catch (error) {
+      console.warn('Exception refreshing user data:', error);
+      return null;
+    }
+  }
+
+  /**
    * الحصول على المستخدم الحالي
    */
   async getCurrentUser() {
     try {
-      // إذا كان المستخدم محفوظ بالفعل، أرجعه
-      if (this.state.user) {
+      // إذا كان المستخدم محفوظ بالفعل مع role، أرجعه
+      if (this.state.user && this.state.user.role) {
+        console.log('✅ Returning user from state:', {
+          id: this.state.user.id,
+          email: this.state.user.email,
+          role: this.state.user.role
+        });
         return this.state.user;
       }
 
       // الحصول على الجلسة الحالية
       const { data: { session }, error } = await supabase.auth.getSession();
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error getting session:', error);
+        throw error;
+      }
       
       if (!session) {
+        console.warn('⚠️ No session found');
         return null;
       }
+
+      console.log('🔍 Fetching user data from database for user:', session.user.id);
 
       // الحصول على بيانات المستخدم من قاعدة البيانات
       const { data: userData, error: userError } = await supabase
@@ -673,13 +816,57 @@ class AuthStore {
         .single();
 
       if (userError) {
-        console.error('Error fetching user data:', userError);
-        return session.user; // إرجاع بيانات المستخدم الأساسية من auth
+        console.error('❌ Error fetching user data from database:', userError);
+        // محاولة استخدام البيانات من session
+        const fallbackRole = session.user.user_metadata?.role || 'researcher';
+        const fallbackUser = {
+          id: session.user.id,
+          email: session.user.email,
+          role: fallbackRole,
+          email_verified: session.user.email_confirmed_at !== null,
+          ...session.user.user_metadata
+        };
+        console.log('⚠️ Using fallback user data:', fallbackUser);
+        
+        // تحديث state بالبيانات الاحتياطية
+        this.setState({
+          user: fallbackUser,
+          role: fallbackRole
+        });
+        
+        return fallbackUser;
       }
+
+      // التأكد من وجود role
+      if (!userData.role) {
+        console.warn('⚠️ User role missing in database, checking metadata...');
+        const metadataRole = session.user.user_metadata?.role;
+        if (metadataRole) {
+          console.log('✅ Found role in metadata:', metadataRole);
+          userData.role = metadataRole;
+        } else {
+          console.warn('⚠️ No role found anywhere, defaulting to researcher');
+          userData.role = 'researcher';
+        }
+      }
+
+      console.log('✅ User data fetched successfully:', {
+        id: userData.id,
+        email: userData.email,
+        role: userData.role
+      });
+
+      // تحديث الحالة دائماً لضمان التزامن
+      this.setState({
+        user: userData,
+        role: userData.role,
+        isAuthenticated: true,
+        session: session
+      });
 
       return userData;
     } catch (error) {
-      console.error('Error getting current user:', error);
+      console.error('❌ Error getting current user:', error);
       return null;
     }
   }

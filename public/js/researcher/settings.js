@@ -6,6 +6,7 @@
 import authStore from '../stores/authStore.js';
 import notificationsStore from '../stores/notificationsStore.js';
 import { supabase } from '../config/supabase.js';
+import { requireResearcher } from '../utils/auth-guard.js';
 
 // DOM Elements
 let alertContainer;
@@ -30,9 +31,16 @@ let settings = {
 };
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // التحقق من المصادقة أولاً
+    const user = await requireResearcher();
+    if (!user) {
+        // سيتم إعادة التوجيه تلقائياً من requireResearcher
+        return;
+    }
+    
     initElements();
-    loadSettings();
+    await loadSettings();
     initEventListeners();
 });
 
@@ -42,6 +50,13 @@ document.addEventListener('DOMContentLoaded', () => {
 function initElements() {
     alertContainer = document.getElementById('alert-container');
     saveButton = document.getElementById('save-settings-btn');
+    
+    if (!alertContainer) {
+        console.error('Alert container not found');
+    }
+    if (!saveButton) {
+        console.error('Save button not found');
+    }
 }
 
 /**
@@ -69,14 +84,21 @@ function initEventListeners() {
  */
 async function loadSettings() {
     try {
-        const user = authStore.getState().user;
+        // انتظار تهيئة authStore
+        await authStore.waitForInitialization();
+        
+        // الحصول على المستخدم الحالي
+        const user = await authStore.getCurrentUser();
         if (!user) {
+            console.error('User not found, redirecting to login...');
             showAlert('يجب تسجيل الدخول أولاً', 'error');
             setTimeout(() => {
                 window.location.href = '/pages/login.html';
             }, 2000);
             return;
         }
+        
+        console.log('✅ Loading settings for user:', user.id);
 
         // Load notification preferences
         await loadNotificationPreferences();
@@ -140,6 +162,17 @@ async function loadNotificationPreferences() {
  */
 async function handleSaveSettings() {
     try {
+        // التحقق من وجود المستخدم قبل الحفظ
+        await authStore.waitForInitialization();
+        const user = await authStore.getCurrentUser();
+        if (!user) {
+            showAlert('يجب تسجيل الدخول أولاً', 'error');
+            setTimeout(() => {
+                window.location.href = '/pages/login.html';
+            }, 2000);
+            return;
+        }
+        
         // Collect current settings from UI
         settings.notifications = {
             email_enabled: document.getElementById('email-enabled').checked,
@@ -190,8 +223,13 @@ async function handleSaveSettings() {
  */
 async function saveNotificationPreferences() {
     try {
-        const user = authStore.getState().user;
-        if (!user) return;
+        // التأكد من وجود المستخدم
+        await authStore.waitForInitialization();
+        const user = await authStore.getCurrentUser();
+        if (!user) {
+            console.error('User not found, cannot save preferences');
+            return;
+        }
 
         const { data, error } = await supabase
             .from('notification_preferences')
