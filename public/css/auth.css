@@ -206,6 +206,24 @@
     color: var(--error-color);
 }
 
+.strength-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: all var(--transition-base);
+}
+
+.strength-fill.weak {
+    background-color: var(--error-color);
+}
+
+.strength-fill.medium {
+    background-color: var(--warning-color);
+}
+
+.strength-fill.strong {
+    background-color: var(--success-color);
+}
+
 .strength-text.medium {
     color: var(--warning-color);
 }
@@ -268,6 +286,33 @@
 
 .auth-back a:hover {
     color: var(--primary-color);
+}
+
+/* Error Box */
+.error-box {
+    text-align: center;
+    padding: var(--spacing-xl);
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 2px solid var(--error-color);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.error-box i {
+    font-size: 3rem;
+    color: var(--error-color);
+    margin-bottom: var(--spacing-md);
+}
+
+.error-box h3 {
+    color: var(--error-color);
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-sm);
+}
+
+.error-box p {
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
 }
 
 /* Success Box */
