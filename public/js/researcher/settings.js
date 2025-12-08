@@ -98,8 +98,6 @@ async function loadSettings() {
             return;
         }
         
-        console.log('✅ Loading settings for user:', user.id);
-
         // Load notification preferences
         await loadNotificationPreferences();
 
@@ -264,10 +262,6 @@ function applyLanguage(language) {
     // Store language preference
     document.documentElement.lang = language;
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
-    
-    // Note: Full i18n implementation would require a translation system
-    // For now, we just store the preference
-    console.log('Language preference saved:', language);
 }
 
 /**
