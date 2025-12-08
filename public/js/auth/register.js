@@ -3,7 +3,7 @@
  */
 
 import authStore from '../stores/authStore.js';
-import supabase from '../config/supabase.js';
+import { supabase } from '../config/supabase.js';
 import { validateEmail, validatePassword, validatePasswordWithLength, validatePhone, validateNationalId, getMinimumPasswordLength } from '../utils/validators.js';
 import { guestOnly } from '../utils/auth-guard.js';
 
