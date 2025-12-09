@@ -22,9 +22,13 @@ class NotificationsStore {
       loading: false,
       error: null,
       realtimeSubscription: null,
+      reconnectAttempts: 0,
+      maxReconnectAttempts: 5,
+      reconnectDelay: 3000, // 3 seconds
     };
 
     this.listeners = [];
+    this.reconnectTimeout = null;
   }
 
   /**
@@ -54,8 +58,17 @@ class NotificationsStore {
         if (this.state.realtimeSubscription) {
           const status = this.state.realtimeSubscription.state;
           console.log('Notifications subscription state:', status);
+          
+          // If subscription is closed, try to reconnect
+          if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            console.warn('⚠️ Subscription is not active, attempting reconnect...');
+            this.handleReconnect();
+          }
         }
       }, 2000);
+
+      // إضافة مستمع لتغييرات حالة الصفحة (visibility change)
+      this.setupVisibilityListener();
 
     } catch (error) {
       console.error('Error initializing notifications:', error);
@@ -106,20 +119,27 @@ class NotificationsStore {
         console.log('📬 Notification updated via Realtime:', payload);
         this.handleNotificationUpdate(payload.new);
       })
-      .subscribe((status) => {
-        console.log('📡 Notifications subscription status:', status);
+      .subscribe((status, err) => {
+        console.log('📡 Notifications subscription status:', status, err);
+        
         if (status === 'SUBSCRIBED') {
           console.log('✅ Successfully subscribed to notifications Realtime');
+          // Reset reconnect attempts on successful subscription
+          this.setState({ reconnectAttempts: 0 });
+          // Clear any pending reconnect timeout
+          if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+            this.reconnectTimeout = null;
+          }
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Error subscribing to notifications Realtime');
+          console.error('❌ Error subscribing to notifications Realtime:', err);
+          this.handleReconnect();
         } else if (status === 'TIMED_OUT') {
           console.warn('⏱️ Notifications subscription timed out, retrying...');
-          // إعادة المحاولة بعد ثانية
-          setTimeout(() => {
-            this.subscribeToRealtime();
-          }, 1000);
+          this.handleReconnect();
         } else if (status === 'CLOSED') {
-          console.warn('🔌 Notifications subscription closed');
+          console.warn('🔌 Notifications subscription closed, attempting to reconnect...');
+          this.handleReconnect();
         }
       });
 
@@ -140,12 +160,89 @@ class NotificationsStore {
   }
 
   /**
+   * إعداد مستمع لتغييرات حالة الصفحة
+   */
+  setupVisibilityListener() {
+    // إزالة المستمع السابق إن وُجد
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+    }
+
+    // إضافة مستمع جديد
+    this.visibilityHandler = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('👁️ Page became visible, checking notification subscription...');
+        
+        // التحقق من حالة الاشتراك بعد ثانية من ظهور الصفحة
+        setTimeout(() => {
+          if (this.state.realtimeSubscription) {
+            const status = this.state.realtimeSubscription.state;
+            console.log('📡 Current subscription status:', status);
+            
+            // إذا كان الاشتراك مغلقاً، إعادة الاتصال
+            if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+              console.warn('⚠️ Subscription is closed, reconnecting...');
+              this.handleReconnect();
+            }
+          } else {
+            // إذا لم يكن هناك اشتراك، إنشاء واحد جديد
+            console.warn('⚠️ No subscription found, initializing...');
+            this.subscribeToRealtime();
+          }
+        }, 1000);
+      }
+    };
+
+    document.addEventListener('visibilitychange', this.visibilityHandler);
+  }
+
+  /**
+   * معالجة إعادة الاتصال
+   */
+  handleReconnect() {
+    // Clear any existing reconnect timeout
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
+    const { reconnectAttempts, maxReconnectAttempts, reconnectDelay } = this.state;
+    
+    if (reconnectAttempts >= maxReconnectAttempts) {
+      console.error(`❌ Max reconnect attempts (${maxReconnectAttempts}) reached. Stopping reconnection.`);
+      this.setState({ error: 'فشل الاتصال بالإشعارات الفورية. يرجى تحديث الصفحة.' });
+      return;
+    }
+
+    const nextAttempt = reconnectAttempts + 1;
+    const delay = reconnectDelay * Math.pow(2, reconnectAttempts); // Exponential backoff
+    
+    console.log(`🔄 Scheduling reconnect attempt ${nextAttempt}/${maxReconnectAttempts} in ${delay}ms...`);
+    
+    this.setState({ reconnectAttempts: nextAttempt });
+    
+    this.reconnectTimeout = setTimeout(() => {
+      console.log(`🔄 Reconnecting to notifications (attempt ${nextAttempt})...`);
+      this.subscribeToRealtime();
+    }, delay);
+  }
+
+  /**
    * إلغاء الاشتراك في الإشعارات الفورية
    */
   unsubscribeFromRealtime() {
+    // Clear any pending reconnect timeout
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
     if (this.state.realtimeSubscription) {
       this.state.realtimeSubscription.unsubscribe();
-      this.setState({ realtimeSubscription: null });
+      this.setState({ 
+        realtimeSubscription: null,
+        reconnectAttempts: 0 
+      });
     }
   }
 
@@ -674,6 +771,12 @@ class NotificationsStore {
   cleanup() {
     this.unsubscribeFromRealtime();
     
+    // إزالة مستمع visibility
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
+    
     // مسح الكاش المحلي
     this.clearCache();
     
@@ -682,6 +785,7 @@ class NotificationsStore {
       unreadCount: 0,
       loading: false,
       error: null,
+      reconnectAttempts: 0,
     });
   }
 
