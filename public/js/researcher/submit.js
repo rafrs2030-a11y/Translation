@@ -559,11 +559,20 @@ function validateCurrentStep() {
 function saveFormData() {
     const inputs = form.querySelectorAll('input, select, textarea');
     const submitterTypeSelect = document.getElementById('submitter_type');
-    const submitterType = submitterTypeSelect?.value || formData.submitter_type || 'أفراد';
     
-    // Always save submitter_type
-    if (submitterTypeSelect && submitterTypeSelect.value) {
-        formData.submitter_type = submitterTypeSelect.value;
+    // Always save submitter_type with validation
+    let submitterType = submitterTypeSelect?.value || formData.submitter_type || 'أفراد';
+    
+    // Validate submitter_type - ensure it's always a valid value
+    if (!submitterType || submitterType.trim() === '' || 
+        (submitterType !== 'أفراد' && submitterType !== 'أعمال')) {
+        submitterType = 'أفراد'; // Default to 'أفراد' if invalid
+    }
+    
+    // Always save submitter_type (even if we had to set a default)
+    formData.submitter_type = submitterType;
+    if (submitterTypeSelect) {
+        submitterTypeSelect.value = submitterType;
     }
     
     inputs.forEach(input => {
@@ -849,7 +858,25 @@ async function handleSubmit(e) {
         
         // Ensure submitter_type is saved before creating submission data
         saveFormData();
-        const finalSubmitterType = formData.submitter_type || submitterType;
+        
+        // Get submitter_type from form element or formData, with proper validation
+        const submitterTypeSelect = document.getElementById('submitter_type');
+        let finalSubmitterType = submitterTypeSelect?.value || formData.submitter_type || submitterType;
+        
+        // Validate and ensure submitter_type is always set to a valid value
+        if (!finalSubmitterType || finalSubmitterType.trim() === '' || 
+            (finalSubmitterType !== 'أفراد' && finalSubmitterType !== 'أعمال')) {
+            // Default to 'أفراد' if invalid or empty
+            finalSubmitterType = 'أفراد';
+            console.warn('submitter_type was invalid or empty, defaulting to "أفراد"');
+        }
+        
+        // Ensure it's set in formData and the DOM element
+        formData.submitter_type = finalSubmitterType;
+        if (submitterTypeSelect) {
+            submitterTypeSelect.value = finalSubmitterType;
+        }
+        
         const finalIsIndividual = finalSubmitterType === 'أفراد';
         
         const submissionData = {
@@ -1026,6 +1053,12 @@ function loadDraftIfExists() {
                 formData = draft.formData;
                 currentStep = draft.currentStep || 1;
                 
+                // Validate and fix submitter_type if needed
+                if (!formData.submitter_type || formData.submitter_type.trim() === '' ||
+                    (formData.submitter_type !== 'أفراد' && formData.submitter_type !== 'أعمال')) {
+                    formData.submitter_type = 'أفراد'; // Default to 'أفراد' if invalid
+                }
+                
                 // Fill form fields
                 Object.keys(formData).forEach(key => {
                     const input = form.querySelector(`[name="${key}"]`);
@@ -1037,6 +1070,12 @@ function loadDraftIfExists() {
                         }
                     }
                 });
+                
+                // Ensure submitter_type is set in the DOM element
+                const submitterTypeSelect = document.getElementById('submitter_type');
+                if (submitterTypeSelect) {
+                    submitterTypeSelect.value = formData.submitter_type;
+                }
                 
                 // Handle category change after loading draft
                 // Use setTimeout to ensure DOM is ready
