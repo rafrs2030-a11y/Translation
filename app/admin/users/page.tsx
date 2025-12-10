@@ -22,6 +22,7 @@ interface User {
 export default function AdminUsersPage() {
   const { isAuthenticated, loading: authLoading, role } = useAuth();
   const router = useRouter();
+  const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
