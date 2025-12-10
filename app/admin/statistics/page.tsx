@@ -29,13 +29,13 @@ export default function AdminStatisticsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || role !== 'admin')) {
+    if (!authLoading && (!isAuthenticated || (role !== 'admin' && role !== 'super_admin'))) {
       router.push('/login');
     }
   }, [isAuthenticated, authLoading, role, router]);
 
   useEffect(() => {
-    if (isAuthenticated && role === 'admin') {
+    if (isAuthenticated && (role === 'admin' || role === 'super_admin')) {
       fetchStatistics();
     }
   }, [isAuthenticated, role]);
@@ -149,7 +149,7 @@ export default function AdminStatisticsPage() {
     );
   }
 
-  if (!isAuthenticated || role !== 'admin') {
+  if (!isAuthenticated || (role !== 'admin' && role !== 'super_admin')) {
     return null;
   }
 

@@ -14,7 +14,7 @@ interface UserData {
   id: string;
   email: string;
   username: string;
-  role: 'researcher' | 'admin';
+  role: 'researcher' | 'admin' | 'super_admin';
   email_verified: boolean;
   [key: string]: any;
 }
@@ -25,7 +25,7 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  role: 'researcher' | 'admin' | null;
+  role: 'researcher' | 'admin' | 'super_admin' | null;
 }
 
 interface AuthContextType extends AuthState {
@@ -76,11 +76,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // إذا فشل جلب البيانات من جدول users، استخدم البيانات من auth.users
       if (!userData || fetchError) {
-        let role: 'researcher' | 'admin' = 'researcher';
+        let role: 'researcher' | 'admin' | 'super_admin' = 'researcher';
         try {
           const { data: authUser, error: authError } = await supabase.auth.getUser();
           if (!authError && authUser?.user) {
-            role = (authUser.user.user_metadata?.role || 'researcher') as 'researcher' | 'admin';
+            role = (authUser.user.user_metadata?.role || 'researcher') as 'researcher' | 'admin' | 'super_admin';
           }
         } catch (getUserError) {
           console.warn('Error getting user from auth:', getUserError);
@@ -118,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!userData.role) {
         const authRole = session.user.user_metadata?.role;
         if (authRole) {
-          userData.role = authRole as 'researcher' | 'admin';
+          userData.role = authRole as 'researcher' | 'admin' | 'super_admin';
         } else {
           userData.role = 'researcher';
         }

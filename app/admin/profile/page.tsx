@@ -26,7 +26,7 @@ export default function AdminProfilePage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || role !== 'admin')) {
+    if (!authLoading && (!isAuthenticated || (role !== 'admin' && role !== 'super_admin'))) {
       router.push('/login');
     }
   }, [isAuthenticated, authLoading, role, router]);
@@ -123,7 +123,7 @@ export default function AdminProfilePage() {
     );
   }
 
-  if (!isAuthenticated || role !== 'admin') {
+  if (!isAuthenticated || (role !== 'admin' && role !== 'super_admin')) {
     return null;
   }
 

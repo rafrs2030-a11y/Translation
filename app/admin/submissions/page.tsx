@@ -37,13 +37,13 @@ export default function AdminSubmissionsPage() {
   const pageSize = 10;
 
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || role !== 'admin')) {
+    if (!authLoading && (!isAuthenticated || (role !== 'admin' && role !== 'super_admin'))) {
       router.push('/login');
     }
   }, [isAuthenticated, authLoading, role, router]);
 
   useEffect(() => {
-    if (isAuthenticated && role === 'admin') {
+    if (isAuthenticated && (role === 'admin' || role === 'super_admin')) {
       fetchSubmissions();
     }
   }, [isAuthenticated, role, statusFilter, page, searchTerm]);
@@ -126,7 +126,7 @@ export default function AdminSubmissionsPage() {
     );
   }
 
-  if (!isAuthenticated || role !== 'admin') {
+  if (!isAuthenticated || (role !== 'admin' && role !== 'super_admin')) {
     return null;
   }
 

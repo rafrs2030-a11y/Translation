@@ -44,13 +44,13 @@ export default function AdminSubmissionDetailsPage() {
   const { showToast } = useToast();
 
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || role !== 'admin')) {
+    if (!authLoading && (!isAuthenticated || (role !== 'admin' && role !== 'super_admin'))) {
       router.push('/login');
     }
   }, [isAuthenticated, authLoading, role, router]);
 
   useEffect(() => {
-    if (params.id && isAuthenticated && role === 'admin') {
+    if (params.id && isAuthenticated && (role === 'admin' || role === 'super_admin')) {
       fetchSubmission();
     }
   }, [params.id, isAuthenticated, role]);
@@ -164,7 +164,7 @@ export default function AdminSubmissionDetailsPage() {
     );
   }
 
-  if (!isAuthenticated || role !== 'admin' || !submission) {
+  if (!isAuthenticated || (role !== 'admin' && role !== 'super_admin') || !submission) {
     return null;
   }
 

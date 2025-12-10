@@ -15,7 +15,7 @@ export default function LoginPage() {
   // Redirect to dashboard if already logged in
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      if (role === 'admin') {
+        if (role === 'admin' || role === 'super_admin') {
         router.push('/admin/dashboard');
       } else {
         router.push('/researcher/dashboard');

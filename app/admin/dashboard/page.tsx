@@ -18,13 +18,13 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || role !== 'admin')) {
+    if (!authLoading && (!isAuthenticated || (role !== 'admin' && role !== 'super_admin'))) {
       router.push('/login');
     }
   }, [isAuthenticated, authLoading, role, router]);
 
   useEffect(() => {
-    if (isAuthenticated && role === 'admin') {
+    if (isAuthenticated && (role === 'admin' || role === 'super_admin')) {
       loadStats();
     }
   }, [isAuthenticated, role]);
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!isAuthenticated || role !== 'admin') {
+  if (!isAuthenticated || (role !== 'admin' && role !== 'super_admin')) {
     return null;
   }
 

@@ -34,13 +34,13 @@ export default function AdminVerificationRequestsPage() {
   const pageSize = 10;
 
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || role !== 'admin')) {
+    if (!authLoading && (!isAuthenticated || (role !== 'admin' && role !== 'super_admin'))) {
       router.push('/login');
     }
   }, [isAuthenticated, authLoading, role, router]);
 
   useEffect(() => {
-    if (isAuthenticated && role === 'admin') {
+    if (isAuthenticated && (role === 'admin' || role === 'super_admin')) {
       fetchVerificationRequests();
     }
   }, [isAuthenticated, role, statusFilter, page, searchTerm]);
@@ -183,7 +183,7 @@ export default function AdminVerificationRequestsPage() {
     );
   }
 
-  if (!isAuthenticated || role !== 'admin') {
+  if (!isAuthenticated || (role !== 'admin' && role !== 'super_admin')) {
     return null;
   }
 
