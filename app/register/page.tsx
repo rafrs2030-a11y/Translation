@@ -111,8 +111,21 @@ export default function RegisterPage() {
     }
   };
 
-  // Show loading if checking authentication
-  if (loading && !isAuthenticated) {
+  // Show loading only during initial auth check (first render)
+  const [initialLoading, setInitialLoading] = useState(true);
+  
+  useEffect(() => {
+    // After initial check, stop showing loading overlay
+    if (!loading) {
+      const timer = setTimeout(() => {
+        setInitialLoading(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+  // Show loading if checking authentication (only during initial load)
+  if (initialLoading && loading && !isAuthenticated) {
     return (
       <div className="auth-page">
         <div className="auth-container">
@@ -128,7 +141,7 @@ export default function RegisterPage() {
   }
 
   // Don't render form if already authenticated (redirect will happen)
-  if (isAuthenticated) {
+  if (isAuthenticated && role) {
     return null;
   }
 

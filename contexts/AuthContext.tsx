@@ -160,8 +160,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase, setSession]);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    // Set a timeout to ensure loading doesn't hang forever
+    timeoutId = setTimeout(() => {
+      setState(prev => {
+        if (prev.loading) {
+          return { ...prev, loading: false };
+        }
+        return prev;
+      });
+    }, 5000); // 5 seconds timeout
+
     // الحصول على الجلسة الحالية
     supabase.auth.getSession().then((response: any) => {
+      clearTimeout(timeoutId);
       const { data, error } = response;
       if (error) {
         // Don't show error if it's just missing config
@@ -178,9 +191,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setState(prev => ({ ...prev, loading: false }));
       }
     }).catch((err: any) => {
+      clearTimeout(timeoutId);
       console.warn('Exception getting session:', err);
       setState(prev => ({ ...prev, loading: false }));
     });
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
 
     // الاستماع لتغييرات المصادقة
     try {
