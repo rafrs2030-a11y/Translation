@@ -1,8 +1,14 @@
 [build]
-  publish = "public"
-  functions = "netlify/functions"
-  # No build step required for static site
-  command = "echo 'No build step required - static site'"
+  # Next.js build configuration
+  command = "npm run build"
+  publish = ".next"
+  
+[build.environment]
+  NODE_VERSION = "18"
+  
+# Next.js plugin
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 # Headers for security and CORS
 [[headers]]
