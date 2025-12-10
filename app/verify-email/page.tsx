@@ -29,10 +29,34 @@ function VerifyEmailContent() {
             setMessage('فشل التحقق من البريد الإلكتروني. يرجى المحاولة مرة أخرى.');
           } else {
             setStatus('success');
-            setMessage('تم التحقق من بريدك الإلكتروني بنجاح! يمكنك الآن تسجيل الدخول.');
-            setTimeout(() => {
-              router.push('/login');
-            }, 3000);
+            setMessage('تم التحقق من بريدك الإلكتروني بنجاح! سيتم توجيهك إلى لوحة التحكم.');
+            
+            // Get user role and redirect to appropriate dashboard
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const { data: userData } = await supabase
+                .from('users')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+              
+              const userRole = userData?.role || 'researcher';
+              setTimeout(() => {
+                // Handle all role types including super_admin
+                if (userRole === 'admin' || userRole === 'super_admin') {
+                  router.push('/admin/dashboard');
+                } else if (userRole === 'researcher') {
+                  router.push('/researcher/dashboard');
+                } else {
+                  // Fallback to researcher dashboard
+                  router.push('/researcher/dashboard');
+                }
+              }, 2000);
+            } else {
+              setTimeout(() => {
+                router.push('/login');
+              }, 2000);
+            }
           }
         } catch (err) {
           setStatus('error');

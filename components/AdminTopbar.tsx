@@ -4,6 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
+import ChatDropdown from './ChatDropdown';
+import ChatWindow from './ChatWindow';
+import { useChat } from '@/contexts/ChatContext';
 
 export default function AdminTopbar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -30,12 +33,7 @@ export default function AdminTopbar() {
 
       <div className="topbar-actions">
         {/* Chat */}
-        <button className="topbar-icon-btn" id="chat-btn">
-          <i className="fas fa-comments"></i>
-          {unreadCount > 0 && (
-            <span className="notification-badge" id="chat-badge">{unreadCount}</span>
-          )}
-        </button>
+        <ChatDropdown />
 
         {/* Notifications */}
         <Link href="/admin/notifications" className="topbar-icon-btn" id="notifications-btn">

@@ -1,17 +1,18 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, FormEvent, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissions } from '@/contexts/SubmissionsContext';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 import { createClient } from '@/lib/supabase/client';
 
-export default function SubmitPage() {
+function SubmitPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { createSubmission, loading, saveDraft } = useSubmissions();
+  const { createSubmission, loading, saveDraft, fetchSubmissionById } = useSubmissions();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -30,6 +31,8 @@ export default function SubmitPage() {
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [loadingDraft, setLoadingDraft] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -46,6 +49,48 @@ export default function SubmitPage() {
       }));
     }
   }, [user]);
+
+  // Load draft if draft ID is provided in URL
+  useEffect(() => {
+    const draftIdParam = searchParams.get('draft');
+    if (draftIdParam && isAuthenticated && user) {
+      loadDraft(draftIdParam);
+    }
+  }, [searchParams, isAuthenticated, user]);
+
+  const loadDraft = async (id: string) => {
+    setLoadingDraft(true);
+    try {
+      const draft = await fetchSubmissionById(id);
+      if (draft && draft.is_draft) {
+        setDraftId(id);
+        setFormData(prev => ({
+          ...prev,
+          title: draft.title || '',
+          research_type: draft.research_type || '',
+          category: draft.category || '',
+          description: draft.description || '',
+          country: draft.country || '',
+          submitter_type: draft.submitter_type || 'فرد',
+          full_name: draft.full_name || prev.full_name,
+          email: draft.email || prev.email,
+          organization_name: draft.organization_name || '',
+          organization_type: draft.organization_type || '',
+          main_researcher: draft.main_researcher || '',
+        }));
+        if (draft.file_url) {
+          setFileUrl(draft.file_url);
+        }
+        setSuccess('تم تحميل المسودة بنجاح');
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (err: any) {
+      setError('فشل تحميل المسودة: ' + (err.message || 'حدث خطأ'));
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoadingDraft(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -157,6 +202,7 @@ export default function SubmitPage() {
   const handleSaveDraft = async () => {
     try {
       await saveDraft({
+        ...(draftId ? { id: draftId } : {}),
         ...formData,
         file_url: fileUrl,
         is_draft: true,
@@ -229,9 +275,9 @@ export default function SubmitPage() {
         <div className="dashboard-content">
           <div className="page-header">
             <div>
-              <h1>تقديم بحث جديد</h1>
+              <h1>{draftId ? 'تعديل مسودة' : 'تقديم بحث جديد'}</h1>
               <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                املأ جميع الحقول المطلوبة لتقديم بحثك للمراجعة
+                {draftId ? 'جاري تعديل مسودة موجودة' : 'املأ جميع الحقول المطلوبة لتقديم بحثك للمراجعة'}
               </p>
             </div>
           </div>
@@ -832,6 +878,21 @@ export default function SubmitPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function SubmitPage() {
+  return (
+    <Suspense fallback={
+      <div className="dashboard-page">
+        <div className="loading-overlay">
+          <div className="loading-spinner"></div>
+          <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>جاري التحميل...</p>
+        </div>
+      </div>
+    }>
+      <SubmitPageContent />
+    </Suspense>
   );
 }
 

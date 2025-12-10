@@ -4,12 +4,16 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
+import ChatDropdown from './ChatDropdown';
+import ChatWindow from './ChatWindow';
+import { useChat } from '@/contexts/ChatContext';
 
 export default function Topbar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
+  const { unreadCount: chatUnreadCount } = useChat();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -31,12 +35,7 @@ export default function Topbar() {
 
       <div className="topbar-actions">
         {/* Chat */}
-        <button className="topbar-icon-btn" id="chat-btn">
-          <i className="fas fa-comments"></i>
-          {unreadCount > 0 && (
-            <span className="notification-badge" id="chat-badge">{unreadCount}</span>
-          )}
-        </button>
+        <ChatDropdown />
 
         {/* Notifications */}
         <Link href="/researcher/notifications" className="topbar-icon-btn" id="notifications-btn">

@@ -12,15 +12,19 @@ export default function SubmissionsPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const {
     submissions,
+    drafts,
     loading,
     filters,
     pagination,
     setFilters,
     setPage,
     fetchUserSubmissions,
+    fetchDrafts,
+    deleteSubmission,
   } = useSubmissions();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'submissions' | 'drafts'>('submissions');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -30,9 +34,13 @@ export default function SubmissionsPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchUserSubmissions();
+      if (viewMode === 'submissions') {
+        fetchUserSubmissions();
+      } else {
+        fetchDrafts();
+      }
     }
-  }, [isAuthenticated, fetchUserSubmissions]);
+  }, [isAuthenticated, viewMode, fetchUserSubmissions, fetchDrafts]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,10 +98,28 @@ export default function SubmissionsPage() {
         <div className="dashboard-content">
           <div className="page-header">
             <h1>طلباتي</h1>
-            <Link href="/researcher/submit" className="btn btn-primary">
-              <i className="fas fa-plus"></i>
-              تقديم بحث جديد
-            </Link>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <div className="tabs" style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  className={`btn ${viewMode === 'submissions' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setViewMode('submissions')}
+                >
+                  <i className="fas fa-file-alt"></i>
+                  الطلبات المرسلة ({submissions.length})
+                </button>
+                <button
+                  className={`btn ${viewMode === 'drafts' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setViewMode('drafts')}
+                >
+                  <i className="fas fa-edit"></i>
+                  المسودات ({drafts.length})
+                </button>
+              </div>
+              <Link href="/researcher/submit" className="btn btn-primary">
+                <i className="fas fa-plus"></i>
+                تقديم بحث جديد
+              </Link>
+            </div>
           </div>
 
           {/* Filters */}
@@ -170,47 +196,97 @@ export default function SubmissionsPage() {
                     <div className="skeleton skeleton-text" style={{ width: '90%' }}></div>
                   </div>
                 </div>
-              ) : submissions.length === 0 ? (
+              ) : viewMode === 'submissions' && submissions.length === 0 ? (
                 <div className="empty-state">
                   <i className="fas fa-inbox"></i>
-                  <p>لا توجد طلبات</p>
+                  <p>لا توجد طلبات مرسلة</p>
                   <Link href="/researcher/submit" className="btn btn-primary">
                     تقديم بحث جديد
+                  </Link>
+                </div>
+              ) : viewMode === 'drafts' && drafts.length === 0 ? (
+                <div className="empty-state">
+                  <i className="fas fa-edit"></i>
+                  <p>لا توجد مسودات</p>
+                  <Link href="/researcher/submit" className="btn btn-primary">
+                    إنشاء مسودة جديدة
                   </Link>
                 </div>
               ) : (
                 <>
                   <div className="submissions-list">
-                    {submissions.map((submission) => (
-                      <div key={submission.id} className="submission-item">
+                    {(viewMode === 'submissions' ? submissions : drafts).map((item: any) => (
+                      <div key={item.id} className="submission-item">
                         <div className="submission-info">
                           <h3>
-                            <Link href={`/researcher/submissions/${submission.id}`}>
-                              {submission.title || 'بدون عنوان'}
-                            </Link>
+                            {viewMode === 'drafts' ? (
+                              <Link href={`/researcher/submit?draft=${item.id}`}>
+                                {item.title || 'مسودة بدون عنوان'}
+                              </Link>
+                            ) : (
+                              <Link href={`/researcher/submissions/${item.id}`}>
+                                {item.title || 'بدون عنوان'}
+                              </Link>
+                            )}
+                            {viewMode === 'drafts' && (
+                              <span className="badge badge-info" style={{ marginRight: '0.5rem', fontSize: '0.75rem' }}>
+                                مسودة
+                              </span>
+                            )}
                           </h3>
                           <div className="submission-meta">
-                            <span className={`badge badge-${getStatusColor(submission.status)}`}>
-                              {getStatusLabel(submission.status)}
-                            </span>
-                            <span className="submission-type">{submission.research_type}</span>
+                            {viewMode === 'submissions' && (
+                              <span className={`badge badge-${getStatusColor(item.status)}`}>
+                                {getStatusLabel(item.status)}
+                              </span>
+                            )}
+                            <span className="submission-type">{item.research_type || 'غير محدد'}</span>
                             <span className="submission-date">
-                              {new Date(submission.created_at).toLocaleDateString('ar-SA', {
+                              {new Date(item.updated_at || item.created_at).toLocaleDateString('ar-SA', {
                                 year: 'numeric',
                                 month: 'long',
                                 day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
                               })}
                             </span>
                           </div>
                         </div>
-                        <div className="submission-actions">
-                          <Link
-                            href={`/researcher/submissions/${submission.id}`}
-                            className="btn btn-outline btn-small"
-                          >
-                            <i className="fas fa-eye"></i>
-                            عرض التفاصيل
-                          </Link>
+                        <div className="submission-actions" style={{ display: 'flex', gap: '0.5rem' }}>
+                          {viewMode === 'drafts' ? (
+                            <>
+                              <Link
+                                href={`/researcher/submit?draft=${item.id}`}
+                                className="btn btn-primary btn-small"
+                              >
+                                <i className="fas fa-edit"></i>
+                                تعديل
+                              </Link>
+                              <button
+                                className="btn btn-outline btn-small"
+                                onClick={async () => {
+                                  if (confirm('هل أنت متأكد من حذف هذه المسودة؟')) {
+                                    const result = await deleteSubmission(item.id);
+                                    if (result.success) {
+                                      fetchDrafts();
+                                    }
+                                  }
+                                }}
+                                style={{ color: 'var(--error)' }}
+                              >
+                                <i className="fas fa-trash"></i>
+                                حذف
+                              </button>
+                            </>
+                          ) : (
+                            <Link
+                              href={`/researcher/submissions/${item.id}`}
+                              className="btn btn-outline btn-small"
+                            >
+                              <i className="fas fa-eye"></i>
+                              عرض التفاصيل
+                            </Link>
+                          )}
                         </div>
                       </div>
                     ))}

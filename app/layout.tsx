@@ -5,6 +5,8 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import { SubmissionsProvider } from '@/contexts/SubmissionsContext';
 import { ToastProvider } from '@/contexts/ToastContext';
+import { ChatProvider } from '@/contexts/ChatContext';
+import ChatWindow from '@/components/ChatWindow';
 
 const cairo = Cairo({
   subsets: ['arabic', 'latin'],
@@ -44,9 +46,12 @@ export default function RootLayout({
         <AuthProvider>
           <NotificationsProvider>
             <SubmissionsProvider>
-              <ToastProvider>
-                {children}
-              </ToastProvider>
+              <ChatProvider>
+                <ToastProvider>
+                  {children}
+                  <ChatWindow />
+                </ToastProvider>
+              </ChatProvider>
             </SubmissionsProvider>
           </NotificationsProvider>
         </AuthProvider>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -9,8 +9,19 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState('');
-  const { login, loading, error } = useAuth();
+  const { login, loading, error, isAuthenticated, role } = useAuth();
   const router = useRouter();
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      if (role === 'admin') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/researcher/dashboard');
+      }
+    }
+  }, [isAuthenticated, loading, role, router]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -30,6 +41,27 @@ export default function LoginPage() {
   };
 
   const [showPassword, setShowPassword] = useState(false);
+
+  // Show loading if checking authentication
+  if (loading && !isAuthenticated) {
+    return (
+      <div className="auth-page">
+        <div className="auth-container">
+          <div className="auth-card">
+            <div className="text-center">
+              <div className="loading-spinner" style={{ margin: '2rem auto' }}></div>
+              <p>جاري التحقق...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render form if already authenticated (redirect will happen)
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="auth-page">

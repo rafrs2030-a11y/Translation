@@ -12,11 +12,13 @@ import { useAuth } from './AuthContext';
 interface Notification {
   id: string;
   user_id: string;
-  title: string;
+  title?: string;
   message: string;
   type: string;
   read: boolean;
+  is_read?: boolean;
   created_at: string;
+  submission_id?: string;
   [key: string]: any;
 }
 
@@ -81,7 +83,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
       if (error) throw error;
 
-      const notifications = data || [];
+      const notifications = (data || []).map((n: any) => ({
+        ...n,
+        read: n.is_read || n.read || false,
+      }));
       const unreadCount = notifications.filter((n: Notification) => !n.read).length;
 
       setState(prev => ({
@@ -147,7 +152,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
       setState(prev => {
         const updated = prev.notifications.map(n =>
-          n.id === notificationId ? { ...n, read: true } : n
+          n.id === notificationId ? { ...n, read: true, is_read: true } : n
         );
         const unreadCount = updated.filter(n => !n.read).length;
         return {
@@ -167,15 +172,15 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     try {
       const { error } = await supabase
         .from('notifications')
-        .update({ read: true })
+        .update({ is_read: true })
         .eq('user_id', user.id)
-        .eq('read', false);
+        .eq('is_read', false);
 
       if (error) throw error;
 
       setState(prev => ({
         ...prev,
-        notifications: prev.notifications.map(n => ({ ...n, read: true })),
+        notifications: prev.notifications.map(n => ({ ...n, read: true, is_read: true })),
         unreadCount: 0,
       }));
     } catch (error: any) {
