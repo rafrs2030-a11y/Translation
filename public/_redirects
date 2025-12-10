@@ -1,6 +1,3 @@
-# API routes
-/api/* /.netlify/functions/api/:splat 200
-
-# Ensure root path serves index.html
-/ /index.html 200
+# Next.js handles all routes
+# This file is kept for Netlify compatibility but Next.js plugin handles routing
 
