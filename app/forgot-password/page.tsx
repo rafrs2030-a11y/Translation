@@ -24,17 +24,33 @@ export default function ForgotPasswordPage() {
     }
 
     try {
+      // Get the full origin including protocol
+      const redirectUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/reset-password`
+        : 'https://res-assistant.com/reset-password';
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: redirectUrl,
+        emailRedirectTo: redirectUrl,
       });
 
       if (error) {
-        setError(error.message || 'حدث خطأ أثناء إرسال رابط إعادة تعيين كلمة المرور');
+        console.error('Password reset error:', error);
+        // Provide more helpful error messages
+        if (error.message.includes('rate limit')) {
+          setError('تم إرسال الكثير من الطلبات. يرجى المحاولة مرة أخرى لاحقاً.');
+        } else if (error.message.includes('email')) {
+          setError('البريد الإلكتروني غير صحيح أو غير مسجل.');
+        } else {
+          setError(error.message || 'حدث خطأ أثناء إرسال رابط إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى.');
+        }
       } else {
-        setMessage('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
+        setMessage('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. يرجى التحقق من صندوق الوارد.');
+        setEmail(''); // Clear email after success
       }
     } catch (err: any) {
-      setError('حدث خطأ غير متوقع');
+      console.error('Unexpected error:', err);
+      setError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى لاحقاً.');
     } finally {
       setLoading(false);
     }

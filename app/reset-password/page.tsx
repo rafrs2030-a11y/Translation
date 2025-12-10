@@ -13,15 +13,61 @@ function ResetPasswordContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
-    // Check if we have a valid token
-    const token = searchParams.get('token');
-    if (!token) {
-      setError('رابط إعادة تعيين كلمة المرور غير صحيح أو منتهي الصلاحية');
-    }
-  }, [searchParams]);
+    // Supabase sends tokens as URL fragments (#access_token=...&type=recovery)
+    // We need to check both URL fragments and query parameters
+    const checkToken = async () => {
+      try {
+        // Check URL fragments (hash) first - this is how Supabase sends recovery links
+        if (typeof window !== 'undefined') {
+          const hash = window.location.hash;
+          const hashParams = new URLSearchParams(hash.substring(1)); // Remove #
+          const accessToken = hashParams.get('access_token');
+          const type = hashParams.get('type');
+
+          // Also check query parameters (for backward compatibility)
+          const tokenFromQuery = searchParams.get('token');
+          const tokenFromHash = hashParams.get('token');
+
+          // If we have access_token in hash, Supabase will handle it automatically
+          // Just verify we have a valid session or token
+          if (accessToken && type === 'recovery') {
+            setIsValidToken(true);
+            setError('');
+            return;
+          }
+
+          // Check for token in query params (legacy support)
+          if (tokenFromQuery || tokenFromHash) {
+            setIsValidToken(true);
+            setError('');
+            return;
+          }
+
+          // Check if we have a session (user might have clicked the link and been redirected)
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            setIsValidToken(true);
+            setError('');
+            return;
+          }
+
+          // No valid token found
+          setIsValidToken(false);
+          setError('رابط إعادة تعيين كلمة المرور غير صحيح أو منتهي الصلاحية. يرجى طلب رابط جديد.');
+        }
+      } catch (err: any) {
+        console.error('Error checking token:', err);
+        setIsValidToken(false);
+        setError('حدث خطأ أثناء التحقق من الرابط. يرجى المحاولة مرة أخرى.');
+      }
+    };
+
+    checkToken();
+  }, [searchParams, supabase]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -48,39 +94,87 @@ function ResetPasswordContent() {
     }
 
     try {
-      const token = searchParams.get('token');
-      if (!token) {
-        setError('رابط إعادة تعيين كلمة المرور غير صحيح');
-        setLoading(false);
-        return;
+      // First, check if we need to verify a token from URL
+      if (typeof window !== 'undefined') {
+        const hash = window.location.hash;
+        const hashParams = new URLSearchParams(hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const type = hashParams.get('type');
+
+        // If we have access_token in hash, Supabase will exchange it for a session automatically
+        // We just need to update the password
+        if (accessToken && type === 'recovery') {
+          // The session should already be established by Supabase, but let's verify
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError || !session) {
+            // Try to verify the OTP manually
+            const tokenFromQuery = searchParams.get('token');
+            const tokenFromHash = hashParams.get('token');
+            
+            if (tokenFromQuery || tokenFromHash) {
+              const { error: verifyError } = await supabase.auth.verifyOtp({
+                token_hash: tokenFromQuery || tokenFromHash || '',
+                type: 'recovery',
+              });
+
+              if (verifyError) {
+                setError(verifyError.message || 'فشل التحقق من الرابط. الرابط قد يكون منتهي الصلاحية.');
+                setLoading(false);
+                return;
+              }
+            } else {
+              setError('رابط إعادة تعيين كلمة المرور غير صحيح أو منتهي الصلاحية.');
+              setLoading(false);
+              return;
+            }
+          }
+        } else {
+          // Check for token in query params (legacy support)
+          const token = searchParams.get('token');
+          if (token) {
+            const { error: verifyError } = await supabase.auth.verifyOtp({
+              token_hash: token,
+              type: 'recovery',
+            });
+
+            if (verifyError) {
+              setError(verifyError.message || 'فشل التحقق من الرابط. الرابط قد يكون منتهي الصلاحية.');
+              setLoading(false);
+              return;
+            }
+          } else {
+            // Check if we have an active session
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+              setError('رابط إعادة تعيين كلمة المرور غير صحيح أو منتهي الصلاحية. يرجى طلب رابط جديد.');
+              setLoading(false);
+              return;
+            }
+          }
+        }
       }
 
-      const { error } = await supabase.auth.verifyOtp({
-        token_hash: token,
-        type: 'recovery',
-      });
-
-      if (error) {
-        setError(error.message || 'فشل التحقق من الرابط');
-        setLoading(false);
-        return;
-      }
-
-      // Update password
+      // Update password - this requires an active session
       const { error: updateError } = await supabase.auth.updateUser({
         password: password,
       });
 
       if (updateError) {
-        setError(updateError.message || 'فشل تحديث كلمة المرور');
+        setError(updateError.message || 'فشل تحديث كلمة المرور. يرجى المحاولة مرة أخرى.');
       } else {
         setMessage('تم تحديث كلمة المرور بنجاح! سيتم توجيهك إلى صفحة تسجيل الدخول...');
+        // Clear the hash from URL
+        if (typeof window !== 'undefined') {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
         setTimeout(() => {
           router.push('/login');
         }, 3000);
       }
     } catch (err: any) {
-      setError('حدث خطأ غير متوقع');
+      console.error('Reset password error:', err);
+      setError(err.message || 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
     } finally {
       setLoading(false);
     }
@@ -116,6 +210,13 @@ function ResetPasswordContent() {
               <h1>إعادة تعيين كلمة المرور</h1>
               <p>أدخل كلمة المرور الجديدة</p>
             </div>
+
+          {isValidToken === false && !error && (
+            <div className="alert alert-error">
+              <i className="fas fa-exclamation-circle"></i>
+              <span>رابط إعادة تعيين كلمة المرور غير صحيح أو منتهي الصلاحية. يرجى طلب رابط جديد من <Link href="/forgot-password">صفحة نسيت كلمة المرور</Link>.</span>
+            </div>
+          )}
 
           {error && (
             <div className="alert alert-error">
@@ -175,7 +276,7 @@ function ResetPasswordContent() {
             <button
               type="submit"
               className="btn btn-primary btn-large"
-              disabled={loading}
+              disabled={loading || isValidToken === false}
             >
               {loading ? (
                 <>
