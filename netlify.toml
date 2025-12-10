@@ -7,8 +7,8 @@
   NODE_VERSION = "18"
 
 # Headers for security and CORS
-[[headers]]
-  for = "/*"
+  [[headers]]
+    for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"

@@ -53,13 +53,14 @@ cypress/screenshots
 *.iso
 
 # Old HTML/JS files (migrated to Next.js)
+# Note: These directories are deleted but kept in gitignore for safety
 /public/pages/
 /public/index.html
 /public/js/
 /public/css/
-/public/sw.js
 /public/colors-demo.html
 /test-settings.html
+/email-templates/
 
 # Old server files (migrated to Next.js)
 /server/

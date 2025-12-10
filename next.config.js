@@ -49,6 +49,21 @@ const nextConfig = {
   async rewrites() {
     return [];
   },
+  
+  // Prevent serving HTML files from public directory as pages
+  async headers() {
+    return [
+      {
+        source: '/:path*.html',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
