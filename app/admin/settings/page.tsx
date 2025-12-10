@@ -54,7 +54,7 @@ export default function AdminSettingsPage() {
       if (error) throw error;
 
       const settingsMap: Partial<PlatformSettings> = {};
-      data?.forEach((item) => {
+      data?.forEach((item: { setting_key: string; setting_value: string }) => {
         const key = item.setting_key as keyof PlatformSettings;
         settingsMap[key] = item.setting_value === 'true';
       });

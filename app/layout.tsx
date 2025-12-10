@@ -12,6 +12,9 @@ const cairo = Cairo({
   variable: '--font-cairo',
 });
 
+// Force dynamic rendering to avoid build-time Supabase errors
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'منصة نشر الأبحاث العربية',
   description: 'منصة رقمية شاملة تمكّن الهيئات والمؤسسات والجامعات والباحثين العرب من تقديم أبحاثهم العلمية وكتبهم للمراجعة والنشر عالمياً في مجلات عالمية علمية محكمة',

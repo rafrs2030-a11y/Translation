@@ -9,9 +9,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 function getSupabaseUrl(): string {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   if (!url) {
-    throw new Error(
-      'Missing Supabase URL. Please set NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL in your .env.local file.'
-    );
+    // Return empty string to allow middleware to pass through during build
+    // Runtime errors will be handled by the application
+    console.warn('Missing Supabase URL in middleware');
+    return '';
   }
   return url;
 }
@@ -19,9 +20,10 @@ function getSupabaseUrl(): string {
 function getSupabaseAnonKey(): string {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
   if (!key) {
-    throw new Error(
-      'Missing Supabase Anon Key. Please set NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY in your .env.local file.'
-    );
+    // Return empty string to allow middleware to pass through during build
+    // Runtime errors will be handled by the application
+    console.warn('Missing Supabase Anon Key in middleware');
+    return '';
   }
   return key;
 }
@@ -33,6 +35,11 @@ export async function updateSession(request: NextRequest) {
 
   const supabaseUrl = getSupabaseUrl();
   const supabaseAnonKey = getSupabaseAnonKey();
+
+  // Skip Supabase logic if credentials are missing (during build)
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return supabaseResponse;
+  }
 
   const supabase = createServerClient(
     supabaseUrl,

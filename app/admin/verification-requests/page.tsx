@@ -74,7 +74,7 @@ export default function AdminVerificationRequestsPage() {
       if (error) throw error;
 
       // Map users to verification requests
-      const mappedRequests: VerificationRequest[] = (data || []).map((user) => ({
+      const mappedRequests: VerificationRequest[] = (data || []).map((user: any) => ({
         id: user.id,
         username: user.username,
         email: user.email,
