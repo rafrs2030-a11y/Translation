@@ -43,9 +43,9 @@ export default function AdminDashboard() {
 
       const stats = {
         total: submissions?.length || 0,
-        pending: submissions?.filter(s => s.status === 'pending' || s.status === 'under_review').length || 0,
-        approved: submissions?.filter(s => s.status === 'approved').length || 0,
-        rejected: submissions?.filter(s => s.status === 'rejected').length || 0,
+        pending: submissions?.filter((s: any) => s.status === 'pending' || s.status === 'under_review').length || 0,
+        approved: submissions?.filter((s: any) => s.status === 'approved').length || 0,
+        rejected: submissions?.filter((s: any) => s.status === 'rejected').length || 0,
       };
 
       setStats(stats);
