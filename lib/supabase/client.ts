@@ -6,61 +6,104 @@
 import { createBrowserClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-function getSupabaseUrl(): string {
+function getSupabaseUrl(): string | undefined {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   if (!url) {
-    // During build time, return empty string to prevent build errors
-    // Runtime checks will handle missing URLs
-    if (typeof window === 'undefined') {
-      return '';
+    // Log warning but don't throw - allow graceful degradation
+    if (typeof window !== 'undefined') {
+      console.warn(
+        '⚠️ Missing Supabase URL. Please set NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL in your environment variables.'
+      );
     }
-    throw new Error(
-      'Missing Supabase URL. Please set NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL in your .env.local file.'
-    );
+    return undefined;
   }
   return url;
 }
 
-function getSupabaseAnonKey(): string {
+function getSupabaseAnonKey(): string | undefined {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
   if (!key) {
-    // During build time, return empty string to prevent build errors
-    // Runtime checks will handle missing keys
-    if (typeof window === 'undefined') {
-      return '';
+    // Log warning but don't throw - allow graceful degradation
+    if (typeof window !== 'undefined') {
+      console.warn(
+        '⚠️ Missing Supabase Anon Key. Please set NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY in your environment variables.'
+      );
     }
-    throw new Error(
-      'Missing Supabase Anon Key. Please set NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY in your .env.local file.'
-    );
+    return undefined;
   }
   return key;
+}
+
+/**
+ * Create a mock Supabase client that handles missing credentials gracefully
+ */
+function createMockClient() {
+  const mockError = {
+    message: 'Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment variables.',
+    details: 'Missing environment variables',
+    hint: 'Check your Netlify environment variables or .env.local file',
+    code: 'MISSING_CONFIG'
+  };
+
+  return {
+    from: (table: string) => ({
+      select: () => ({
+        eq: () => ({ data: null, error: mockError }),
+        insert: () => ({ data: null, error: mockError }),
+        update: () => ({ data: null, error: mockError }),
+        delete: () => ({ data: null, error: mockError }),
+      }),
+    }),
+    auth: {
+      getUser: async () => ({ data: { user: null }, error: mockError }),
+      getSession: async () => ({ data: { session: null }, error: mockError }),
+      signInWithPassword: async () => ({ data: null, error: mockError }),
+      signUp: async () => ({ data: null, error: mockError }),
+      signOut: async () => ({ error: mockError }),
+      onAuthStateChange: () => ({ data: { subscription: null }, error: mockError }),
+    },
+    storage: {
+      from: () => ({
+        upload: async () => ({ data: null, error: mockError }),
+        download: async () => ({ data: null, error: mockError }),
+        remove: async () => ({ data: null, error: mockError }),
+        getPublicUrl: () => ({ data: { publicUrl: '' } }),
+      }),
+    },
+  } as any;
 }
 
 export function createClient() {
   const supabaseUrl = getSupabaseUrl();
   const supabaseAnonKey = getSupabaseAnonKey();
 
-  // During build time, return a mock client to prevent errors
+  // If credentials are missing, return a mock client that won't crash the app
   if (!supabaseUrl || !supabaseAnonKey) {
-    // Return a mock client that won't cause build errors
-    return {
-      from: () => ({ select: () => ({ eq: () => ({ data: null, error: null }) }) }),
-      auth: { getUser: async () => ({ data: { user: null }, error: null }) },
-      storage: { from: () => ({ upload: async () => ({ data: null, error: null }) }) }
-    } as any;
+    return createMockClient();
   }
 
   // Use SSR client if available, otherwise fallback to regular client
   if (typeof window !== 'undefined') {
     try {
       return createBrowserClient(supabaseUrl, supabaseAnonKey);
-    } catch {
+    } catch (error) {
+      console.error('Error creating Supabase browser client:', error);
       // Fallback to regular client
-      return createSupabaseClient(supabaseUrl, supabaseAnonKey);
+      try {
+        return createSupabaseClient(supabaseUrl, supabaseAnonKey);
+      } catch (fallbackError) {
+        console.error('Error creating Supabase client:', fallbackError);
+        return createMockClient();
+      }
     }
   }
   
   // Server-side fallback
-  return createSupabaseClient(supabaseUrl, supabaseAnonKey);
+  try {
+    return createSupabaseClient(supabaseUrl, supabaseAnonKey);
+  } catch (error) {
+    console.error('Error creating Supabase server client:', error);
+    return createMockClient();
+  }
 }
 

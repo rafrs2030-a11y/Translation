@@ -145,9 +145,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase]);
 
   const refreshUserData = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      await setSession(session);
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.warn('Error getting session in refreshUserData:', error);
+        return;
+      }
+      if (session) {
+        await setSession(session);
+      }
+    } catch (err: any) {
+      console.warn('Exception in refreshUserData:', err);
     }
   }, [supabase, setSession]);
 
@@ -156,7 +164,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then((response: any) => {
       const { data, error } = response;
       if (error) {
-        setState(prev => ({ ...prev, error: error.message, loading: false }));
+        // Don't show error if it's just missing config
+        if (error.code !== 'MISSING_CONFIG') {
+          console.warn('Error getting session:', error);
+        }
+        setState(prev => ({ ...prev, error: error.code === 'MISSING_CONFIG' ? null : error.message, loading: false }));
         return;
       }
       const session = data?.session;
@@ -165,18 +177,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setState(prev => ({ ...prev, loading: false }));
       }
+    }).catch((err: any) => {
+      console.warn('Exception getting session:', err);
+      setState(prev => ({ ...prev, loading: false }));
     });
 
     // الاستماع لتغييرات المصادقة
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event: any, session: Session | null) => {
-      await setSession(session);
-    });
+    try {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (_event: any, session: Session | null) => {
+        await setSession(session);
+      });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+      return () => {
+        if (subscription) {
+          subscription.unsubscribe();
+        }
+      };
+    } catch (err: any) {
+      console.warn('Error setting up auth state listener:', err);
+      return () => {}; // Return empty cleanup function
+    }
   }, [supabase, setSession]);
 
   const login = useCallback(async (email: string, password: string) => {
