@@ -407,9 +407,9 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
 
       const stats = {
         total: data?.length || 0,
-        approved: data?.filter(s => s.status === 'approved').length || 0,
-        pending: data?.filter(s => s.status === 'pending').length || 0,
-        rejected: data?.filter(s => s.status === 'rejected').length || 0,
+        approved: data?.filter((s: any) => s.status === 'approved').length || 0,
+        pending: data?.filter((s: any) => s.status === 'pending').length || 0,
+        rejected: data?.filter((s: any) => s.status === 'rejected').length || 0,
       };
 
       return stats;

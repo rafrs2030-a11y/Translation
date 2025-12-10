@@ -72,7 +72,7 @@ export default function AdminStatisticsPage() {
         revision_requested: 0,
       };
 
-      submissions?.forEach((sub) => {
+      submissions?.forEach((sub: any) => {
         if (sub.status in statusCounts) {
           statusCounts[sub.status as keyof typeof statusCounts]++;
         }
@@ -80,7 +80,7 @@ export default function AdminStatisticsPage() {
 
       // Group by type
       const typeMap = new Map<string, number>();
-      submissions?.forEach((sub) => {
+      submissions?.forEach((sub: any) => {
         const type = sub.research_type || 'غير محدد';
         typeMap.set(type, (typeMap.get(type) || 0) + 1);
       });
@@ -91,7 +91,7 @@ export default function AdminStatisticsPage() {
 
       // Group by category
       const categoryMap = new Map<string, number>();
-      submissions?.forEach((sub) => {
+      submissions?.forEach((sub: any) => {
         const category = sub.category || 'غير محدد';
         categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
       });
@@ -102,7 +102,7 @@ export default function AdminStatisticsPage() {
 
       // Group by month
       const monthMap = new Map<string, number>();
-      submissions?.forEach((sub) => {
+      submissions?.forEach((sub: any) => {
         const date = new Date(sub.created_at);
         const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         monthMap.set(month, (monthMap.get(month) || 0) + 1);
@@ -115,7 +115,7 @@ export default function AdminStatisticsPage() {
           count,
         }));
 
-      const verifiedUsers = users?.filter((u) => u.email_verified).length || 0;
+      const verifiedUsers = users?.filter((u: any) => u.email_verified).length || 0;
       const unverifiedUsers = totalUsers - verifiedUsers;
 
       setStats({

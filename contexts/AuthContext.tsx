@@ -153,11 +153,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // الحصول على الجلسة الحالية
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
+    supabase.auth.getSession().then((response: any) => {
+      const { data, error } = response;
       if (error) {
         setState(prev => ({ ...prev, error: error.message, loading: false }));
         return;
       }
+      const session = data?.session;
       if (session) {
         setSession(session);
       } else {
@@ -168,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // الاستماع لتغييرات المصادقة
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event: any, session: Session | null) => {
       await setSession(session);
     });
 
