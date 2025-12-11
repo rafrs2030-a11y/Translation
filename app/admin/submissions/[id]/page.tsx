@@ -20,8 +20,7 @@ interface Submission {
   created_at: string;
   updated_at: string;
   description?: string;
-  admin_notes?: string;
-  admin_reply?: string;
+  admin_comment?: string;
   user?: {
     username: string;
     email: string;
@@ -69,8 +68,8 @@ export default function AdminSubmissionDetailsPage() {
 
       setSubmission(data);
       setNewStatus(data.status);
-      setAdminNotes(data.admin_notes || '');
-      setAdminReply(data.admin_reply || '');
+      setAdminNotes(data.admin_comment || '');
+      setAdminReply('');
     } catch (error: any) {
       console.error('Error fetching submission:', error);
       setMessage({ type: 'error', text: 'فشل تحميل بيانات الطلب' });
@@ -93,11 +92,7 @@ export default function AdminSubmissionDetailsPage() {
       };
 
       if (adminNotes) {
-        updateData.admin_notes = adminNotes;
-      }
-
-      if (adminReply) {
-        updateData.admin_reply = adminReply;
+        updateData.admin_comment = adminNotes;
       }
 
       const { error } = await supabase
@@ -107,15 +102,13 @@ export default function AdminSubmissionDetailsPage() {
 
       if (error) throw error;
 
-      // Create notification for user
+      // Create notification for user (if not already created by trigger)
       if (submission.user_id) {
         await supabase.from('notifications').insert({
           user_id: submission.user_id,
+          submission_id: submission.id,
           type: 'status_change',
-          title: 'تغيير حالة الطلب',
-          message: `تم تحديث حالة طلبك "${submission.title}" إلى ${getStatusLabel(newStatus)}`,
-          related_id: submission.id,
-          related_type: 'submission',
+          message: `تم تحديث حالة طلبك إلى ${getStatusLabel(newStatus)}`,
         });
       }
 
@@ -439,14 +432,14 @@ export default function AdminSubmissionDetailsPage() {
                     </small>
                   </div>
 
-                  {submission.admin_reply && (
+                  {submission.admin_comment && (
                     <div className="detail-section" style={{ marginTop: 'var(--spacing-md)', padding: 'var(--spacing-md)', background: 'rgba(59, 130, 246, 0.05)', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)', marginBottom: 'var(--spacing-sm)', fontWeight: 600, color: 'var(--info-color)' }}>
                         <i className="fas fa-history"></i>
-                        الرد السابق:
+                        التعليق السابق:
                       </label>
                       <div style={{ padding: 'var(--spacing-sm)', background: 'white', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                        <p style={{ margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{submission.admin_reply}</p>
+                        <p style={{ margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{submission.admin_comment}</p>
                       </div>
                     </div>
                   )}
