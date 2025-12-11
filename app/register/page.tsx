@@ -24,6 +24,7 @@ export default function RegisterPage() {
     // Business fields
     organization_name: '',
     organization_type: '',
+    commercial_registration_number: '',
   });
   const [localError, setLocalError] = useState('');
   const { register, loading, error, isAuthenticated, role } = useAuth();
@@ -66,7 +67,7 @@ export default function RegisterPage() {
         return;
       }
     } else if (accountType === 'أعمال') {
-      if (!formData.organization_name || !formData.organization_type) {
+      if (!formData.organization_name || !formData.organization_type || !formData.commercial_registration_number) {
         setLocalError('يرجى ملء جميع الحقول المطلوبة للأعمال');
         return;
       }
@@ -101,6 +102,7 @@ export default function RegisterPage() {
       } : {
         organization_name: formData.organization_name,
         organization_type: formData.organization_type,
+        commercial_registration_number: formData.commercial_registration_number,
       }),
     };
 
@@ -287,6 +289,24 @@ export default function RegisterPage() {
                         <option value="قطاع غير ربحي">قطاع غير ربحي</option>
                       </select>
                     </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="commercial_registration_number" className="form-label required">رقم السجل التجاري</label>
+                    <div className="input-with-icon">
+                      <i className="fas fa-id-badge"></i>
+                      <input
+                        type="text"
+                        id="commercial_registration_number"
+                        name="commercial_registration_number"
+                        className="form-input"
+                        placeholder="أدخل رقم السجل التجاري"
+                        value={formData.commercial_registration_number}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                    <small className="form-help">رقم السجل التجاري للمؤسسة</small>
                   </div>
                 </div>
               )}
