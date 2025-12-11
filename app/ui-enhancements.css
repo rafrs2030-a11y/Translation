@@ -1552,8 +1552,8 @@ html {
 
 /* Enhanced Developer Credit */
 .developer-credit {
-  margin-top: var(--spacing-2xl);
-  padding-top: var(--spacing-xl);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-sm);
   border-top: 1px solid var(--border-color);
   text-align: center;
 }
@@ -1565,7 +1565,7 @@ html {
   color: var(--text-secondary);
   text-decoration: none;
   font-size: var(--font-size-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-md);
   transition: all var(--transition-base);
 }

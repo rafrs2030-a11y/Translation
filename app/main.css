@@ -985,7 +985,7 @@ section {
 
 .developer-credit {
     background: var(--developer-bg);
-    padding: 1rem;
+    padding: 0.5rem;
     text-align: center;
     border-top: 1px solid var(--border-color);
     margin-top: auto;
@@ -1028,11 +1028,12 @@ section {
     z-index: 100;
     background: rgba(248, 249, 250, 0.95);
     backdrop-filter: blur(10px);
+    padding: 0.5rem;
 }
 
 /* For dashboard pages */
 .dashboard-layout .developer-credit {
     grid-column: 1 / -1;
-    margin-top: 2rem;
+    margin-top: 1rem;
 }
 
