@@ -1260,9 +1260,11 @@ html {
 /* Enhanced Table Styling */
 .data-table-wrapper {
   overflow-x: auto;
+  overflow-y: visible;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
   background: var(--bg-primary);
+  max-height: none;
 }
 
 .data-table {
@@ -1275,7 +1277,8 @@ html {
   background: linear-gradient(135deg, rgba(61, 90, 148, 0.05), rgba(81, 118, 184, 0.05));
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .data-table th {
@@ -1453,11 +1456,16 @@ html {
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--spacing-xl);
+  margin-top: var(--spacing-lg);
   padding-bottom: var(--spacing-lg);
+  padding-top: var(--spacing-md);
   border-bottom: 2px solid var(--border-color);
   flex-wrap: wrap;
   gap: var(--spacing-md);
   animation: fadeIn 0.4s ease-out;
+  position: relative;
+  z-index: 10;
+  width: 100%;
 }
 
 .page-header h1 {

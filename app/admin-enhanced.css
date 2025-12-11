@@ -451,6 +451,24 @@
     animation: fadeIn 0.6s ease-out forwards;
 }
 
+/* Ensure card header is always visible and not cut off */
+.card-header {
+    position: relative;
+    z-index: 50;
+    background: linear-gradient(135deg, #f8fafc 0%, white 100%);
+    flex-shrink: 0;
+}
+
+/* Allow table scrolling without hiding header - use class-based approach */
+.card-with-table {
+    overflow: visible;
+}
+
+.card-with-table .card-body {
+    overflow: visible;
+    padding: var(--spacing-xl);
+}
+
 .card:hover {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     transform: translateY(-4px);

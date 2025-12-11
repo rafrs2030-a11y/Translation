@@ -217,13 +217,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           `)
           .eq('user_id', userId)
           .eq('admin_id', user.id)
-          .single();
+          .maybeSingle();
         
+        // Check if conversation exists (no error or data found)
         if (!error && data) {
           existingConv = data;
         }
       } else {
-        // User chatting with admin (get any admin conversation or create with first admin)
+        // User chatting with admin
         const { data, error } = await supabase
           .from('chat_conversations')
           .select(`
@@ -233,8 +234,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           `)
           .eq('user_id', user.id)
           .eq('admin_id', userId)
-          .single();
+          .maybeSingle();
         
+        // Check if conversation exists (no error or data found)
         if (!error && data) {
           existingConv = data;
         }
@@ -260,13 +262,43 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           `)
           .single();
 
-        if (createError) throw createError;
+        if (createError) {
+          console.error('Error creating conversation:', createError);
+          throw createError;
+        }
+        
+        if (!newConv) {
+          throw new Error('فشل إنشاء المحادثة');
+        }
+        
         conversation = newConv;
       }
 
-      const otherUser = conversation.user_id === user.id 
+      // Get other user details if not already loaded
+      let otherUser = conversation.user_id === user.id 
         ? conversation.admin 
         : conversation.user;
+
+      // If other user data is missing, fetch it
+      if (!otherUser || !otherUser.id) {
+        try {
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('id, username, email')
+            .eq('id', userId)
+            .single();
+
+          if (!userError && userData) {
+            otherUser = userData;
+          } else {
+            // Fallback
+            otherUser = { id: userId, username: 'مستخدم', email: '' };
+          }
+        } catch (err) {
+          console.warn('Error fetching other user:', err);
+          otherUser = { id: userId, username: 'مستخدم', email: '' };
+        }
+      }
 
       // Calculate unread count
       const { count } = await supabase
@@ -291,16 +323,29 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         currentConversation: formattedConv,
         loading: false,
+        error: null,
       }));
+      
+      // Refresh conversations list to include the new conversation
+      await fetchConversations();
+      
+      // Refresh conversations list to include the new conversation
+      await fetchConversations();
     } catch (err: any) {
       console.error('Error opening chat:', err);
+      const errorMessage = err.message || 'فشل فتح الدردشة';
       setState(prev => ({
         ...prev,
-        error: err.message || 'فشل فتح الدردشة',
+        error: errorMessage,
         loading: false,
       }));
+      
+      // Show error toast if available
+      if (typeof window !== 'undefined' && (window as any).showToast) {
+        (window as any).showToast(errorMessage, 'error');
+      }
     }
-  }, [user, supabase, fetchMessages]);
+  }, [user, supabase, fetchMessages, fetchConversations]);
 
   // Send message
   const sendMessage = useCallback(async (message: string) => {

@@ -196,7 +196,7 @@ export default function AdminUsersPage() {
           </div>
 
           {/* Users List */}
-          <div className="card">
+          <div className="card card-with-table">
             <div className="card-body">
               {loading ? (
                 <div className="loading-placeholder">
