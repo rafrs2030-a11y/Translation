@@ -374,23 +374,25 @@ function SubmitPageContent() {
                 {draftId ? 'جاري تعديل مسودة موجودة' : 'املأ جميع الحقول المطلوبة لتقديم بحثك للمراجعة'}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={clearCacheAndReset}
-              className="btn btn-outline"
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 'var(--spacing-sm)',
-                fontSize: 'var(--font-size-sm)',
-                padding: 'var(--spacing-sm) var(--spacing-md)',
-                whiteSpace: 'nowrap'
-              }}
-              title="مسح الكاش وإعادة تعيين النموذج"
-            >
-              <i className="fas fa-trash-alt"></i>
-              مسح الكاش
-            </button>
+            {currentStep < 4 && (
+              <button
+                type="button"
+                onClick={clearCacheAndReset}
+                className="btn btn-outline"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 'var(--spacing-sm)',
+                  fontSize: 'var(--font-size-sm)',
+                  padding: 'var(--spacing-sm) var(--spacing-md)',
+                  whiteSpace: 'nowrap'
+                }}
+                title="مسح الكاش وإعادة تعيين النموذج"
+              >
+                <i className="fas fa-trash-alt"></i>
+                مسح الكاش
+              </button>
+            )}
           </div>
 
           {/* Progress Steps */}
@@ -1033,7 +1035,29 @@ function SubmitPageContent() {
                       <i className="fas fa-save"></i>
                       حفظ مسودة
                     </button>
-                    <button type="submit" className="btn btn-primary" disabled={loading || !fileUrl || !declarationAccepted} style={{ minWidth: '160px' }}>
+                    <button 
+                      type="submit" 
+                      className="btn btn-primary" 
+                      disabled={loading || !fileUrl || !declarationAccepted} 
+                      style={{ 
+                        minWidth: '160px',
+                        opacity: (loading || !fileUrl || !declarationAccepted) ? 0.6 : 1,
+                        cursor: (loading || !fileUrl || !declarationAccepted) ? 'not-allowed' : 'pointer'
+                      }}
+                      title={!fileUrl ? 'يجب رفع الملف أولاً' : !declarationAccepted ? 'يجب الموافقة على التعهد أولاً' : loading ? 'جاري الإرسال...' : 'إرسال البحث'}
+                      onClick={(e) => {
+                        if (!fileUrl) {
+                          e.preventDefault();
+                          setError('يجب رفع الملف قبل الإرسال');
+                          return;
+                        }
+                        if (!declarationAccepted) {
+                          e.preventDefault();
+                          setError('يجب الموافقة على التعهد قبل الإرسال');
+                          return;
+                        }
+                      }}
+                    >
                       {loading ? (
                         <>
                           <i className="fas fa-spinner fa-spin"></i>
@@ -1046,6 +1070,24 @@ function SubmitPageContent() {
                         </>
                       )}
                     </button>
+                    {(!fileUrl || !declarationAccepted) && !loading && (
+                      <div style={{ 
+                        marginTop: 'var(--spacing-sm)', 
+                        padding: 'var(--spacing-sm)', 
+                        background: 'rgba(239, 68, 68, 0.1)', 
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: 'var(--font-size-sm)',
+                        color: 'var(--error-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--spacing-xs)',
+                        width: '100%',
+                        marginRight: 'var(--spacing-md)'
+                      }}>
+                        <i className="fas fa-exclamation-circle"></i>
+                        {!fileUrl && !declarationAccepted ? 'يجب رفع الملف والموافقة على التعهد أولاً' : !fileUrl ? 'يجب رفع الملف أولاً' : 'يجب الموافقة على التعهد أولاً'}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
