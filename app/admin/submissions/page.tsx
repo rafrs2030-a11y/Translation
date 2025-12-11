@@ -11,7 +11,9 @@ import AdminTopbar from '@/components/AdminTopbar';
 interface Submission {
   id: string;
   user_id: string;
-  title: string;
+  main_researcher: string;
+  full_name: string;
+  reference_number: string;
   research_type: string;
   category: string;
   status: string;
@@ -19,6 +21,8 @@ interface Submission {
   created_at: string;
   updated_at: string;
   is_draft: boolean;
+  detailed_specialization?: string;
+  general_specialization?: string;
   user?: {
     username: string;
     email: string;
@@ -63,7 +67,8 @@ export default function AdminSubmissionsPage() {
       }
 
       if (searchTerm) {
-        query = query.ilike('title', `%${searchTerm}%`);
+        // البحث في عدة حقول: main_researcher, full_name, reference_number, detailed_specialization
+        query = query.or(`main_researcher.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%,reference_number.ilike.%${searchTerm}%,detailed_specialization.ilike.%${searchTerm}%`);
       }
 
       const from = (page - 1) * pageSize;
@@ -139,8 +144,14 @@ export default function AdminSubmissionsPage() {
         <AdminTopbar />
 
         <div className="dashboard-content">
-          <div className="page-header">
-            <h1>إدارة الطلبات</h1>
+          <div className="page-header" style={{ marginBottom: 'var(--spacing-lg)' }}>
+            <div>
+              <h1 style={{ margin: 0, marginBottom: '0.5rem' }}>إدارة الطلبات</h1>
+              <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                <i className="fas fa-file-alt" style={{ marginLeft: '0.5rem' }}></i>
+                إجمالي الطلبات: <strong>{totalCount}</strong> طلب
+              </p>
+            </div>
           </div>
 
           {/* Filters */}
@@ -239,46 +250,168 @@ export default function AdminSubmissionsPage() {
               ) : (
                 <>
                   <div className="submissions-list">
-                    {submissions.map((submission) => (
-                      <div key={submission.id} className="submission-item">
-                        <div className="submission-info">
-                          <h3>
-                            <Link href={`/admin/submissions/${submission.id}`}>
-                              {submission.title || 'بدون عنوان'}
-                            </Link>
-                          </h3>
-                          <div className="submission-meta">
-                            <span className={`badge badge-${getStatusColor(submission.status)}`}>
-                              {getStatusLabel(submission.status)}
-                            </span>
-                            <span className="submission-type">{submission.research_type}</span>
-                            <span className="submission-category">{submission.category}</span>
-                            {submission.user && (
-                              <span className="submission-user">
-                                <i className="fas fa-user"></i>
-                                {submission.user.username || submission.user.email}
+                    {submissions.map((submission) => {
+                      // إنشاء عنوان للعرض من الحقول المتاحة
+                      const displayTitle = submission.main_researcher || submission.full_name || submission.reference_number || 'بدون عنوان';
+                      const displaySubtitle = submission.detailed_specialization || submission.general_specialization || '';
+                      
+                      return (
+                        <div key={submission.id} className="submission-item" style={{ 
+                          padding: 'var(--spacing-lg)', 
+                          border: '1px solid var(--border-color)', 
+                          borderRadius: 'var(--radius-lg)',
+                          marginBottom: 'var(--spacing-md)',
+                          background: 'white',
+                          transition: 'all 0.2s ease',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                        }}>
+                          <div className="submission-info" style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-sm)' }}>
+                              <div style={{ flex: 1 }}>
+                                <h3 style={{ margin: 0, marginBottom: 'var(--spacing-xs)', fontSize: 'var(--font-size-lg)', fontWeight: 600 }}>
+                                  <Link 
+                                    href={`/admin/submissions/${submission.id}`}
+                                    style={{ color: 'var(--text-primary)', textDecoration: 'none' }}
+                                  >
+                                    {displayTitle}
+                                  </Link>
+                                </h3>
+                                {displaySubtitle && (
+                                  <p style={{ 
+                                    margin: 0, 
+                                    color: 'var(--text-secondary)', 
+                                    fontSize: 'var(--font-size-sm)',
+                                    marginTop: '0.25rem'
+                                  }}>
+                                    <i className="fas fa-book" style={{ marginLeft: '0.25rem', color: 'var(--primary-color)' }}></i>
+                                    {displaySubtitle}
+                                  </p>
+                                )}
+                                {submission.reference_number && (
+                                  <p style={{ 
+                                    margin: '0.5rem 0 0 0', 
+                                    fontSize: 'var(--font-size-xs)', 
+                                    color: 'var(--text-secondary)',
+                                    fontFamily: 'monospace'
+                                  }}>
+                                    <i className="fas fa-hashtag" style={{ marginLeft: '0.25rem' }}></i>
+                                    رقم المرجع: {submission.reference_number}
+                                  </p>
+                                )}
+                              </div>
+                              <span className={`badge badge-${getStatusColor(submission.status)}`} style={{ 
+                                fontSize: 'var(--font-size-sm)', 
+                                padding: '0.5rem 1rem',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {getStatusLabel(submission.status)}
                               </span>
-                            )}
-                            <span className="submission-date">
-                              {new Date(submission.created_at).toLocaleDateString('ar-SA', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                              })}
-                            </span>
+                            </div>
+                            
+                            <div className="submission-meta" style={{ 
+                              display: 'flex', 
+                              flexWrap: 'wrap', 
+                              gap: 'var(--spacing-md)',
+                              alignItems: 'center',
+                              paddingTop: 'var(--spacing-sm)',
+                              borderTop: '1px solid var(--border-color)'
+                            }}>
+                              <span className="submission-type" style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '0.25rem',
+                                fontSize: 'var(--font-size-sm)',
+                                color: 'var(--text-secondary)'
+                              }}>
+                                <i className="fas fa-microscope" style={{ color: 'var(--primary-color)' }}></i>
+                                {submission.research_type || 'غير محدد'}
+                              </span>
+                              
+                              {submission.category && (
+                                <span className="submission-category" style={{ 
+                                  display: 'inline-flex', 
+                                  alignItems: 'center', 
+                                  gap: '0.25rem',
+                                  fontSize: 'var(--font-size-sm)',
+                                  color: 'var(--text-secondary)'
+                                }}>
+                                  <i className="fas fa-folder" style={{ color: 'var(--info-color)' }}></i>
+                                  {submission.category}
+                                </span>
+                              )}
+                              
+                              {submission.user && (
+                                <span className="submission-user" style={{ 
+                                  display: 'inline-flex', 
+                                  alignItems: 'center', 
+                                  gap: '0.25rem',
+                                  fontSize: 'var(--font-size-sm)',
+                                  color: 'var(--text-secondary)'
+                                }}>
+                                  <i className="fas fa-user" style={{ color: 'var(--success-color)' }}></i>
+                                  {submission.user.username || submission.user.email}
+                                </span>
+                              )}
+                              
+                              <span className="submission-date" style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '0.25rem',
+                                fontSize: 'var(--font-size-sm)',
+                                color: 'var(--text-secondary)',
+                                marginRight: 'auto'
+                              }}>
+                                <i className="fas fa-calendar" style={{ color: 'var(--warning-color)' }}></i>
+                                {new Date(submission.created_at).toLocaleDateString('ar-SA', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                              
+                              {submission.file_url && (
+                                <a
+                                  href={submission.file_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ 
+                                    display: 'inline-flex', 
+                                    alignItems: 'center', 
+                                    gap: '0.25rem',
+                                    fontSize: 'var(--font-size-sm)',
+                                    color: 'var(--primary-color)',
+                                    textDecoration: 'none'
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <i className="fas fa-file-pdf"></i>
+                                  الملف
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="submission-actions" style={{ 
+                            display: 'flex', 
+                            gap: 'var(--spacing-sm)',
+                            marginTop: 'var(--spacing-md)',
+                            paddingTop: 'var(--spacing-md)',
+                            borderTop: '1px solid var(--border-color)'
+                          }}>
+                            <Link
+                              href={`/admin/submissions/${submission.id}`}
+                              className="btn btn-primary btn-small"
+                              style={{ flex: 1, justifyContent: 'center' }}
+                            >
+                              <i className="fas fa-eye"></i>
+                              مراجعة
+                            </Link>
                           </div>
                         </div>
-                        <div className="submission-actions">
-                          <Link
-                            href={`/admin/submissions/${submission.id}`}
-                            className="btn btn-primary btn-small"
-                          >
-                            <i className="fas fa-eye"></i>
-                            مراجعة
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Pagination */}
