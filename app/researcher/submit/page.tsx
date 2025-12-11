@@ -35,6 +35,7 @@ function SubmitPageContent() {
   const [success, setSuccess] = useState('');
   const [draftId, setDraftId] = useState<string | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
+  const [declarationAccepted, setDeclarationAccepted] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -177,11 +178,26 @@ function SubmitPageContent() {
         setError('فئة البحث مطلوبة');
         return false;
       }
+      if (formData.submitter_type === 'جهة' && !formData.main_researcher) {
+        setError('اسم الباحث الرئيسي مطلوب في حالة الحساب أعمال');
+        return false;
+      }
     }
 
     if (step === 3) {
       if (!formData.file && !fileUrl) {
         setError('يرجى رفع ملف البحث');
+        return false;
+      }
+    }
+
+    if (step === 4) {
+      if (!fileUrl) {
+        setError('يجب رفع الملف قبل الإرسال');
+        return false;
+      }
+      if (!declarationAccepted) {
+        setError('يجب الموافقة على التعهد قبل الإرسال');
         return false;
       }
     }
@@ -220,6 +236,15 @@ function SubmitPageContent() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (!fileUrl) {
+      setError('يجب رفع الملف قبل الإرسال');
+      return;
+    }
+    if (!declarationAccepted) {
+      setError('يجب الموافقة على التعهد قبل الإرسال');
+      return;
+    }
 
     if (!validateStep(4)) return;
 
@@ -584,7 +609,7 @@ function SubmitPageContent() {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="main_researcher" className="form-label">
+                    <label htmlFor="main_researcher" className={`form-label ${formData.submitter_type === 'جهة' ? 'required' : ''}`}>
                       <i className="fas fa-user-graduate" style={{ marginLeft: '0.5rem', color: 'var(--primary-color)' }}></i>
                       الباحث الرئيسي
                     </label>
@@ -595,7 +620,8 @@ function SubmitPageContent() {
                       className="form-input"
                       value={formData.main_researcher}
                       onChange={handleInputChange}
-                      placeholder="اسم الباحث الرئيسي (اختياري)"
+                      placeholder={formData.submitter_type === 'جهة' ? 'اسم الباحث الرئيسي (مطلوب)' : 'اسم الباحث الرئيسي (اختياري)'}
+                      required={formData.submitter_type === 'جهة'}
                     />
                   </div>
 
@@ -824,6 +850,78 @@ function SubmitPageContent() {
                       </div>
                     )}
                   </div>
+
+                  {/* Declaration Section */}
+                  <div className="review-section" style={{ marginTop: 'var(--spacing-xl)', padding: 'var(--spacing-lg)', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', border: '2px solid var(--border-color)' }}>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-md)', color: 'var(--primary-color)' }}>
+                      <i className="fas fa-file-contract"></i>
+                      التعهد والموافقة
+                    </h4>
+                    <div style={{ 
+                      padding: 'var(--spacing-md)', 
+                      background: 'var(--bg-primary)', 
+                      borderRadius: 'var(--radius-md)',
+                      marginBottom: 'var(--spacing-md)',
+                      border: '1px solid var(--border-color)',
+                      lineHeight: 1.8,
+                      fontSize: 'var(--font-size-sm)',
+                      color: 'var(--text-primary)'
+                    }}>
+                      {formData.submitter_type === 'فرد' ? (
+                        <p style={{ margin: 0, textAlign: 'right' }}>
+                          أتعهد بأن جميع البيانات والمعلومات المقدمة ضمن هذا الطلب/العمل صحيحة ودقيقة، وأن المحتوى مستخدم لغرض مشروع ومتوافق مع الأنظمة والتعليمات. كما أقرّ بأنني أتحمل المسؤولية الكاملة عن أي استخدام غير نظامي أو مخالف، دون تضمين أي ادعاء بملكية بحث أو مادة علمية ما لم يُذكر ذلك بشكل مستقل وواضح.
+                        </p>
+                      ) : (
+                        <p style={{ margin: 0, textAlign: 'right' }}>
+                          نقرّ بأن جميع البيانات والمعلومات المقدمة ضمن هذا الطلب/العمل صحيحة وتمثل الجهة مقدمة الطلب، كما نلتزم باستخدام المحتوى فيما يتوافق مع سياسات الجهة والأنظمة ذات العلاقة. {formData.main_researcher && `ونقرّ بأن هذا البحث ملك ل${formData.main_researcher}.`} ولا يُعتبر هذا التعهّد إثباتًا لملكية بحث أو مادة علمية لأي فرد أو جهة إلا إذا تم إرفاق ما يثبت ذلك بشكل مستقل. ونقرّ بتحمل المسؤولية الكاملة عن أي استخدام مخالف.
+                        </p>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-sm)' }}>
+                      <input
+                        type="checkbox"
+                        id="declaration"
+                        name="declaration"
+                        checked={declarationAccepted}
+                        onChange={(e) => setDeclarationAccepted(e.target.checked)}
+                        required
+                        style={{ 
+                          marginTop: '0.25rem',
+                          width: '18px',
+                          height: '18px',
+                          cursor: 'pointer',
+                          accentColor: 'var(--primary-color)'
+                        }}
+                      />
+                      <label htmlFor="declaration" style={{ 
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        fontSize: 'var(--font-size-sm)',
+                        color: declarationAccepted ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        fontWeight: declarationAccepted ? 600 : 400,
+                        lineHeight: 1.6
+                      }}>
+                        {formData.submitter_type === 'فرد' ? (
+                          <>أقرّ وأوافق على التعهد أعلاه وأتحمل المسؤولية الكاملة عن صحة البيانات والمعلومات المقدمة</>
+                        ) : (
+                          <>نقرّ ونوافق على التعهد أعلاه ونتحمل المسؤولية الكاملة عن صحة البيانات والمعلومات المقدمة</>
+                        )}
+                      </label>
+                    </div>
+                    {error && !declarationAccepted && currentStep === 4 && (
+                      <p style={{ 
+                        marginTop: 'var(--spacing-sm)', 
+                        color: 'var(--error-color)', 
+                        fontSize: 'var(--font-size-sm)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--spacing-xs)'
+                      }}>
+                        <i className="fas fa-exclamation-circle"></i>
+                        {error}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -851,7 +949,7 @@ function SubmitPageContent() {
                       <i className="fas fa-save"></i>
                       حفظ مسودة
                     </button>
-                    <button type="submit" className="btn btn-primary" disabled={loading || !fileUrl} style={{ minWidth: '160px' }}>
+                    <button type="submit" className="btn btn-primary" disabled={loading || !fileUrl || !declarationAccepted} style={{ minWidth: '160px' }}>
                       {loading ? (
                         <>
                           <i className="fas fa-spinner fa-spin"></i>
