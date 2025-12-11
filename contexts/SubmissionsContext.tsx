@@ -390,36 +390,98 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
     }
 
     try {
-      const draftData = {
-        ...data,
+      // إزالة الحقول غير الموجودة في الجدول
+      const {
+        title, // غير موجود في الجدول
+        description, // غير موجود في الجدول (يستخدم detailed_specialization)
+        file, // كائن File - لا يجب إرساله
+        user_id, // سيتم إضافته لاحقاً
+        ...cleanData
+      } = data;
+
+      // إعداد البيانات للمسودة
+      const draftData: any = {
+        ...cleanData,
         user_id: user.id,
         is_draft: true,
         updated_at: new Date().toISOString(),
       };
 
+      // إذا كان هناك مسودة موجودة، قم بالتحديث
       if (data.id) {
-        // Update existing draft
+        // إزالة id من البيانات المرسلة (لا يجب تحديثه)
+        const { id, ...updateData } = draftData;
+        
         const { error } = await supabase
           .from('submissions')
-          .update(draftData)
+          .update(updateData)
           .eq('id', data.id)
           .eq('user_id', user.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating draft:', error);
+          throw new Error(error.message || 'فشل تحديث المسودة');
+        }
       } else {
-        // Create new draft
+        // إنشاء مسودة جديدة
+        // إضافة الحقول المطلوبة بقيم افتراضية إذا كانت مفقودة
+        const newDraftData = {
+          ...draftData,
+          created_at: new Date().toISOString(),
+          // قيم افتراضية للحقول المطلوبة إذا كانت مفقودة
+          full_name: draftData.full_name || 'مسودة',
+          country: draftData.country || '',
+          email: draftData.email || user.email || '',
+          gender: draftData.gender || 'ذكر',
+          id_number: draftData.id_number || '',
+          research_type: draftData.research_type || '',
+          category: draftData.category || '',
+          main_researcher: draftData.main_researcher || draftData.full_name || '',
+          general_specialization: draftData.general_specialization || draftData.category || '',
+          detailed_specialization: draftData.detailed_specialization || '',
+          file_url: draftData.file_url || '',
+          file_name: draftData.file_name || 'draft-file',
+          file_size: draftData.file_size || 0,
+          declaration_accepted: draftData.declaration_accepted || false,
+          declaration_timestamp: draftData.declaration_timestamp || new Date().toISOString(),
+          reference_number: draftData.reference_number || `DRAFT-${Date.now()}`,
+          status: draftData.status || 'draft',
+        };
+
         const { error } = await supabase
           .from('submissions')
-          .insert([{ ...draftData, created_at: new Date().toISOString() }]);
+          .insert([newDraftData]);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error creating draft:', error);
+          throw new Error(error.message || 'فشل إنشاء المسودة');
+        }
       }
 
-      await fetchDrafts();
+      // إعادة تحميل المسودات بعد الحفظ
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('submissions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_draft', true)
+          .order('updated_at', { ascending: false });
+
+        if (!fetchError && data) {
+          setState(prev => ({
+            ...prev,
+            drafts: data || [],
+          }));
+        }
+      } catch (fetchErr) {
+        console.warn('خطأ في إعادة تحميل المسودات:', fetchErr);
+      }
+
       return { success: true };
     } catch (error: any) {
       console.error('Error saving draft:', error);
-      return { success: false, error: error.message };
+      const errorMessage = error?.message || error?.toString() || 'حدث خطأ غير معروف أثناء حفظ المسودة';
+      return { success: false, error: errorMessage };
     }
   }, [user, supabase]);
 

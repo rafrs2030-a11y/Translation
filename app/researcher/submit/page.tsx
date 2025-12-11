@@ -270,16 +270,61 @@ function SubmitPageContent() {
 
   const handleSaveDraft = async () => {
     try {
-      await saveDraft({
+      // إعداد البيانات للمسودة
+      const fullName = (formData.submitter_type === 'فرد') 
+        ? (formData.full_name || '').trim()
+        : (formData.organization_name || '').trim();
+      
+      const mainResearcher = (formData.main_researcher || '').trim() || fullName;
+
+      // الحصول على معلومات المستخدم
+      const supabase = createClient();
+      let userData = null;
+      try {
+        const { data } = await supabase
+          .from('users')
+          .select('gender, national_id, email')
+          .eq('id', user?.id)
+          .single();
+        userData = data;
+      } catch (userErr) {
+        console.warn('خطأ في جلب بيانات المستخدم:', userErr);
+      }
+
+      const result = await saveDraft({
         ...(draftId ? { id: draftId } : {}),
-        ...formData,
-        file_url: fileUrl,
+        full_name: fullName || 'مسودة',
+        email: formData.email || userData?.email || '',
+        country: formData.country || '',
+        gender: userData?.gender || 'ذكر',
+        id_number: userData?.national_id || '',
+        research_type: formData.research_type || '',
+        category: formData.category || '',
+        main_researcher: mainResearcher || fullName || '',
+        general_specialization: formData.category || '',
+        detailed_specialization: formData.description || '',
+        file_url: fileUrl || '',
+        file_name: fileName || formData.file?.name || 'draft-file',
+        file_size: fileSize || formData.file?.size || 0,
+        submitter_type: formData.submitter_type === 'فرد' ? 'أفراد' : formData.submitter_type === 'جهة' ? 'أعمال' : formData.submitter_type,
+        organization_name: formData.organization_name || null,
+        organization_type: formData.organization_type || null,
+        declaration_accepted: false,
+        declaration_timestamp: new Date().toISOString(),
+        reference_number: draftId ? undefined : `DRAFT-${Date.now()}`,
+        status: 'draft',
         is_draft: true,
       });
-      setSuccess('تم حفظ المسودة بنجاح');
-      setTimeout(() => setSuccess(''), 3000);
+
+      if (result.success) {
+        setSuccess('تم حفظ المسودة بنجاح');
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError('فشل حفظ المسودة: ' + (result.error || 'حدث خطأ غير معروف'));
+      }
     } catch (err: any) {
-      setError('فشل حفظ المسودة: ' + err.message);
+      console.error('Error saving draft:', err);
+      setError('فشل حفظ المسودة: ' + (err.message || 'حدث خطأ غير معروف'));
     }
   };
 
