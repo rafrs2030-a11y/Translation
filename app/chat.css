@@ -887,6 +887,7 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
     border: 2px solid rgba(61, 90, 148, 0.2);
     animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
 }
 
 @keyframes scaleIn {
@@ -908,6 +909,10 @@
     align-items: center;
     background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
     position: relative;
+    z-index: 100;
+    flex-shrink: 0;
+    min-height: 60px;
+    border-radius: var(--chat-radius-lg) var(--chat-radius-lg) 0 0;
 }
 
 .chat-user-selection-header::after {
@@ -932,7 +937,9 @@
     padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--chat-border);
     position: relative;
+    z-index: 99;
     background: white;
+    flex-shrink: 0;
 }
 
 .chat-user-selection-search input {
@@ -1548,19 +1555,23 @@
     }
     
     .chat-user-selection-header {
-        padding: 0.75rem;
-        position: sticky;
-        top: 0;
-        background: white;
-        z-index: 10;
+        padding: 0.75rem 1rem;
+        position: relative;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        z-index: 100;
+        min-height: 50px;
+        flex-shrink: 0;
+        border-bottom: 1px solid var(--chat-border);
+        border-radius: var(--chat-radius-lg) var(--chat-radius-lg) 0 0;
     }
     
     .chat-user-selection-search {
         padding: 0.625rem 0.75rem;
-        position: sticky;
-        top: 60px;
+        position: relative;
         background: white;
-        z-index: 9;
+        z-index: 99;
+        flex-shrink: 0;
+        border-bottom: 1px solid var(--chat-border);
     }
     
     .chat-user-selection-search input {

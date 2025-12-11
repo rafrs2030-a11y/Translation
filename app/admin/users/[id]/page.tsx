@@ -213,7 +213,7 @@ export default function AdminUserDetailsPage() {
           )}
 
           {/* Main Content Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 'var(--spacing-xl)', marginTop: 'var(--spacing-lg)' }}>
+          <div className="user-details-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 'var(--spacing-xl)', marginTop: 'var(--spacing-lg)' }}>
             {/* Left Column - User Details Form */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
               <div className="card">

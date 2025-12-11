@@ -251,14 +251,14 @@ export default function AdminUsersPage() {
                               })}
                             </td>
                             <td>
-                              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <div className="table-actions" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                 <Link
                                   href={`/admin/users/${user.id}`}
                                   className="btn btn-primary btn-small"
                                   title="عرض وتعديل التفاصيل"
                                 >
                                   <i className="fas fa-eye"></i>
-                                  عرض التفاصيل
+                                  <span className="action-text">عرض التفاصيل</span>
                                 </Link>
                                 <button
                                   className="btn btn-outline btn-small"
@@ -266,7 +266,7 @@ export default function AdminUsersPage() {
                                   title={user.role === 'admin' ? 'تحويل إلى باحث' : 'تحويل إلى مدير'}
                                 >
                                   <i className={`fas fa-${user.role === 'admin' ? 'user' : 'user-shield'}`}></i>
-                                  {user.role === 'admin' ? 'تحويل إلى باحث' : 'تحويل إلى مدير'}
+                                  <span className="action-text">{user.role === 'admin' ? 'تحويل إلى باحث' : 'تحويل إلى مدير'}</span>
                                 </button>
                               </div>
                             </td>
