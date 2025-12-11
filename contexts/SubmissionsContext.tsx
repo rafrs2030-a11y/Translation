@@ -57,7 +57,6 @@ interface SubmissionsContextType extends SubmissionsState {
   setFilters: (filters: Partial<SubmissionFilters>) => void;
   setPage: (page: number) => void;
   getStats: () => Promise<{ total: number; approved: number; pending: number; rejected: number }>;
-  resetLoading: () => void;
 }
 
 const SubmissionsContext = createContext<SubmissionsContextType | undefined>(undefined);
@@ -212,6 +211,14 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
+      // التحقق من الحقول المطلوبة
+      const requiredFields = ['title', 'research_type', 'category', 'file_url', 'file_name', 'file_size', 'full_name', 'email', 'country', 'gender', 'id_number', 'main_researcher', 'general_specialization', 'detailed_specialization', 'reference_number'];
+      const missingFields = requiredFields.filter(field => !data[field as keyof Submission]);
+      
+      if (missingFields.length > 0) {
+        throw new Error(`الحقول التالية مطلوبة: ${missingFields.join(', ')}`);
+      }
+
       const submissionData = {
         ...data,
         user_id: user.id,
@@ -227,7 +234,10 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw new Error(error.message || 'حدث خطأ أثناء إنشاء الطلب');
+      }
 
       setState(prev => ({
         ...prev,
@@ -238,12 +248,13 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
       return { success: true, data: newSubmission };
     } catch (error: any) {
       console.error('Error creating submission:', error);
+      const errorMessage = error.message || 'حدث خطأ أثناء إنشاء الطلب';
       setState(prev => ({
         ...prev,
-        error: error.message || 'حدث خطأ أثناء إنشاء الطلب',
+        error: errorMessage,
         loading: false,
       }));
-      return { success: false, error: error.message };
+      return { success: false, error: errorMessage };
     }
   }, [user, supabase]);
 
@@ -432,10 +443,6 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
     }
   }, [user, isAuthenticated, state.filters.status, state.filters.researchType, state.filters.category, state.filters.dateFrom, state.filters.dateTo, state.filters.searchTerm, state.pagination.page, fetchUserSubmissions]);
 
-  const resetLoading = useCallback(() => {
-    setState(prev => ({ ...prev, loading: false }));
-  }, []);
-
   return (
     <SubmissionsContext.Provider
       value={{
@@ -450,7 +457,6 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
         setFilters,
         setPage,
         getStats,
-        resetLoading,
       }}
     >
       {children}

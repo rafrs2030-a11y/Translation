@@ -14,7 +14,7 @@ function SubmitPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { createSubmission, loading, saveDraft, fetchSubmissionById, resetLoading } = useSubmissions();
+  const { createSubmission, loading, saveDraft, fetchSubmissionById } = useSubmissions();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -22,7 +22,7 @@ function SubmitPageContent() {
     category: '',
     description: '',
     country: '',
-    submitter_type: 'أفراد',
+    submitter_type: 'فرد',
     full_name: '',
     email: '',
     organization_name: '',
@@ -35,46 +35,6 @@ function SubmitPageContent() {
   const [success, setSuccess] = useState('');
   const [draftId, setDraftId] = useState<string | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
-  const [declarationAccepted, setDeclarationAccepted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // دالة لمسح الكاش وإعادة تعيين النموذج
-  const clearCacheAndReset = () => {
-    // مسح localStorage المتعلق بالنموذج
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (key.includes('submit') || key.includes('draft') || key.includes('form'))) {
-        keysToRemove.push(key);
-      }
-    }
-    keysToRemove.forEach(key => localStorage.removeItem(key));
-
-    // إعادة تعيين النموذج
-    setFormData({
-      title: '',
-      research_type: '',
-      category: '',
-      description: '',
-      country: '',
-      submitter_type: 'أفراد',
-      full_name: user?.username || '',
-      email: user?.email || '',
-      organization_name: '',
-      organization_type: '',
-      main_researcher: '',
-      file: null,
-    });
-    setFileUrl(null);
-    setError('');
-    setSuccess('');
-    setDraftId(null);
-    setDeclarationAccepted(false);
-    setCurrentStep(1);
-    
-    // مسح معاملات URL
-    router.replace('/researcher/submit', { scroll: false });
-  };
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -113,7 +73,7 @@ function SubmitPageContent() {
           category: draft.category || '',
           description: draft.description || '',
           country: draft.country || '',
-          submitter_type: draft.submitter_type || 'أفراد',
+          submitter_type: draft.submitter_type || 'فرد',
           full_name: draft.full_name || prev.full_name,
           email: draft.email || prev.email,
           organization_name: draft.organization_name || '',
@@ -136,16 +96,7 @@ function SubmitPageContent() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    // تحويل القيم للتوافق مع قاعدة البيانات
-    let processedValue = value;
-    if (name === 'submitter_type') {
-      if (value === 'فرد') {
-        processedValue = 'أفراد';
-      } else if (value === 'جهة') {
-        processedValue = 'أعمال';
-      }
-    }
-    setFormData(prev => ({ ...prev, [name]: processedValue }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,11 +146,11 @@ function SubmitPageContent() {
         setError('يرجى اختيار نوع مقدم البحث');
         return false;
       }
-      if ((formData.submitter_type === 'أفراد' || formData.submitter_type === 'فرد') && !formData.full_name) {
+      if (formData.submitter_type === 'فرد' && !formData.full_name) {
         setError('الاسم الكامل مطلوب');
         return false;
       }
-      if ((formData.submitter_type === 'أعمال' || formData.submitter_type === 'جهة') && (!formData.organization_name || !formData.organization_type)) {
+      if (formData.submitter_type === 'جهة' && (!formData.organization_name || !formData.organization_type)) {
         setError('اسم الجهة ونوع الجهة مطلوبان');
         return false;
       }
@@ -226,26 +177,11 @@ function SubmitPageContent() {
         setError('فئة البحث مطلوبة');
         return false;
       }
-      if ((formData.submitter_type === 'أعمال' || formData.submitter_type === 'جهة') && !formData.main_researcher) {
-        setError('اسم الباحث الرئيسي مطلوب في حالة الحساب أعمال');
-        return false;
-      }
     }
 
     if (step === 3) {
       if (!formData.file && !fileUrl) {
         setError('يرجى رفع ملف البحث');
-        return false;
-      }
-    }
-
-    if (step === 4) {
-      if (!fileUrl) {
-        setError('يجب رفع الملف قبل الإرسال');
-        return false;
-      }
-      if (!declarationAccepted) {
-        setError('يجب الموافقة على التعهد قبل الإرسال');
         return false;
       }
     }
@@ -282,40 +218,18 @@ function SubmitPageContent() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
-    // منع الإرسال المتعدد
-    if (isSubmitting) {
-      return;
-    }
-    
-    setIsSubmitting(true);
     setError('');
     setSuccess('');
 
-    if (!fileUrl) {
-      setError('يجب رفع الملف قبل الإرسال');
-      return;
-    }
-    if (!declarationAccepted) {
-      setError('يجب الموافقة على التعهد قبل الإرسال');
-      return;
-    }
-
     if (!validateStep(4)) return;
 
+    // التحقق من وجود الملف
+    if (!formData.file || !fileUrl) {
+      setError('يجب رفع ملف البحث قبل الإرسال');
+      return;
+    }
+
     try {
-      // التحقق من وجود المستخدم
-      if (!user?.id) {
-        setError('المستخدم غير مسجل الدخول');
-        return;
-      }
-
-      // التحقق من وجود الملف
-      if (!formData.file) {
-        setError('يجب رفع ملف البحث');
-        return;
-      }
-
       // الحصول على معلومات المستخدم من قاعدة البيانات
       const supabase = createClient();
       let userData = null;
@@ -323,40 +237,43 @@ function SubmitPageContent() {
         const { data, error: userError } = await supabase
           .from('users')
           .select('gender, national_id')
-          .eq('id', user.id)
+          .eq('id', user?.id)
           .single();
         
         if (userError) {
           console.warn('خطأ في جلب بيانات المستخدم:', userError);
-          // نستمر حتى لو فشل جلب البيانات، سنستخدم القيم الافتراضية
         } else {
           userData = data;
         }
       } catch (userErr: any) {
         console.warn('خطأ في جلب بيانات المستخدم:', userErr);
-        // نستمر حتى لو فشل جلب البيانات
       }
+
+      // إنشاء رقم مرجعي
+      const referenceNumber = `REF-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
 
       const result = await createSubmission({
         title: formData.title,
         research_type: formData.research_type,
         category: formData.category,
         description: formData.description || '',
-        file_url: fileUrl!,
+        file_url: fileUrl,
         file_name: formData.file.name,
         file_size: formData.file.size,
         submitter_type: formData.submitter_type === 'فرد' ? 'أفراد' : formData.submitter_type === 'جهة' ? 'أعمال' : formData.submitter_type,
-        full_name: (formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? formData.full_name : formData.organization_name || '',
+        full_name: (formData.submitter_type === 'فرد') ? formData.full_name : formData.organization_name || '',
         email: formData.email,
         organization_name: formData.organization_name || '',
         organization_type: formData.organization_type || '',
-        main_researcher: formData.main_researcher || ((formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? formData.full_name : formData.organization_name) || '',
+        main_researcher: formData.main_researcher || ((formData.submitter_type === 'فرد') ? formData.full_name : formData.organization_name) || '',
         country: formData.country,
         gender: userData?.gender || 'ذكر',
         id_number: userData?.national_id || '',
         general_specialization: formData.category || '',
         detailed_specialization: formData.description || '',
         declaration_accepted: true,
+        declaration_timestamp: new Date().toISOString(),
+        reference_number: referenceNumber,
         status: 'pending',
         is_draft: false,
       });
@@ -368,12 +285,10 @@ function SubmitPageContent() {
         }, 2000);
       } else {
         setError(result.error || 'فشل تقديم البحث');
-        setIsSubmitting(false);
       }
     } catch (err: any) {
       console.error('خطأ في إرسال الطلب:', err);
       setError('حدث خطأ: ' + (err.message || 'خطأ غير معروف'));
-      setIsSubmitting(false);
     }
   };
 
@@ -398,32 +313,13 @@ function SubmitPageContent() {
         <Topbar />
 
         <div className="dashboard-content">
-          <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
+          <div className="page-header">
             <div>
               <h1>{draftId ? 'تعديل مسودة' : 'تقديم بحث جديد'}</h1>
               <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
                 {draftId ? 'جاري تعديل مسودة موجودة' : 'املأ جميع الحقول المطلوبة لتقديم بحثك للمراجعة'}
               </p>
             </div>
-            {currentStep < 4 && (
-              <button
-                type="button"
-                onClick={clearCacheAndReset}
-                className="btn btn-outline"
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 'var(--spacing-sm)',
-                  fontSize: 'var(--font-size-sm)',
-                  padding: 'var(--spacing-sm) var(--spacing-md)',
-                  whiteSpace: 'nowrap'
-                }}
-                title="مسح الكاش وإعادة تعيين النموذج"
-              >
-                <i className="fas fa-trash-alt"></i>
-                مسح الكاش
-              </button>
-            )}
           </div>
 
           {/* Progress Steps */}
@@ -488,59 +384,59 @@ function SubmitPageContent() {
                       <label
                         style={{
                           padding: 'var(--spacing-lg)',
-                          border: `2px solid ${(formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? 'var(--primary-color)' : 'var(--border-color)'}`,
+                          border: `2px solid ${formData.submitter_type === 'فرد' ? 'var(--primary-color)' : 'var(--border-color)'}`,
                           borderRadius: 'var(--radius-lg)',
                           cursor: 'pointer',
-                          background: (formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? 'rgba(61, 90, 148, 0.05)' : 'var(--bg-primary)',
+                          background: formData.submitter_type === 'فرد' ? 'rgba(61, 90, 148, 0.05)' : 'var(--bg-primary)',
                           transition: 'all var(--transition-base)',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
                           gap: 'var(--spacing-sm)',
                         }}
-                        onClick={() => setFormData(prev => ({ ...prev, submitter_type: 'أفراد' }))}
+                        onClick={() => setFormData(prev => ({ ...prev, submitter_type: 'فرد' }))}
                       >
                         <input
                           type="radio"
                           name="submitter_type"
                           value="فرد"
-                          checked={formData.submitter_type === 'أفراد' || formData.submitter_type === 'فرد'}
+                          checked={formData.submitter_type === 'فرد'}
                           onChange={handleInputChange}
                           style={{ display: 'none' }}
                         />
-                        <i className="fas fa-user" style={{ fontSize: '2rem', color: (formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? 'var(--primary-color)' : 'var(--text-secondary)' }}></i>
-                        <span style={{ fontWeight: 600, color: (formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? 'var(--primary-color)' : 'var(--text-primary)' }}>فرد</span>
+                        <i className="fas fa-user" style={{ fontSize: '2rem', color: formData.submitter_type === 'فرد' ? 'var(--primary-color)' : 'var(--text-secondary)' }}></i>
+                        <span style={{ fontWeight: 600, color: formData.submitter_type === 'فرد' ? 'var(--primary-color)' : 'var(--text-primary)' }}>فرد</span>
                       </label>
                       <label
                         style={{
                           padding: 'var(--spacing-lg)',
-                          border: `2px solid ${(formData.submitter_type === 'جهة' || formData.submitter_type === 'أعمال') ? 'var(--primary-color)' : 'var(--border-color)'}`,
+                          border: `2px solid ${formData.submitter_type === 'جهة' ? 'var(--primary-color)' : 'var(--border-color)'}`,
                           borderRadius: 'var(--radius-lg)',
                           cursor: 'pointer',
-                          background: (formData.submitter_type === 'جهة' || formData.submitter_type === 'أعمال') ? 'rgba(61, 90, 148, 0.05)' : 'var(--bg-primary)',
+                          background: formData.submitter_type === 'جهة' ? 'rgba(61, 90, 148, 0.05)' : 'var(--bg-primary)',
                           transition: 'all var(--transition-base)',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
                           gap: 'var(--spacing-sm)',
                         }}
-                        onClick={() => setFormData(prev => ({ ...prev, submitter_type: 'أعمال' }))}
+                        onClick={() => setFormData(prev => ({ ...prev, submitter_type: 'جهة' }))}
                       >
                         <input
                           type="radio"
                           name="submitter_type"
                           value="جهة"
-                          checked={formData.submitter_type === 'أعمال' || formData.submitter_type === 'جهة'}
+                          checked={formData.submitter_type === 'جهة'}
                           onChange={handleInputChange}
                           style={{ display: 'none' }}
                         />
-                        <i className="fas fa-building" style={{ fontSize: '2rem', color: (formData.submitter_type === 'جهة' || formData.submitter_type === 'أعمال') ? 'var(--primary-color)' : 'var(--text-secondary)' }}></i>
-                        <span style={{ fontWeight: 600, color: (formData.submitter_type === 'جهة' || formData.submitter_type === 'أعمال') ? 'var(--primary-color)' : 'var(--text-primary)' }}>جهة</span>
+                        <i className="fas fa-building" style={{ fontSize: '2rem', color: formData.submitter_type === 'جهة' ? 'var(--primary-color)' : 'var(--text-secondary)' }}></i>
+                        <span style={{ fontWeight: 600, color: formData.submitter_type === 'جهة' ? 'var(--primary-color)' : 'var(--text-primary)' }}>جهة</span>
                       </label>
                     </div>
                   </div>
 
-                  {(formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') && (
+                  {formData.submitter_type === 'فرد' && (
                     <>
                       <div className="form-group">
                         <label htmlFor="full_name" className="form-label required">
@@ -577,7 +473,7 @@ function SubmitPageContent() {
                     </>
                   )}
 
-                  {(formData.submitter_type === 'جهة' || formData.submitter_type === 'أعمال') && (
+                  {formData.submitter_type === 'جهة' && (
                     <>
                       <div className="form-group">
                         <label htmlFor="organization_name" className="form-label required">اسم الجهة</label>
@@ -726,7 +622,7 @@ function SubmitPageContent() {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="main_researcher" className={`form-label ${(formData.submitter_type === 'أعمال' || formData.submitter_type === 'جهة') ? 'required' : ''}`}>
+                    <label htmlFor="main_researcher" className="form-label">
                       <i className="fas fa-user-graduate" style={{ marginLeft: '0.5rem', color: 'var(--primary-color)' }}></i>
                       الباحث الرئيسي
                     </label>
@@ -737,8 +633,7 @@ function SubmitPageContent() {
                       className="form-input"
                       value={formData.main_researcher}
                       onChange={handleInputChange}
-                      placeholder={(formData.submitter_type === 'أعمال' || formData.submitter_type === 'جهة') ? 'اسم الباحث الرئيسي (مطلوب)' : 'اسم الباحث الرئيسي (اختياري)'}
-                      required={formData.submitter_type === 'أعمال' || formData.submitter_type === 'جهة'}
+                      placeholder="اسم الباحث الرئيسي (اختياري)"
                     />
                   </div>
 
@@ -874,7 +769,7 @@ function SubmitPageContent() {
                         <label>نوع مقدم البحث:</label>
                         <span style={{ fontWeight: 600 }}>{formData.submitter_type}</span>
                       </div>
-                      {(formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? (
+                      {formData.submitter_type === 'فرد' ? (
                         <>
                           <div className="detail-item">
                             <label>الاسم:</label>
@@ -967,78 +862,6 @@ function SubmitPageContent() {
                       </div>
                     )}
                   </div>
-
-                  {/* Declaration Section */}
-                  <div className="review-section" style={{ marginTop: 'var(--spacing-xl)', padding: 'var(--spacing-lg)', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', border: '2px solid var(--border-color)' }}>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-md)', color: 'var(--primary-color)' }}>
-                      <i className="fas fa-file-contract"></i>
-                      التعهد والموافقة
-                    </h4>
-                    <div style={{ 
-                      padding: 'var(--spacing-md)', 
-                      background: 'var(--bg-primary)', 
-                      borderRadius: 'var(--radius-md)',
-                      marginBottom: 'var(--spacing-md)',
-                      border: '1px solid var(--border-color)',
-                      lineHeight: 1.8,
-                      fontSize: 'var(--font-size-sm)',
-                      color: 'var(--text-primary)'
-                    }}>
-                      {(formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? (
-                        <p style={{ margin: 0, textAlign: 'right' }}>
-                          أتعهد بأن جميع البيانات والمعلومات المقدمة ضمن هذا الطلب/العمل صحيحة ودقيقة، وأن المحتوى مستخدم لغرض مشروع ومتوافق مع الأنظمة والتعليمات. كما أقرّ بأنني أتحمل المسؤولية الكاملة عن أي استخدام غير نظامي أو مخالف، دون تضمين أي ادعاء بملكية بحث أو مادة علمية ما لم يُذكر ذلك بشكل مستقل وواضح.
-                        </p>
-                      ) : (
-                        <p style={{ margin: 0, textAlign: 'right' }}>
-                          نقرّ بأن جميع البيانات والمعلومات المقدمة ضمن هذا الطلب/العمل صحيحة وتمثل الجهة مقدمة الطلب، كما نلتزم باستخدام المحتوى فيما يتوافق مع سياسات الجهة والأنظمة ذات العلاقة. {formData.main_researcher && `ونقرّ بأن هذا البحث ملك ل${formData.main_researcher}.`} ولا يُعتبر هذا التعهّد إثباتًا لملكية بحث أو مادة علمية لأي فرد أو جهة إلا إذا تم إرفاق ما يثبت ذلك بشكل مستقل. ونقرّ بتحمل المسؤولية الكاملة عن أي استخدام مخالف.
-                        </p>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-sm)' }}>
-                      <input
-                        type="checkbox"
-                        id="declaration"
-                        name="declaration"
-                        checked={declarationAccepted}
-                        onChange={(e) => setDeclarationAccepted(e.target.checked)}
-                        required
-                        style={{ 
-                          marginTop: '0.25rem',
-                          width: '18px',
-                          height: '18px',
-                          cursor: 'pointer',
-                          accentColor: 'var(--primary-color)'
-                        }}
-                      />
-                      <label htmlFor="declaration" style={{ 
-                        cursor: 'pointer',
-                        userSelect: 'none',
-                        fontSize: 'var(--font-size-sm)',
-                        color: declarationAccepted ? 'var(--text-primary)' : 'var(--text-secondary)',
-                        fontWeight: declarationAccepted ? 600 : 400,
-                        lineHeight: 1.6
-                      }}>
-                        {(formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? (
-                          <>أقرّ وأوافق على التعهد أعلاه وأتحمل المسؤولية الكاملة عن صحة البيانات والمعلومات المقدمة</>
-                        ) : (
-                          <>نقرّ ونوافق على التعهد أعلاه ونتحمل المسؤولية الكاملة عن صحة البيانات والمعلومات المقدمة</>
-                        )}
-                      </label>
-                    </div>
-                    {error && !declarationAccepted && currentStep === 4 && (
-                      <p style={{ 
-                        marginTop: 'var(--spacing-sm)', 
-                        color: 'var(--error-color)', 
-                        fontSize: 'var(--font-size-sm)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--spacing-xs)'
-                      }}>
-                        <i className="fas fa-exclamation-circle"></i>
-                        {error}
-                      </p>
-                    )}
-                  </div>
                 </div>
               </div>
             )}
@@ -1062,34 +885,12 @@ function SubmitPageContent() {
                 )}
                 {currentStep === 4 && (
                   <>
-                    <button type="button" className="btn btn-outline" onClick={handleSaveDraft} disabled={isSubmitting || loadingDraft} style={{ minWidth: '140px' }}>
+                    <button type="button" className="btn btn-outline" onClick={handleSaveDraft} disabled={loading} style={{ minWidth: '140px' }}>
                       <i className="fas fa-save"></i>
-                      {loadingDraft ? 'جاري الحفظ...' : 'حفظ مسودة'}
+                      حفظ مسودة
                     </button>
-                    <button 
-                      type="submit" 
-                      className="btn btn-primary" 
-                      disabled={isSubmitting || !fileUrl || !declarationAccepted} 
-                      style={{ 
-                        minWidth: '160px',
-                        opacity: (isSubmitting || !fileUrl || !declarationAccepted) ? 0.6 : 1,
-                        cursor: (isSubmitting || !fileUrl || !declarationAccepted) ? 'not-allowed' : 'pointer'
-                      }}
-                      title={!fileUrl ? 'يجب رفع الملف أولاً' : !declarationAccepted ? 'يجب الموافقة على التعهد أولاً' : isSubmitting ? 'جاري الإرسال...' : 'إرسال البحث'}
-                      onClick={(e) => {
-                        if (!fileUrl) {
-                          e.preventDefault();
-                          setError('يجب رفع الملف قبل الإرسال');
-                          return;
-                        }
-                        if (!declarationAccepted) {
-                          e.preventDefault();
-                          setError('يجب الموافقة على التعهد قبل الإرسال');
-                          return;
-                        }
-                      }}
-                    >
-                      {isSubmitting ? (
+                    <button type="submit" className="btn btn-primary" disabled={loading || !fileUrl} style={{ minWidth: '160px' }}>
+                      {loading ? (
                         <>
                           <i className="fas fa-spinner fa-spin"></i>
                           جاري الإرسال...
@@ -1101,45 +902,6 @@ function SubmitPageContent() {
                         </>
                       )}
                     </button>
-                    {isSubmitting && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsSubmitting(false);
-                          resetLoading();
-                        }}
-                        className="btn btn-outline"
-                        style={{
-                          marginTop: 'var(--spacing-sm)',
-                          fontSize: 'var(--font-size-sm)',
-                          padding: 'var(--spacing-xs) var(--spacing-sm)',
-                          background: 'rgba(239, 68, 68, 0.1)',
-                          color: 'var(--error-color)',
-                          borderColor: 'var(--error-color)'
-                        }}
-                      >
-                        <i className="fas fa-times-circle"></i>
-                        إيقاف الإرسال
-                      </button>
-                    )}
-                    {(!fileUrl || !declarationAccepted) && !isSubmitting && (
-                      <div style={{ 
-                        marginTop: 'var(--spacing-sm)', 
-                        padding: 'var(--spacing-sm)', 
-                        background: 'rgba(239, 68, 68, 0.1)', 
-                        borderRadius: 'var(--radius-md)',
-                        fontSize: 'var(--font-size-sm)',
-                        color: 'var(--error-color)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--spacing-xs)',
-                        width: '100%',
-                        marginRight: 'var(--spacing-md)'
-                      }}>
-                        <i className="fas fa-exclamation-circle"></i>
-                        {!fileUrl && !declarationAccepted ? 'يجب رفع الملف والموافقة على التعهد أولاً' : !fileUrl ? 'يجب رفع الملف أولاً' : 'يجب الموافقة على التعهد أولاً'}
-                      </div>
-                    )}
                   </>
                 )}
               </div>
