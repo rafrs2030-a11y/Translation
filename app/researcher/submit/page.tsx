@@ -14,7 +14,7 @@ function SubmitPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { createSubmission, loading, saveDraft, fetchSubmissionById } = useSubmissions();
+  const { createSubmission, loading, saveDraft, fetchSubmissionById, resetLoading } = useSubmissions();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -36,6 +36,7 @@ function SubmitPageContent() {
   const [draftId, setDraftId] = useState<string | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
   const [declarationAccepted, setDeclarationAccepted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // دالة لمسح الكاش وإعادة تعيين النموذج
   const clearCacheAndReset = () => {
@@ -281,6 +282,13 @@ function SubmitPageContent() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    // منع الإرسال المتعدد
+    if (isSubmitting) {
+      return;
+    }
+    
+    setIsSubmitting(true);
     setError('');
     setSuccess('');
 
@@ -296,17 +304,37 @@ function SubmitPageContent() {
     if (!validateStep(4)) return;
 
     try {
-      // الحصول على معلومات المستخدم من قاعدة البيانات
-      const supabase = createClient();
-      const { data: userData } = await supabase
-        .from('users')
-        .select('gender, national_id')
-        .eq('id', user?.id)
-        .single();
+      // التحقق من وجود المستخدم
+      if (!user?.id) {
+        setError('المستخدم غير مسجل الدخول');
+        return;
+      }
 
+      // التحقق من وجود الملف
       if (!formData.file) {
         setError('يجب رفع ملف البحث');
         return;
+      }
+
+      // الحصول على معلومات المستخدم من قاعدة البيانات
+      const supabase = createClient();
+      let userData = null;
+      try {
+        const { data, error: userError } = await supabase
+          .from('users')
+          .select('gender, national_id')
+          .eq('id', user.id)
+          .single();
+        
+        if (userError) {
+          console.warn('خطأ في جلب بيانات المستخدم:', userError);
+          // نستمر حتى لو فشل جلب البيانات، سنستخدم القيم الافتراضية
+        } else {
+          userData = data;
+        }
+      } catch (userErr: any) {
+        console.warn('خطأ في جلب بيانات المستخدم:', userErr);
+        // نستمر حتى لو فشل جلب البيانات
       }
 
       const result = await createSubmission({
@@ -340,9 +368,12 @@ function SubmitPageContent() {
         }, 2000);
       } else {
         setError(result.error || 'فشل تقديم البحث');
+        setIsSubmitting(false);
       }
     } catch (err: any) {
-      setError('حدث خطأ: ' + err.message);
+      console.error('خطأ في إرسال الطلب:', err);
+      setError('حدث خطأ: ' + (err.message || 'خطأ غير معروف'));
+      setIsSubmitting(false);
     }
   };
 
@@ -1031,20 +1062,20 @@ function SubmitPageContent() {
                 )}
                 {currentStep === 4 && (
                   <>
-                    <button type="button" className="btn btn-outline" onClick={handleSaveDraft} disabled={loading} style={{ minWidth: '140px' }}>
+                    <button type="button" className="btn btn-outline" onClick={handleSaveDraft} disabled={isSubmitting || loadingDraft} style={{ minWidth: '140px' }}>
                       <i className="fas fa-save"></i>
-                      حفظ مسودة
+                      {loadingDraft ? 'جاري الحفظ...' : 'حفظ مسودة'}
                     </button>
                     <button 
                       type="submit" 
                       className="btn btn-primary" 
-                      disabled={loading || !fileUrl || !declarationAccepted} 
+                      disabled={isSubmitting || !fileUrl || !declarationAccepted} 
                       style={{ 
                         minWidth: '160px',
-                        opacity: (loading || !fileUrl || !declarationAccepted) ? 0.6 : 1,
-                        cursor: (loading || !fileUrl || !declarationAccepted) ? 'not-allowed' : 'pointer'
+                        opacity: (isSubmitting || !fileUrl || !declarationAccepted) ? 0.6 : 1,
+                        cursor: (isSubmitting || !fileUrl || !declarationAccepted) ? 'not-allowed' : 'pointer'
                       }}
-                      title={!fileUrl ? 'يجب رفع الملف أولاً' : !declarationAccepted ? 'يجب الموافقة على التعهد أولاً' : loading ? 'جاري الإرسال...' : 'إرسال البحث'}
+                      title={!fileUrl ? 'يجب رفع الملف أولاً' : !declarationAccepted ? 'يجب الموافقة على التعهد أولاً' : isSubmitting ? 'جاري الإرسال...' : 'إرسال البحث'}
                       onClick={(e) => {
                         if (!fileUrl) {
                           e.preventDefault();
@@ -1058,7 +1089,7 @@ function SubmitPageContent() {
                         }
                       }}
                     >
-                      {loading ? (
+                      {isSubmitting ? (
                         <>
                           <i className="fas fa-spinner fa-spin"></i>
                           جاري الإرسال...
@@ -1070,7 +1101,28 @@ function SubmitPageContent() {
                         </>
                       )}
                     </button>
-                    {(!fileUrl || !declarationAccepted) && !loading && (
+                    {isSubmitting && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSubmitting(false);
+                          resetLoading();
+                        }}
+                        className="btn btn-outline"
+                        style={{
+                          marginTop: 'var(--spacing-sm)',
+                          fontSize: 'var(--font-size-sm)',
+                          padding: 'var(--spacing-xs) var(--spacing-sm)',
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          color: 'var(--error-color)',
+                          borderColor: 'var(--error-color)'
+                        }}
+                      >
+                        <i className="fas fa-times-circle"></i>
+                        إيقاف الإرسال
+                      </button>
+                    )}
+                    {(!fileUrl || !declarationAccepted) && !isSubmitting && (
                       <div style={{ 
                         marginTop: 'var(--spacing-sm)', 
                         padding: 'var(--spacing-sm)', 

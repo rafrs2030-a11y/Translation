@@ -57,6 +57,7 @@ interface SubmissionsContextType extends SubmissionsState {
   setFilters: (filters: Partial<SubmissionFilters>) => void;
   setPage: (page: number) => void;
   getStats: () => Promise<{ total: number; approved: number; pending: number; rejected: number }>;
+  resetLoading: () => void;
 }
 
 const SubmissionsContext = createContext<SubmissionsContextType | undefined>(undefined);
@@ -431,6 +432,10 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
     }
   }, [user, isAuthenticated, state.filters.status, state.filters.researchType, state.filters.category, state.filters.dateFrom, state.filters.dateTo, state.filters.searchTerm, state.pagination.page, fetchUserSubmissions]);
 
+  const resetLoading = useCallback(() => {
+    setState(prev => ({ ...prev, loading: false }));
+  }, []);
+
   return (
     <SubmissionsContext.Provider
       value={{
@@ -445,6 +450,7 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
         setFilters,
         setPage,
         getStats,
+        resetLoading,
       }}
     >
       {children}
