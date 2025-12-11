@@ -70,7 +70,7 @@ export default function ChatDropdown() {
       {isOpen && (
         <div className="chat-dropdown" ref={dropdownRef}>
           <div className="chat-dropdown-header">
-            <h3>المحادثات</h3>
+            <h3 style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--chat-primary)' }}>المحادثات</h3>
             <button
               className="btn btn-primary"
               onClick={() => setShowUserSelection(true)}
@@ -117,10 +117,10 @@ export default function ChatDropdown() {
                       </div>
                     </div>
                     <div className="chat-conversation-content">
-                      <h4 className="chat-conversation-name">
+                      <h4 className="chat-conversation-name" style={{ fontWeight: 700, fontSize: '1rem' }}>
                         {conversation.other_user?.username || 'مستخدم'}
                       </h4>
-                      <p className="chat-conversation-time">
+                      <p className="chat-conversation-time" style={{ fontWeight: 600, fontSize: '0.875rem' }}>
                         {formatTime(conversation.last_message_at)}
                       </p>
                     </div>
@@ -207,7 +207,7 @@ function UserSelectionModal({ onSelect, onClose, currentUserId }: {
     <div className="chat-user-selection-modal" onClick={onClose}>
       <div className="chat-user-selection-content" onClick={(e) => e.stopPropagation()}>
         <div className="chat-user-selection-header">
-          <h3>اختر مستخدم للدردشة</h3>
+          <h3 style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--chat-primary)' }}>اختر مستخدم للدردشة</h3>
           <button className="chat-user-selection-close" onClick={onClose}>
             <i className="fas fa-times"></i>
           </button>
@@ -247,8 +247,8 @@ function UserSelectionModal({ onSelect, onClose, currentUserId }: {
                   </div>
                 </div>
                 <div className="chat-user-selection-info">
-                  <h4>{user.username || 'مستخدم'}</h4>
-                  <p>{user.email}</p>
+                  <h4 style={{ fontWeight: 700, fontSize: '1rem' }}>{user.username || 'مستخدم'}</h4>
+                  <p style={{ fontWeight: 500, fontSize: '0.875rem', opacity: 0.9 }}>{user.email}</p>
                 </div>
               </div>
             ))

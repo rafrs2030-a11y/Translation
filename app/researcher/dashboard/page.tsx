@@ -117,14 +117,23 @@ export default function ResearcherDashboard() {
           {/* Recent Submissions */}
           <div className="card">
             <div className="card-header">
-              <h3 className="card-title">
-                <i className="fas fa-file-alt"></i>
-                أحدث الطلبات
-              </h3>
-              <Link href="/researcher/submissions" className="link-primary">
-                عرض الكل
-                <i className="fas fa-arrow-left"></i>
-              </Link>
+              <div>
+                <h3 className="card-title">
+                  <i className="fas fa-file-alt"></i>
+                  أحدث الطلبات
+                </h3>
+                {submissions.length > 0 && (
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
+                    عرض {recentSubmissions.length} من {submissions.length} طلب
+                  </p>
+                )}
+              </div>
+              {submissions.length > 5 && (
+                <Link href="/researcher/submissions" className="link-primary">
+                  عرض الكل
+                  <i className="fas fa-arrow-left"></i>
+                </Link>
+              )}
             </div>
             <div className="card-body">
               {submissionsLoading ? (
@@ -142,27 +151,147 @@ export default function ResearcherDashboard() {
                 </div>
               ) : (
                 <div className="submissions-list">
-                  {recentSubmissions.map((submission) => (
-                    <div key={submission.id} className="submission-item">
-                      <div className="submission-info">
-                        <h4>{submission.title || 'بدون عنوان'}</h4>
-                        <p className="submission-meta">
-                          <span className={`badge badge-${getStatusColor(submission.status)}`}>
-                            {getStatusLabel(submission.status)}
-                          </span>
-                          <span className="submission-date">
-                            {new Date(submission.created_at).toLocaleDateString('ar-SA')}
-                          </span>
-                        </p>
-                      </div>
-                      <Link
-                        href={`/researcher/submissions/${submission.id}`}
-                        className="btn btn-outline btn-small"
+                  {recentSubmissions.map((submission: any) => {
+                    // إنشاء عنوان للعرض من الحقول المتاحة
+                    const displayTitle = submission.main_researcher || submission.full_name || submission.reference_number || 'بدون عنوان';
+                    const displaySubtitle = submission.detailed_specialization || submission.general_specialization || '';
+                    
+                    return (
+                      <div 
+                        key={submission.id} 
+                        className="submission-item"
+                        style={{
+                          padding: 'var(--spacing-md)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: 'var(--radius-lg)',
+                          marginBottom: 'var(--spacing-md)',
+                          background: 'white',
+                          transition: 'all 0.2s ease',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 'var(--spacing-md)',
+                          justifyContent: 'space-between'
+                        }}
                       >
-                        عرض التفاصيل
-                      </Link>
-                    </div>
-                  ))}
+                        <div className="submission-info" style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-xs)' }}>
+                            <div style={{ flex: 1 }}>
+                              <h4 style={{ 
+                                margin: 0, 
+                                marginBottom: '0.25rem', 
+                                fontSize: 'var(--font-size-base)', 
+                                fontWeight: 600,
+                                color: 'var(--text-primary)'
+                              }}>
+                                <Link 
+                                  href={`/researcher/submissions/${submission.id}`}
+                                  style={{ color: 'var(--text-primary)', textDecoration: 'none' }}
+                                >
+                                  {displayTitle}
+                                </Link>
+                              </h4>
+                              {displaySubtitle && (
+                                <p style={{ 
+                                  margin: 0, 
+                                  color: 'var(--text-secondary)', 
+                                  fontSize: 'var(--font-size-sm)',
+                                  marginTop: '0.25rem'
+                                }}>
+                                  <i className="fas fa-book" style={{ marginLeft: '0.25rem', color: 'var(--primary-color)', fontSize: '0.75rem' }}></i>
+                                  {displaySubtitle}
+                                </p>
+                              )}
+                              {submission.reference_number && (
+                                <p style={{ 
+                                  margin: '0.5rem 0 0 0', 
+                                  fontSize: 'var(--font-size-xs)', 
+                                  color: 'var(--text-secondary)',
+                                  fontFamily: 'monospace'
+                                }}>
+                                  <i className="fas fa-hashtag" style={{ marginLeft: '0.25rem', fontSize: '0.7rem' }}></i>
+                                  رقم المرجع: {submission.reference_number}
+                                </p>
+                              )}
+                            </div>
+                            <span className={`badge badge-${getStatusColor(submission.status)}`} style={{ 
+                              fontSize: 'var(--font-size-xs)', 
+                              padding: '0.375rem 0.75rem',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {getStatusLabel(submission.status)}
+                            </span>
+                          </div>
+                          
+                          <div className="submission-meta" style={{ 
+                            display: 'flex', 
+                            flexWrap: 'wrap', 
+                            gap: 'var(--spacing-md)',
+                            alignItems: 'center',
+                            paddingTop: 'var(--spacing-xs)',
+                            borderTop: '1px solid var(--border-color)',
+                            marginTop: 'var(--spacing-xs)'
+                          }}>
+                            {submission.research_type && (
+                              <span style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '0.25rem',
+                                fontSize: 'var(--font-size-xs)',
+                                color: 'var(--text-secondary)'
+                              }}>
+                                <i className="fas fa-microscope" style={{ color: 'var(--primary-color)', fontSize: '0.7rem' }}></i>
+                                {submission.research_type}
+                              </span>
+                            )}
+                            
+                            {submission.category && (
+                              <span style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '0.25rem',
+                                fontSize: 'var(--font-size-xs)',
+                                color: 'var(--text-secondary)'
+                              }}>
+                                <i className="fas fa-folder" style={{ color: 'var(--info-color)', fontSize: '0.7rem' }}></i>
+                                {submission.category}
+                              </span>
+                            )}
+                            
+                            <span className="submission-date" style={{ 
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              gap: '0.25rem',
+                              fontSize: 'var(--font-size-xs)',
+                              color: 'var(--text-secondary)',
+                              marginRight: 'auto'
+                            }}>
+                              <i className="fas fa-calendar" style={{ color: 'var(--warning-color)', fontSize: '0.7rem' }}></i>
+                              {new Date(submission.created_at).toLocaleDateString('ar-SA', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <Link
+                          href={`/researcher/submissions/${submission.id}`}
+                          className="btn btn-outline btn-small"
+                          style={{ 
+                            alignSelf: 'center',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          <i className="fas fa-eye" style={{ marginLeft: '0.25rem' }}></i>
+                          عرض التفاصيل
+                        </Link>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

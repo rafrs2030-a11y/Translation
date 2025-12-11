@@ -51,9 +51,9 @@ export default function ChatWindow() {
             </div>
           </div>
           <div>
-            <h4>{currentConversation.other_user?.username || 'مستخدم'}</h4>
+            <h4 style={{ fontWeight: 700, fontSize: '1.125rem' }}>{currentConversation.other_user?.username || 'مستخدم'}</h4>
             <div className="chat-window-status">
-              <span>متصل</span>
+              <span style={{ fontWeight: 600 }}>متصل</span>
             </div>
           </div>
         </div>
@@ -91,12 +91,12 @@ export default function ChatWindow() {
                 {!isOwn && <div className="chat-message-avatar-spacer"></div>}
                 <div className="chat-message-content">
                   {!isOwn && (
-                    <div className="chat-message-sender-name">
+                    <div className="chat-message-sender-name" style={{ fontWeight: 700, fontSize: '0.875rem' }}>
                       {message.sender?.username || 'مستخدم'}
                     </div>
                   )}
-                  <p>{message.message}</p>
-                  <span className="chat-message-time">{formatTime(message.created_at)}</span>
+                  <p style={{ fontWeight: 400, lineHeight: 1.7, fontSize: '0.9375rem' }}>{message.message}</p>
+                  <span className="chat-message-time" style={{ fontWeight: 600, fontSize: '0.75rem' }}>{formatTime(message.created_at)}</span>
                   {isOwn && (
                     <div className={`chat-message-status ${message.is_read ? 'read' : 'unread'}`}>
                       <i className={`fas fa-${message.is_read ? 'check-double' : 'check'} chat-message-status-icon`}></i>
