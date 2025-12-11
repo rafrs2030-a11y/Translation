@@ -215,43 +215,61 @@ export default function SubmissionsPage() {
               ) : (
                 <>
                   <div className="submissions-list">
-                    {(viewMode === 'submissions' ? submissions : drafts).map((item: any) => (
-                      <div key={item.id} className="submission-item">
-                        <div className="submission-info">
-                          <h3>
-                            {viewMode === 'drafts' ? (
-                              <Link href={`/researcher/submit?draft=${item.id}`}>
-                                {item.title || 'مسودة بدون عنوان'}
-                              </Link>
-                            ) : (
-                              <Link href={`/researcher/submissions/${item.id}`}>
-                                {item.title || 'بدون عنوان'}
-                              </Link>
+                    {(viewMode === 'submissions' ? submissions : drafts).map((item: any) => {
+                      // إنشاء عنوان للعرض من الحقول المتاحة
+                      const displayTitle = item.main_researcher || item.full_name || 'بدون عنوان';
+                      const displaySubtitle = item.detailed_specialization || item.general_specialization || '';
+                      
+                      return (
+                        <div key={item.id} className="submission-item">
+                          <div className="submission-info">
+                            <h3>
+                              {viewMode === 'drafts' ? (
+                                <Link href={`/researcher/submit?draft=${item.id}`}>
+                                  {displayTitle}
+                                </Link>
+                              ) : (
+                                <Link href={`/researcher/submissions/${item.id}`}>
+                                  {displayTitle}
+                                </Link>
+                              )}
+                              {viewMode === 'drafts' && (
+                                <span className="badge badge-info" style={{ marginRight: '0.5rem', fontSize: '0.75rem' }}>
+                                  مسودة
+                                </span>
+                              )}
+                            </h3>
+                            {displaySubtitle && (
+                              <p style={{ margin: '0.25rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                {displaySubtitle}
+                              </p>
                             )}
-                            {viewMode === 'drafts' && (
-                              <span className="badge badge-info" style={{ marginRight: '0.5rem', fontSize: '0.75rem' }}>
-                                مسودة
+                            <div className="submission-meta">
+                              {viewMode === 'submissions' && (
+                                <span className={`badge badge-${getStatusColor(item.status)}`}>
+                                  {getStatusLabel(item.status)}
+                                </span>
+                              )}
+                              <span className="submission-type">{item.research_type || 'غير محدد'}</span>
+                              {item.category && (
+                                <span className="submission-category">{item.category}</span>
+                              )}
+                              {item.reference_number && (
+                                <span className="submission-ref" style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                                  رقم المرجع: {item.reference_number}
+                                </span>
+                              )}
+                              <span className="submission-date">
+                                {new Date(item.updated_at || item.created_at).toLocaleDateString('ar-SA', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
                               </span>
-                            )}
-                          </h3>
-                          <div className="submission-meta">
-                            {viewMode === 'submissions' && (
-                              <span className={`badge badge-${getStatusColor(item.status)}`}>
-                                {getStatusLabel(item.status)}
-                              </span>
-                            )}
-                            <span className="submission-type">{item.research_type || 'غير محدد'}</span>
-                            <span className="submission-date">
-                              {new Date(item.updated_at || item.created_at).toLocaleDateString('ar-SA', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </span>
+                            </div>
                           </div>
-                        </div>
                         <div className="submission-actions" style={{ display: 'flex', gap: '0.5rem' }}>
                           {viewMode === 'drafts' ? (
                             <>
@@ -288,8 +306,9 @@ export default function SubmissionsPage() {
                             </Link>
                           )}
                         </div>
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Pagination */}

@@ -5,7 +5,7 @@
  * إدارة حالة الطلبات (البحث المقدمة)
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from './AuthContext';
 
@@ -85,6 +85,12 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
 
   const { user, isAuthenticated } = useAuth();
   const supabase = createClient();
+  const stateRef = useRef(state);
+  
+  // Keep stateRef in sync with state
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const applyFilters = useCallback((query: any) => {
     let filteredQuery = query;
@@ -105,7 +111,8 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
       filteredQuery = filteredQuery.lte('created_at', state.filters.dateTo);
     }
     if (state.filters.searchTerm) {
-      filteredQuery = filteredQuery.ilike('title', `%${state.filters.searchTerm}%`);
+      // البحث في عدة حقول: main_researcher, full_name, reference_number, detailed_specialization
+      filteredQuery = filteredQuery.or(`main_researcher.ilike.%${state.filters.searchTerm}%,full_name.ilike.%${state.filters.searchTerm}%,reference_number.ilike.%${state.filters.searchTerm}%,detailed_specialization.ilike.%${state.filters.searchTerm}%`);
     }
 
     return filteredQuery;
@@ -116,6 +123,10 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
 
     setState(prev => ({ ...prev, loading: true, error: null }));
 
+    // Get current filters and pagination from ref (always latest)
+    const currentFilters = stateRef.current.filters;
+    const { page, pageSize } = stateRef.current.pagination;
+
     try {
       let query = supabase
         .from('submissions')
@@ -125,7 +136,6 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
         .order('created_at', { ascending: false });
 
       // Apply filters
-      const currentFilters = state.filters;
       if (currentFilters.status) {
         query = query.eq('status', currentFilters.status);
       }
@@ -142,10 +152,11 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
         query = query.lte('created_at', currentFilters.dateTo);
       }
       if (currentFilters.searchTerm) {
-        query = query.ilike('title', `%${currentFilters.searchTerm}%`);
+        // البحث في عدة حقول: main_researcher, full_name, reference_number, detailed_specialization
+        query = query.or(`main_researcher.ilike.%${currentFilters.searchTerm}%,full_name.ilike.%${currentFilters.searchTerm}%,reference_number.ilike.%${currentFilters.searchTerm}%,detailed_specialization.ilike.%${currentFilters.searchTerm}%`);
       }
 
-      const { page, pageSize } = state.pagination;
+      // Apply pagination
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
       query = query.range(from, to);
@@ -168,7 +179,7 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
         loading: false,
       }));
     }
-  }, [user, isAuthenticated, supabase, state.filters, state.pagination]);
+  }, [user, isAuthenticated, supabase]);
 
   const fetchSubmissionById = useCallback(async (id: string): Promise<Submission | null> => {
     if (!user) return null;
