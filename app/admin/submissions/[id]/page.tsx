@@ -12,7 +12,13 @@ import AdminTopbar from '@/components/AdminTopbar';
 interface Submission {
   id: string;
   user_id: string;
-  title: string;
+  full_name: string;
+  email: string;
+  country: string;
+  id_number: string;
+  gender: string;
+  main_researcher: string;
+  reference_number: string;
   research_type: string;
   category: string;
   status: string;
@@ -60,7 +66,25 @@ export default function AdminSubmissionDetailsPage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('submissions')
-        .select('*, users:user_id(username, email, phone, country)')
+        .select(`
+          id,
+          user_id,
+          full_name,
+          email,
+          country,
+          id_number,
+          gender,
+          main_researcher,
+          reference_number,
+          research_type,
+          category,
+          status,
+          file_url,
+          created_at,
+          updated_at,
+          admin_comment,
+          users:user_id(username, email, phone, country)
+        `)
         .eq('id', params.id)
         .single();
 
@@ -195,8 +219,14 @@ export default function AdminSubmissionDetailsPage() {
                 <div style={{ flex: 1 }}>
                   <h2 className="card-title" style={{ margin: 0, fontSize: 'var(--font-size-2xl)', fontWeight: 700 }}>
                     <i className="fas fa-file-alt" style={{ marginLeft: 'var(--spacing-sm)', color: 'var(--primary-color)' }}></i>
-                    {submission.title || 'بدون عنوان'}
+                    {submission.main_researcher || submission.full_name || 'بدون عنوان'}
                   </h2>
+                  {submission.reference_number && (
+                    <p style={{ margin: '0.5rem 0 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
+                      <i className="fas fa-hashtag" style={{ marginLeft: '0.25rem' }}></i>
+                      رقم المرجع: {submission.reference_number}
+                    </p>
+                  )}
                 </div>
                 <span className={`badge badge-${getStatusColor(submission.status)}`} style={{ fontSize: 'var(--font-size-base)', padding: '0.5rem 1rem' }}>
                   <i className={`fas fa-${submission.status === 'approved' ? 'check-circle' : submission.status === 'rejected' ? 'times-circle' : 'clock'}`} style={{ marginLeft: '0.25rem' }}></i>
@@ -307,7 +337,7 @@ export default function AdminSubmissionDetailsPage() {
                 <div className="card-header">
                   <h2 className="card-title">
                     <i className="fas fa-user-circle"></i>
-                    معلومات الباحث
+                    معلومات الباحث / مقدم الطلب
                   </h2>
                 </div>
                 <div className="card-body">
@@ -315,21 +345,63 @@ export default function AdminSubmissionDetailsPage() {
                     <div className="detail-item">
                       <label>
                         <i className="fas fa-user" style={{ marginLeft: '0.5rem', color: 'var(--primary-color)' }}></i>
-                        اسم الباحث:
+                        الاسم الكامل:
                       </label>
-                      <span style={{ fontWeight: 600 }}>{submission.user?.username || submission.user?.email || 'غير محدد'}</span>
+                      <span style={{ fontWeight: 600 }}>{submission.full_name || submission.user?.username || 'غير محدد'}</span>
                     </div>
+                    
+                    {submission.main_researcher && submission.main_researcher !== submission.full_name && (
+                      <div className="detail-item">
+                        <label>
+                          <i className="fas fa-user-tie" style={{ marginLeft: '0.5rem', color: 'var(--primary-color)' }}></i>
+                          الباحث الرئيسي:
+                        </label>
+                        <span style={{ fontWeight: 600 }}>{submission.main_researcher}</span>
+                      </div>
+                    )}
+                    
                     <div className="detail-item">
                       <label>
                         <i className="fas fa-envelope" style={{ marginLeft: '0.5rem', color: 'var(--primary-color)' }}></i>
                         البريد الإلكتروني:
                       </label>
                       <span>
-                        <a href={`mailto:${submission.user?.email}`} style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 600 }}>
-                          {submission.user?.email || 'غير محدد'}
+                        <a href={`mailto:${submission.email || submission.user?.email}`} style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 600 }}>
+                          {submission.email || submission.user?.email || 'غير محدد'}
                         </a>
                       </span>
                     </div>
+                    
+                    {submission.id_number && (
+                      <div className="detail-item">
+                        <label>
+                          <i className="fas fa-id-card" style={{ marginLeft: '0.5rem', color: 'var(--primary-color)' }}></i>
+                          رقم الهوية / السجل التجاري:
+                        </label>
+                        <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{submission.id_number}</span>
+                      </div>
+                    )}
+                    
+                    {submission.gender && (
+                      <div className="detail-item">
+                        <label>
+                          <i className="fas fa-venus-mars" style={{ marginLeft: '0.5rem', color: 'var(--primary-color)' }}></i>
+                          الجنس:
+                        </label>
+                        <span style={{ fontWeight: 600 }}>{submission.gender}</span>
+                      </div>
+                    )}
+                    
+                    {submission.country && (
+                      <div className="detail-item">
+                        <label>
+                          <i className="fas fa-globe" style={{ marginLeft: '0.5rem', color: 'var(--primary-color)' }}></i>
+                          الدولة:
+                        </label>
+                        <span style={{ fontWeight: 600 }}>{submission.country}</span>
+                      </div>
+                    )}
+                    
                     {submission.user?.phone && (
                       <div className="detail-item">
                         <label>
@@ -341,15 +413,6 @@ export default function AdminSubmissionDetailsPage() {
                             {submission.user.phone}
                           </a>
                         </span>
-                      </div>
-                    )}
-                    {submission.user?.country && (
-                      <div className="detail-item">
-                        <label>
-                          <i className="fas fa-globe" style={{ marginLeft: '0.5rem', color: 'var(--primary-color)' }}></i>
-                          الدولة:
-                        </label>
-                        <span style={{ fontWeight: 600 }}>{submission.user.country}</span>
                       </div>
                     )}
                   </div>
