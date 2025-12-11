@@ -7,6 +7,8 @@ import { useSubmissions } from '@/contexts/SubmissionsContext';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 import { createClient } from '@/lib/supabase/client';
+import { RESEARCH_CATEGORIES } from '@/config/constants';
+import { ALL_COUNTRIES } from '@/config/constants';
 
 function SubmitPageContent() {
   const router = useRouter();
@@ -497,16 +499,9 @@ function SubmitPageContent() {
                       required
                     />
                     <datalist id="countries-list">
-                      <option value="المملكة العربية السعودية" />
-                      <option value="الإمارات العربية المتحدة" />
-                      <option value="مصر" />
-                      <option value="الأردن" />
-                      <option value="لبنان" />
-                      <option value="العراق" />
-                      <option value="سوريا" />
-                      <option value="المغرب" />
-                      <option value="الجزائر" />
-                      <option value="تونس" />
+                      {ALL_COUNTRIES.map((country) => (
+                        <option key={country} value={country} />
+                      ))}
                     </datalist>
                   </div>
                 </div>
@@ -579,12 +574,11 @@ function SubmitPageContent() {
                         required
                       >
                         <option value="">اختر الفئة</option>
-                        <option value="علوم طبيعية">علوم طبيعية</option>
-                        <option value="علوم إنسانية">علوم إنسانية</option>
-                        <option value="علوم اجتماعية">علوم اجتماعية</option>
-                        <option value="هندسة">هندسة</option>
-                        <option value="طب">طب</option>
-                        <option value="أخرى">أخرى</option>
+                        {RESEARCH_CATEGORIES.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>

@@ -4,6 +4,7 @@ import { useState, FormEvent, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { ALL_COUNTRIES } from '@/config/constants';
 
 type AccountType = 'أفراد' | 'أعمال' | '';
 
@@ -343,24 +344,9 @@ export default function RegisterPage() {
                     required
                   />
                   <datalist id="countries-list">
-                    <option value="المملكة العربية السعودية" />
-                    <option value="الإمارات العربية المتحدة" />
-                    <option value="مصر" />
-                    <option value="الأردن" />
-                    <option value="لبنان" />
-                    <option value="العراق" />
-                    <option value="سوريا" />
-                    <option value="المغرب" />
-                    <option value="الجزائر" />
-                    <option value="تونس" />
-                    <option value="ليبيا" />
-                    <option value="السودان" />
-                    <option value="الكويت" />
-                    <option value="قطر" />
-                    <option value="البحرين" />
-                    <option value="عمان" />
-                    <option value="اليمن" />
-                    <option value="فلسطين" />
+                    {ALL_COUNTRIES.map((country) => (
+                      <option key={country} value={country} />
+                    ))}
                   </datalist>
                 </div>
               </div>
