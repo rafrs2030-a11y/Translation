@@ -31,6 +31,8 @@ function SubmitPageContent() {
     file: null as File | null,
   });
   const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileSize, setFileSize] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -82,6 +84,8 @@ function SubmitPageContent() {
       file: null,
     });
     setFileUrl(null);
+    setFileName(null);
+    setFileSize(null);
     setError('');
     setSuccess('');
     setDraftId(null);
@@ -123,6 +127,13 @@ function SubmitPageContent() {
         }));
         if (draft.file_url) {
           setFileUrl(draft.file_url);
+          // استخراج اسم الملف وحجمه من بيانات المسودة
+          if (draft.file_name) {
+            setFileName(draft.file_name);
+          }
+          if (draft.file_size) {
+            setFileSize(draft.file_size);
+          }
         }
         setSuccess('تم تحميل المسودة بنجاح');
         setTimeout(() => setSuccess(''), 3000);
@@ -156,6 +167,10 @@ function SubmitPageContent() {
 
     setFormData(prev => ({ ...prev, file }));
     setError('');
+
+    // حفظ اسم الملف وحجمه
+    setFileName(file.name);
+    setFileSize(file.size);
 
     // Upload file to Supabase Storage
     try {
@@ -281,13 +296,14 @@ function SubmitPageContent() {
     setError('');
     setSuccess('');
 
+    // التحقق الشامل من جميع الحقول المطلوبة
     if (!validateStep(4)) {
       setIsSubmitting(false);
       return;
     }
 
     // التحقق من وجود الملف
-    if (!formData.file || !fileUrl) {
+    if (!fileUrl) {
       setError('يجب رفع ملف البحث قبل الإرسال');
       setIsSubmitting(false);
       return;
@@ -296,6 +312,26 @@ function SubmitPageContent() {
     // التحقق من التعهد
     if (!declarationAccepted) {
       setError('يجب الموافقة على التعهد قبل الإرسال');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // التحقق من الحقول المطلوبة
+    if (!formData.research_type || !formData.category || !formData.email || !formData.country) {
+      setError('يرجى التأكد من ملء جميع الحقول المطلوبة');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // التحقق من نوع مقدم البحث
+    if (formData.submitter_type === 'جهة' && (!formData.organization_name || !formData.organization_type)) {
+      setError('يرجى إدخال اسم الجهة ونوع الجهة');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (formData.submitter_type === 'فرد' && !formData.full_name) {
+      setError('يرجى إدخال الاسم الكامل');
       setIsSubmitting(false);
       return;
     }
@@ -320,34 +356,95 @@ function SubmitPageContent() {
         console.warn('خطأ في جلب بيانات المستخدم:', userErr);
       }
 
-      // إنشاء رقم مرجعي
-      const referenceNumber = `REF-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+      // إنشاء رقم مرجعي فريد
+      let referenceNumber = '';
+      let isUnique = false;
+      let attempts = 0;
+      while (!isUnique && attempts < 10) {
+        referenceNumber = `REF-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+        const { data: existing, error: checkError } = await supabase
+          .from('submissions')
+          .select('id')
+          .eq('reference_number', referenceNumber)
+          .maybeSingle();
+        
+        // إذا لم يوجد خطأ ولم يوجد سجل بهذا الرقم، فهو فريد
+        if (!checkError && !existing) {
+          isUnique = true;
+        } else if (checkError && checkError.code !== 'PGRST116') {
+          // PGRST116 يعني عدم وجود نتائج، وهو ما نريده
+          console.warn('خطأ في التحقق من الرقم المرجعي:', checkError);
+        }
+        attempts++;
+      }
+
+      if (!isUnique) {
+        // استخدام timestamp كبديل لضمان التفرد
+        referenceNumber = `REF-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
+      }
 
       // إعداد البيانات حسب نوع مقدم البحث
       const fullName = (formData.submitter_type === 'فرد') 
-        ? formData.full_name 
-        : formData.organization_name || '';
+        ? (formData.full_name || '').trim()
+        : (formData.organization_name || '').trim();
       
-      const mainResearcher = formData.main_researcher || 
+      if (!fullName || fullName.length > 255) {
+        setError('اسم مقدم البحث مطلوب ولا يجب أن يتجاوز 255 حرف');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const mainResearcher = (formData.main_researcher || '').trim() || 
         ((formData.submitter_type === 'فرد') 
-          ? formData.full_name 
-          : formData.organization_name) || '';
+          ? (formData.full_name || '').trim()
+          : (formData.organization_name || '').trim());
+
+      if (!mainResearcher || mainResearcher.length > 255) {
+        setError('اسم الباحث الرئيسي مطلوب ولا يجب أن يتجاوز 255 حرف');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // تقصير النصوص الطويلة لتتوافق مع قيود قاعدة البيانات
+      const truncateText = (text: string, maxLength: number): string => {
+        if (!text) return '';
+        return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
+      };
+
+      const generalSpecialization = truncateText(formData.category || '', 255);
+      const detailedSpecialization = truncateText(formData.description || '', 255);
+      const file_name_truncated = truncateText(fileName || formData.file?.name || 'research-file', 255);
+      const country_truncated = truncateText(formData.country || '', 100);
+      const email_truncated = truncateText(formData.email || '', 255);
+      const research_type_truncated = truncateText(formData.research_type || '', 50);
+      const category_truncated = truncateText(formData.category || '', 100);
+      const id_number_truncated = truncateText(userData?.national_id || 'N/A', 50);
+
+      // التحقق من أن جميع الحقول المطلوبة موجودة
+      if (!generalSpecialization || !detailedSpecialization || !file_name_truncated) {
+        setError('يرجى التأكد من ملء جميع الحقول المطلوبة');
+        setIsSubmitting(false);
+        return;
+      }
 
       const result = await createSubmission({
         // الحقول المطلوبة في جدول submissions (بدون user_id - سيتم إضافته في الـ context)
-        research_type: formData.research_type,
-        category: formData.category,
+        research_type: research_type_truncated,
+        category: category_truncated,
         file_url: fileUrl || '',
-        file_name: formData.file.name,
-        file_size: formData.file.size,
+        file_name: file_name_truncated,
+        file_size: fileSize || formData.file?.size || 0,
         full_name: fullName,
-        email: formData.email,
-        country: formData.country,
-        gender: userData?.gender || 'ذكر',
-        id_number: userData?.national_id || '',
+        email: email_truncated,
+        country: country_truncated,
+        gender: (userData?.gender === 'ذكر' || userData?.gender === 'أنثى') ? userData.gender : 'ذكر',
+        id_number: id_number_truncated,
         main_researcher: mainResearcher,
-        general_specialization: formData.category || '',
-        detailed_specialization: formData.description || '',
+        general_specialization: generalSpecialization,
+        detailed_specialization: detailedSpecialization,
+        submitter_type: formData.submitter_type === 'فرد' ? 'أفراد' : formData.submitter_type === 'جهة' ? 'أعمال' : formData.submitter_type,
+        organization_name: formData.organization_name ? truncateText(formData.organization_name, 255) : null,
+        organization_type: formData.organization_type ? truncateText(formData.organization_type, 50) : null,
         declaration_accepted: true,
         declaration_timestamp: new Date().toISOString(),
         reference_number: referenceNumber,
@@ -356,7 +453,7 @@ function SubmitPageContent() {
       });
 
       if (result.success) {
-        setSuccess('تم تقديم البحث بنجاح!');
+        setSuccess('تم تقديم البحث بنجاح! الرقم المرجعي: ' + referenceNumber);
         setIsSubmitting(false);
         // مسح الكاش بعد النجاح
         setTimeout(() => {
@@ -364,12 +461,31 @@ function SubmitPageContent() {
           router.push('/researcher/submissions');
         }, 2000);
       } else {
-        setError(result.error || 'فشل تقديم البحث');
+        const errorMessage = result.error || 'فشل تقديم البحث';
+        console.error('خطأ في إرسال الطلب:', errorMessage);
+        setError(errorMessage);
         setIsSubmitting(false);
       }
     } catch (err: any) {
       console.error('خطأ في إرسال الطلب:', err);
-      setError('حدث خطأ: ' + (err.message || 'خطأ غير معروف'));
+      let errorMessage = 'حدث خطأ أثناء إرسال الطلب';
+      
+      // معالجة أخطاء محددة
+      if (err.message) {
+        if (err.message.includes('duplicate key') || err.message.includes('unique constraint')) {
+          errorMessage = 'رقم مرجعي موجود مسبقاً. يرجى المحاولة مرة أخرى';
+        } else if (err.message.includes('violates check constraint')) {
+          errorMessage = 'قيمة غير صحيحة في أحد الحقول. يرجى التحقق من البيانات المدخلة';
+        } else if (err.message.includes('violates not-null constraint')) {
+          errorMessage = 'حقل مطلوب مفقود. يرجى التأكد من ملء جميع الحقول المطلوبة';
+        } else if (err.message.includes('value too long')) {
+          errorMessage = 'أحد الحقول طويل جداً. يرجى تقصير النص';
+        } else {
+          errorMessage = 'حدث خطأ: ' + err.message;
+        }
+      }
+      
+      setError(errorMessage);
       setIsSubmitting(false);
     } finally {
       // التأكد من إعادة تعيين الحالة في جميع الحالات
@@ -822,6 +938,8 @@ function SubmitPageContent() {
                             onClick={(e) => {
                               e.stopPropagation();
                               setFileUrl(null);
+                              setFileName(null);
+                              setFileSize(null);
                               setFormData(prev => ({ ...prev, file: null }));
                               const input = document.getElementById('file') as HTMLInputElement;
                               if (input) input.value = '';
@@ -954,7 +1072,7 @@ function SubmitPageContent() {
                           تم رفع الملف بنجاح
                         </p>
                         <p style={{ margin: 'var(--spacing-sm) 0 0 0', color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                          {formData.file?.name || 'الملف المرفوع'}
+                          {fileName || formData.file?.name || 'الملف المرفوع'}
                         </p>
                       </div>
                     ) : (

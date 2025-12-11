@@ -211,16 +211,69 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      // إزالة الحقول غير الموجودة في الجدول
+      // إزالة الحقول غير الموجودة في الجدول فقط
       const {
-        title,
-        description,
-        submitter_type,
-        organization_name,
-        organization_type,
-        user_id, // إزالة user_id إذا كان موجوداً في data
+        title, // غير موجود في الجدول
+        description, // غير موجود في الجدول (يستخدم detailed_specialization)
+        user_id, // إزالة user_id إذا كان موجوداً في data (سيتم إضافته لاحقاً)
         ...validData
       } = data;
+
+      // التحقق من الحقول المطلوبة قبل الإرسال
+      const requiredFields = {
+        full_name: validData.full_name,
+        country: validData.country,
+        email: validData.email,
+        gender: validData.gender,
+        id_number: validData.id_number,
+        research_type: validData.research_type,
+        category: validData.category,
+        main_researcher: validData.main_researcher,
+        general_specialization: validData.general_specialization,
+        detailed_specialization: validData.detailed_specialization,
+        file_url: validData.file_url,
+        file_name: validData.file_name,
+        file_size: validData.file_size,
+        declaration_accepted: validData.declaration_accepted,
+        declaration_timestamp: validData.declaration_timestamp,
+        reference_number: validData.reference_number,
+      };
+
+      // التحقق من أن جميع الحقول المطلوبة موجودة
+      const missingFields = Object.entries(requiredFields)
+        .filter(([key, value]) => {
+          // التحقق من القيم الفارغة
+          if (value === undefined || value === null) return true;
+          // التحقق من السلاسل الفارغة
+          if (typeof value === 'string' && value.trim() === '') return true;
+          // التحقق من الأرقام الصفرية (باستثناء file_size الذي يمكن أن يكون 0)
+          if (typeof value === 'number' && key !== 'file_size' && value === 0) return true;
+          return false;
+        })
+        .map(([key]) => key);
+
+      if (missingFields.length > 0) {
+        const fieldNames: { [key: string]: string } = {
+          full_name: 'الاسم الكامل',
+          country: 'الدولة',
+          email: 'البريد الإلكتروني',
+          gender: 'الجنس',
+          id_number: 'رقم الهوية',
+          research_type: 'نوع البحث',
+          category: 'الفئة',
+          main_researcher: 'الباحث الرئيسي',
+          general_specialization: 'التخصص العام',
+          detailed_specialization: 'التخصص التفصيلي',
+          file_url: 'رابط الملف',
+          file_name: 'اسم الملف',
+          file_size: 'حجم الملف',
+          declaration_accepted: 'قبول التعهد',
+          declaration_timestamp: 'وقت التعهد',
+          reference_number: 'الرقم المرجعي',
+        };
+        const missingFieldNames = missingFields.map(field => fieldNames[field] || field);
+        throw new Error(`الحقول المطلوبة التالية مفقودة: ${missingFieldNames.join(', ')}`);
+      }
 
       const submissionData = {
         ...validData,
@@ -239,7 +292,10 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('خطأ Supabase:', error);
+        throw error;
+      }
 
       setState(prev => ({
         ...prev,
