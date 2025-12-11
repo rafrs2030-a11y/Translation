@@ -76,11 +76,12 @@ Deno.serve(async (req: Request) => {
         .from('email_log')
         .insert([{
           user_id: emailData.userId || null,
-          email_type: emailData.type,
+          type: emailData.type,
           recipient_email: emailData.to,
-          subject: emailData.subject,
           status: 'failed',
-          error_message: `Email disabled in platform settings for type: ${emailData.type}`,
+          error_text: `Email disabled in platform settings for type: ${emailData.type}`,
+          provider: 'system',
+          attempts: 0,
         }]);
 
       return new Response(
@@ -112,11 +113,12 @@ Deno.serve(async (req: Request) => {
           .from('email_log')
           .insert([{
             user_id: emailData.userId,
-            email_type: emailData.type,
+            type: emailData.type,
             recipient_email: emailData.to,
-            subject: emailData.subject,
             status: 'failed',
-            error_message: `Email disabled in user preferences for type: ${emailData.type}`,
+            error_text: `Email disabled in user preferences for type: ${emailData.type}`,
+            provider: 'system',
+            attempts: 0,
           }]);
 
         return new Response(
@@ -143,17 +145,6 @@ Deno.serve(async (req: Request) => {
       htmlContent = generateStatusChangeEmail(statusData);
     }
 
-    // Log email to database
-    const { error: logError } = await supabaseClient
-      .from('email_log')
-      .insert([{
-        user_id: emailData.userId || null,
-        email_type: emailData.type,
-        recipient_email: emailData.to,
-        subject: emailData.subject,
-        status: 'queued',
-      }]);
-
     // Get email service configuration
     const emailProvider = Deno.env.get('EMAIL_PROVIDER') || 'smtp'; // 'resend', 'sendgrid', or 'smtp'
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
@@ -166,6 +157,22 @@ Deno.serve(async (req: Request) => {
     const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '465');
     const smtpUser = Deno.env.get('SMTP_USER') || 'resend';
     const smtpPassword = Deno.env.get('SMTP_PASSWORD') || resendApiKey;
+
+    // Log email to database
+    const logId = crypto.randomUUID();
+    const { error: logError, data: logData } = await supabaseClient
+      .from('email_log')
+      .insert([{
+        id: logId,
+        user_id: emailData.userId || null,
+        type: emailData.type,
+        recipient_email: emailData.to,
+        status: 'queued',
+        provider: emailProvider,
+        attempts: 0,
+      }])
+      .select('id')
+      .single();
 
     let emailSent = false;
     let errorMessage: string | null = null;
@@ -290,16 +297,28 @@ Deno.serve(async (req: Request) => {
     }
 
     // Update email log
-    await supabaseClient
-      .from('email_log')
-      .update({ 
-        status: emailSent ? 'sent' : (errorMessage ? 'failed' : 'queued'),
-        sent_at: emailSent ? new Date().toISOString() : null,
-        error_message: errorMessage || null,
-      })
-      .eq('recipient_email', emailData.to)
-      .order('created_at', { ascending: false })
-      .limit(1);
+    if (logData?.id) {
+      await supabaseClient
+        .from('email_log')
+        .update({ 
+          status: emailSent ? 'sent' : (errorMessage ? 'failed' : 'queued'),
+          error_text: errorMessage || null,
+          provider_response: emailSent ? { success: true, provider: emailProvider } : null,
+          attempts: 1,
+        })
+        .eq('id', logData.id);
+    } else if (logId) {
+      // Fallback: try to update by recipient_email if logData.id is not available
+      await supabaseClient
+        .from('email_log')
+        .update({ 
+          status: emailSent ? 'sent' : (errorMessage ? 'failed' : 'queued'),
+          error_text: errorMessage || null,
+          provider_response: emailSent ? { success: true, provider: emailProvider } : null,
+          attempts: 1,
+        })
+        .eq('id', logId);
+    }
 
     if (emailSent) {
       return new Response(
@@ -356,15 +375,25 @@ Deno.serve(async (req: Request) => {
       // Use emailData from outer scope
       const recipientEmail = (emailData as EmailData | null)?.to || 'unknown';
       
-      await supabaseClient
+      // Try to find and update the most recent log entry for this recipient
+      const { data: recentLog } = await supabaseClient
         .from('email_log')
-        .update({ 
-          status: 'failed',
-          error_message: error?.message || String(error) || 'Unknown error'
-        })
+        .select('id')
         .eq('recipient_email', recipientEmail)
         .order('created_at', { ascending: false })
-        .limit(1);
+        .limit(1)
+        .single();
+      
+      if (recentLog?.id) {
+        await supabaseClient
+          .from('email_log')
+          .update({ 
+            status: 'failed',
+            error_text: error?.message || String(error) || 'Unknown error',
+            attempts: 1,
+          })
+          .eq('id', recentLog.id);
+      }
     } catch (logError) {
       console.error('Failed to log error:', logError);
     }
