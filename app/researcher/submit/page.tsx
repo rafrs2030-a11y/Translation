@@ -151,6 +151,20 @@ function SubmitPageContent() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // منع الإرسال التلقائي عند الضغط على Enter في الحقول
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && currentStep < 4) {
+      // في الخطوات الأولى، Enter ينتقل للخطوة التالية
+      e.preventDefault();
+      handleNext();
+    } else if (e.key === 'Enter' && currentStep === 4) {
+      // في الخطوة الأخيرة، Enter لا يرسل تلقائياً إلا إذا كان الزر مفعلاً
+      if (isSubmitting || loading || !fileUrl || !declarationAccepted) {
+        e.preventDefault();
+      }
+    }
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -626,7 +640,22 @@ function SubmitPageContent() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="multi-step-form">
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              // التأكد من أن الإرسال يتم فقط عند الضغط على زر الإرسال
+              if (currentStep === 4 && !isSubmitting && !loading && fileUrl && declarationAccepted) {
+                handleSubmit(e);
+              }
+            }} 
+            className="multi-step-form"
+            onKeyDown={(e) => {
+              // منع الإرسال التلقائي عند الضغط على Enter في النموذج
+              if (e.key === 'Enter' && e.target instanceof HTMLInputElement && e.target.type !== 'submit') {
+                e.preventDefault();
+              }
+            }}
+          >
             {/* Step 1: Basic Information */}
             {currentStep === 1 && (
               <div className="card form-step">
@@ -715,6 +744,7 @@ function SubmitPageContent() {
                           className="form-input"
                           value={formData.full_name}
                           onChange={handleInputChange}
+                          onKeyDown={handleKeyDown}
                           placeholder="أدخل اسمك الكامل"
                           required
                         />
@@ -731,6 +761,7 @@ function SubmitPageContent() {
                           className="form-input"
                           value={formData.email}
                           onChange={handleInputChange}
+                          onKeyDown={handleKeyDown}
                           placeholder="example@email.com"
                           required
                         />
@@ -749,6 +780,7 @@ function SubmitPageContent() {
                           className="form-input"
                           value={formData.organization_name}
                           onChange={handleInputChange}
+                          onKeyDown={handleKeyDown}
                           required
                         />
                       </div>
@@ -797,6 +829,7 @@ function SubmitPageContent() {
                       className="form-input"
                       value={formData.country}
                       onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
                       list="countries-list"
                       placeholder="اختر أو اكتب اسم الدولة"
                       required
@@ -836,6 +869,7 @@ function SubmitPageContent() {
                       className="form-input"
                       value={formData.title}
                       onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
                       placeholder="أدخل عنوان البحث الكامل"
                       required
                     />
@@ -898,6 +932,7 @@ function SubmitPageContent() {
                       className="form-input"
                       value={formData.main_researcher}
                       onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
                       placeholder="اسم الباحث الرئيسي (اختياري)"
                     />
                   </div>
@@ -914,6 +949,7 @@ function SubmitPageContent() {
                       rows={6}
                       value={formData.description}
                       onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
                       placeholder="أدخل وصفاً مختصراً عن البحث..."
                     />
                     <small className="form-help-text">
@@ -1229,7 +1265,7 @@ function SubmitPageContent() {
                       {loadingDraft ? 'جاري الحفظ...' : 'حفظ مسودة'}
                     </button>
                     <button 
-                      type="submit" 
+                      type="button"
                       className="btn btn-primary" 
                       disabled={isSubmitting || loading || !fileUrl || !declarationAccepted} 
                       style={{ 
@@ -1239,20 +1275,31 @@ function SubmitPageContent() {
                       }}
                       title={!fileUrl ? 'يجب رفع الملف أولاً' : !declarationAccepted ? 'يجب الموافقة على التعهد أولاً' : (isSubmitting || loading) ? 'جاري الإرسال...' : 'إرسال البحث'}
                       onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
                         if (isSubmitting || loading) {
-                          e.preventDefault();
+                          console.log('الإرسال قيد التنفيذ بالفعل');
                           return;
                         }
+                        
                         if (!fileUrl) {
-                          e.preventDefault();
                           setError('يجب رفع الملف قبل الإرسال');
                           return;
                         }
+                        
                         if (!declarationAccepted) {
-                          e.preventDefault();
                           setError('يجب الموافقة على التعهد قبل الإرسال');
                           return;
                         }
+                        
+                        // استدعاء handleSubmit مباشرة
+                        const fakeEvent = {
+                          preventDefault: () => {},
+                          stopPropagation: () => {},
+                        } as FormEvent<HTMLFormElement>;
+                        
+                        handleSubmit(fakeEvent);
                       }}
                     >
                       {(isSubmitting || loading) ? (

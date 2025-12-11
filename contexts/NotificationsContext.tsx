@@ -109,17 +109,24 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     if (!user || !isAuthenticated) return;
 
     try {
+      // استخدام maybeSingle بدلاً من single لتجنب خطأ 406 عند عدم وجود سجل
       const { data, error } = await supabase
         .from('notification_preferences')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        // PGRST116 = no rows returned, which is OK for first time
+      // معالجة الأخطاء
+      if (error) {
+        // إذا كان الخطأ 406 أو PGRST116 (لا يوجد سجل)، هذا طبيعي للمرة الأولى
+        if (error.code === 'PGRST116' || error.code === '406' || error.message?.includes('406')) {
+          console.log('لا توجد تفضيلات موجودة، سيتم استخدام القيم الافتراضية');
+          return; // استخدام القيم الافتراضية الموجودة في state
+        }
         throw error;
       }
 
+      // إذا وجدت بيانات، قم بتحديث التفضيلات
       if (data) {
         setState(prev => ({
           ...prev,
@@ -132,9 +139,32 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
             news_email: data.news_email ?? true,
           },
         }));
+      } else {
+        // إذا لم توجد بيانات، إنشاء تفضيلات افتراضية
+        try {
+          await supabase
+            .from('notification_preferences')
+            .insert({
+              user_id: user.id,
+              email_enabled: true,
+              in_app_enabled: true,
+              status_change_email: true,
+              comments_email: true,
+              reminders_email: true,
+              news_email: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+        } catch (insertError: any) {
+          // تجاهل خطأ الإدراج إذا كان السجل موجود بالفعل
+          if (insertError.code !== '23505') { // 23505 = unique violation
+            console.warn('خطأ في إنشاء التفضيلات الافتراضية:', insertError);
+          }
+        }
       }
     } catch (error: any) {
       console.error('Error fetching preferences:', error);
+      // لا نرمي الخطأ، فقط نستخدم القيم الافتراضية
     }
   }, [user, isAuthenticated, supabase]);
 
