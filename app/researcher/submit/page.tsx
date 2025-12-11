@@ -22,7 +22,7 @@ function SubmitPageContent() {
     category: '',
     description: '',
     country: '',
-    submitter_type: 'فرد',
+    submitter_type: 'أفراد',
     full_name: '',
     email: '',
     organization_name: '',
@@ -36,6 +36,44 @@ function SubmitPageContent() {
   const [draftId, setDraftId] = useState<string | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
   const [declarationAccepted, setDeclarationAccepted] = useState(false);
+
+  // دالة لمسح الكاش وإعادة تعيين النموذج
+  const clearCacheAndReset = () => {
+    // مسح localStorage المتعلق بالنموذج
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('submit') || key.includes('draft') || key.includes('form'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+
+    // إعادة تعيين النموذج
+    setFormData({
+      title: '',
+      research_type: '',
+      category: '',
+      description: '',
+      country: '',
+      submitter_type: 'أفراد',
+      full_name: user?.username || '',
+      email: user?.email || '',
+      organization_name: '',
+      organization_type: '',
+      main_researcher: '',
+      file: null,
+    });
+    setFileUrl(null);
+    setError('');
+    setSuccess('');
+    setDraftId(null);
+    setDeclarationAccepted(false);
+    setCurrentStep(1);
+    
+    // مسح معاملات URL
+    router.replace('/researcher/submit', { scroll: false });
+  };
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -74,7 +112,7 @@ function SubmitPageContent() {
           category: draft.category || '',
           description: draft.description || '',
           country: draft.country || '',
-          submitter_type: draft.submitter_type || 'فرد',
+          submitter_type: draft.submitter_type || 'أفراد',
           full_name: draft.full_name || prev.full_name,
           email: draft.email || prev.email,
           organization_name: draft.organization_name || '',
@@ -97,7 +135,16 @@ function SubmitPageContent() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    // تحويل القيم للتوافق مع قاعدة البيانات
+    let processedValue = value;
+    if (name === 'submitter_type') {
+      if (value === 'فرد') {
+        processedValue = 'أفراد';
+      } else if (value === 'جهة') {
+        processedValue = 'أعمال';
+      }
+    }
+    setFormData(prev => ({ ...prev, [name]: processedValue }));
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,11 +194,11 @@ function SubmitPageContent() {
         setError('يرجى اختيار نوع مقدم البحث');
         return false;
       }
-      if (formData.submitter_type === 'فرد' && !formData.full_name) {
+      if ((formData.submitter_type === 'أفراد' || formData.submitter_type === 'فرد') && !formData.full_name) {
         setError('الاسم الكامل مطلوب');
         return false;
       }
-      if (formData.submitter_type === 'جهة' && (!formData.organization_name || !formData.organization_type)) {
+      if ((formData.submitter_type === 'أعمال' || formData.submitter_type === 'جهة') && (!formData.organization_name || !formData.organization_type)) {
         setError('اسم الجهة ونوع الجهة مطلوبان');
         return false;
       }
@@ -178,7 +225,7 @@ function SubmitPageContent() {
         setError('فئة البحث مطلوبة');
         return false;
       }
-      if (formData.submitter_type === 'جهة' && !formData.main_researcher) {
+      if ((formData.submitter_type === 'أعمال' || formData.submitter_type === 'جهة') && !formData.main_researcher) {
         setError('اسم الباحث الرئيسي مطلوب في حالة الحساب أعمال');
         return false;
       }
@@ -249,19 +296,39 @@ function SubmitPageContent() {
     if (!validateStep(4)) return;
 
     try {
+      // الحصول على معلومات المستخدم من قاعدة البيانات
+      const supabase = createClient();
+      const { data: userData } = await supabase
+        .from('users')
+        .select('gender, national_id')
+        .eq('id', user?.id)
+        .single();
+
+      if (!formData.file) {
+        setError('يجب رفع ملف البحث');
+        return;
+      }
+
       const result = await createSubmission({
         title: formData.title,
         research_type: formData.research_type,
         category: formData.category,
-        description: formData.description,
-        file_url: fileUrl,
-        submitter_type: formData.submitter_type,
-        full_name: formData.full_name,
+        description: formData.description || '',
+        file_url: fileUrl!,
+        file_name: formData.file.name,
+        file_size: formData.file.size,
+        submitter_type: formData.submitter_type === 'فرد' ? 'أفراد' : formData.submitter_type === 'جهة' ? 'أعمال' : formData.submitter_type,
+        full_name: (formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? formData.full_name : formData.organization_name || '',
         email: formData.email,
-        organization_name: formData.organization_name,
-        organization_type: formData.organization_type,
-        main_researcher: formData.main_researcher,
+        organization_name: formData.organization_name || '',
+        organization_type: formData.organization_type || '',
+        main_researcher: formData.main_researcher || ((formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? formData.full_name : formData.organization_name) || '',
         country: formData.country,
+        gender: userData?.gender || 'ذكر',
+        id_number: userData?.national_id || '',
+        general_specialization: formData.category || '',
+        detailed_specialization: formData.description || '',
+        declaration_accepted: true,
         status: 'pending',
         is_draft: false,
       });
@@ -300,13 +367,30 @@ function SubmitPageContent() {
         <Topbar />
 
         <div className="dashboard-content">
-          <div className="page-header">
+          <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
             <div>
               <h1>{draftId ? 'تعديل مسودة' : 'تقديم بحث جديد'}</h1>
               <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
                 {draftId ? 'جاري تعديل مسودة موجودة' : 'املأ جميع الحقول المطلوبة لتقديم بحثك للمراجعة'}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={clearCacheAndReset}
+              className="btn btn-outline"
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 'var(--spacing-sm)',
+                fontSize: 'var(--font-size-sm)',
+                padding: 'var(--spacing-sm) var(--spacing-md)',
+                whiteSpace: 'nowrap'
+              }}
+              title="مسح الكاش وإعادة تعيين النموذج"
+            >
+              <i className="fas fa-trash-alt"></i>
+              مسح الكاش
+            </button>
           </div>
 
           {/* Progress Steps */}
@@ -371,59 +455,59 @@ function SubmitPageContent() {
                       <label
                         style={{
                           padding: 'var(--spacing-lg)',
-                          border: `2px solid ${formData.submitter_type === 'فرد' ? 'var(--primary-color)' : 'var(--border-color)'}`,
+                          border: `2px solid ${(formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? 'var(--primary-color)' : 'var(--border-color)'}`,
                           borderRadius: 'var(--radius-lg)',
                           cursor: 'pointer',
-                          background: formData.submitter_type === 'فرد' ? 'rgba(61, 90, 148, 0.05)' : 'var(--bg-primary)',
+                          background: (formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? 'rgba(61, 90, 148, 0.05)' : 'var(--bg-primary)',
                           transition: 'all var(--transition-base)',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
                           gap: 'var(--spacing-sm)',
                         }}
-                        onClick={() => setFormData(prev => ({ ...prev, submitter_type: 'فرد' }))}
+                        onClick={() => setFormData(prev => ({ ...prev, submitter_type: 'أفراد' }))}
                       >
                         <input
                           type="radio"
                           name="submitter_type"
                           value="فرد"
-                          checked={formData.submitter_type === 'فرد'}
+                          checked={formData.submitter_type === 'أفراد' || formData.submitter_type === 'فرد'}
                           onChange={handleInputChange}
                           style={{ display: 'none' }}
                         />
-                        <i className="fas fa-user" style={{ fontSize: '2rem', color: formData.submitter_type === 'فرد' ? 'var(--primary-color)' : 'var(--text-secondary)' }}></i>
-                        <span style={{ fontWeight: 600, color: formData.submitter_type === 'فرد' ? 'var(--primary-color)' : 'var(--text-primary)' }}>فرد</span>
+                        <i className="fas fa-user" style={{ fontSize: '2rem', color: (formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? 'var(--primary-color)' : 'var(--text-secondary)' }}></i>
+                        <span style={{ fontWeight: 600, color: (formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? 'var(--primary-color)' : 'var(--text-primary)' }}>فرد</span>
                       </label>
                       <label
                         style={{
                           padding: 'var(--spacing-lg)',
-                          border: `2px solid ${formData.submitter_type === 'جهة' ? 'var(--primary-color)' : 'var(--border-color)'}`,
+                          border: `2px solid ${(formData.submitter_type === 'جهة' || formData.submitter_type === 'أعمال') ? 'var(--primary-color)' : 'var(--border-color)'}`,
                           borderRadius: 'var(--radius-lg)',
                           cursor: 'pointer',
-                          background: formData.submitter_type === 'جهة' ? 'rgba(61, 90, 148, 0.05)' : 'var(--bg-primary)',
+                          background: (formData.submitter_type === 'جهة' || formData.submitter_type === 'أعمال') ? 'rgba(61, 90, 148, 0.05)' : 'var(--bg-primary)',
                           transition: 'all var(--transition-base)',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
                           gap: 'var(--spacing-sm)',
                         }}
-                        onClick={() => setFormData(prev => ({ ...prev, submitter_type: 'جهة' }))}
+                        onClick={() => setFormData(prev => ({ ...prev, submitter_type: 'أعمال' }))}
                       >
                         <input
                           type="radio"
                           name="submitter_type"
                           value="جهة"
-                          checked={formData.submitter_type === 'جهة'}
+                          checked={formData.submitter_type === 'أعمال' || formData.submitter_type === 'جهة'}
                           onChange={handleInputChange}
                           style={{ display: 'none' }}
                         />
-                        <i className="fas fa-building" style={{ fontSize: '2rem', color: formData.submitter_type === 'جهة' ? 'var(--primary-color)' : 'var(--text-secondary)' }}></i>
-                        <span style={{ fontWeight: 600, color: formData.submitter_type === 'جهة' ? 'var(--primary-color)' : 'var(--text-primary)' }}>جهة</span>
+                        <i className="fas fa-building" style={{ fontSize: '2rem', color: (formData.submitter_type === 'جهة' || formData.submitter_type === 'أعمال') ? 'var(--primary-color)' : 'var(--text-secondary)' }}></i>
+                        <span style={{ fontWeight: 600, color: (formData.submitter_type === 'جهة' || formData.submitter_type === 'أعمال') ? 'var(--primary-color)' : 'var(--text-primary)' }}>جهة</span>
                       </label>
                     </div>
                   </div>
 
-                  {formData.submitter_type === 'فرد' && (
+                  {(formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') && (
                     <>
                       <div className="form-group">
                         <label htmlFor="full_name" className="form-label required">
@@ -460,7 +544,7 @@ function SubmitPageContent() {
                     </>
                   )}
 
-                  {formData.submitter_type === 'جهة' && (
+                  {(formData.submitter_type === 'جهة' || formData.submitter_type === 'أعمال') && (
                     <>
                       <div className="form-group">
                         <label htmlFor="organization_name" className="form-label required">اسم الجهة</label>
@@ -609,7 +693,7 @@ function SubmitPageContent() {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="main_researcher" className={`form-label ${formData.submitter_type === 'جهة' ? 'required' : ''}`}>
+                    <label htmlFor="main_researcher" className={`form-label ${(formData.submitter_type === 'أعمال' || formData.submitter_type === 'جهة') ? 'required' : ''}`}>
                       <i className="fas fa-user-graduate" style={{ marginLeft: '0.5rem', color: 'var(--primary-color)' }}></i>
                       الباحث الرئيسي
                     </label>
@@ -620,8 +704,8 @@ function SubmitPageContent() {
                       className="form-input"
                       value={formData.main_researcher}
                       onChange={handleInputChange}
-                      placeholder={formData.submitter_type === 'جهة' ? 'اسم الباحث الرئيسي (مطلوب)' : 'اسم الباحث الرئيسي (اختياري)'}
-                      required={formData.submitter_type === 'جهة'}
+                      placeholder={(formData.submitter_type === 'أعمال' || formData.submitter_type === 'جهة') ? 'اسم الباحث الرئيسي (مطلوب)' : 'اسم الباحث الرئيسي (اختياري)'}
+                      required={formData.submitter_type === 'أعمال' || formData.submitter_type === 'جهة'}
                     />
                   </div>
 
@@ -757,7 +841,7 @@ function SubmitPageContent() {
                         <label>نوع مقدم البحث:</label>
                         <span style={{ fontWeight: 600 }}>{formData.submitter_type}</span>
                       </div>
-                      {formData.submitter_type === 'فرد' ? (
+                      {(formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? (
                         <>
                           <div className="detail-item">
                             <label>الاسم:</label>
@@ -867,7 +951,7 @@ function SubmitPageContent() {
                       fontSize: 'var(--font-size-sm)',
                       color: 'var(--text-primary)'
                     }}>
-                      {formData.submitter_type === 'فرد' ? (
+                      {(formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? (
                         <p style={{ margin: 0, textAlign: 'right' }}>
                           أتعهد بأن جميع البيانات والمعلومات المقدمة ضمن هذا الطلب/العمل صحيحة ودقيقة، وأن المحتوى مستخدم لغرض مشروع ومتوافق مع الأنظمة والتعليمات. كما أقرّ بأنني أتحمل المسؤولية الكاملة عن أي استخدام غير نظامي أو مخالف، دون تضمين أي ادعاء بملكية بحث أو مادة علمية ما لم يُذكر ذلك بشكل مستقل وواضح.
                         </p>
@@ -901,7 +985,7 @@ function SubmitPageContent() {
                         fontWeight: declarationAccepted ? 600 : 400,
                         lineHeight: 1.6
                       }}>
-                        {formData.submitter_type === 'فرد' ? (
+                        {(formData.submitter_type === 'فرد' || formData.submitter_type === 'أفراد') ? (
                           <>أقرّ وأوافق على التعهد أعلاه وأتحمل المسؤولية الكاملة عن صحة البيانات والمعلومات المقدمة</>
                         ) : (
                           <>نقرّ ونوافق على التعهد أعلاه ونتحمل المسؤولية الكاملة عن صحة البيانات والمعلومات المقدمة</>
