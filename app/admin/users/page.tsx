@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { createClient } from '@/lib/supabase/client';
@@ -250,14 +251,24 @@ export default function AdminUsersPage() {
                               })}
                             </td>
                             <td>
-                              <button
-                                className="btn btn-outline btn-small"
-                                onClick={() => toggleUserRole(user.id, user.role)}
-                                title={user.role === 'admin' ? 'تحويل إلى باحث' : 'تحويل إلى مدير'}
-                              >
-                                <i className={`fas fa-${user.role === 'admin' ? 'user' : 'user-shield'}`}></i>
-                                {user.role === 'admin' ? 'تحويل إلى باحث' : 'تحويل إلى مدير'}
-                              </button>
+                              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <Link
+                                  href={`/admin/users/${user.id}`}
+                                  className="btn btn-primary btn-small"
+                                  title="عرض وتعديل التفاصيل"
+                                >
+                                  <i className="fas fa-eye"></i>
+                                  عرض التفاصيل
+                                </Link>
+                                <button
+                                  className="btn btn-outline btn-small"
+                                  onClick={() => toggleUserRole(user.id, user.role)}
+                                  title={user.role === 'admin' ? 'تحويل إلى باحث' : 'تحويل إلى مدير'}
+                                >
+                                  <i className={`fas fa-${user.role === 'admin' ? 'user' : 'user-shield'}`}></i>
+                                  {user.role === 'admin' ? 'تحويل إلى باحث' : 'تحويل إلى مدير'}
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
