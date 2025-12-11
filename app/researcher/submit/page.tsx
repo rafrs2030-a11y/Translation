@@ -35,6 +35,8 @@ function SubmitPageContent() {
   const [success, setSuccess] = useState('');
   const [draftId, setDraftId] = useState<string | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
+  const [declarationAccepted, setDeclarationAccepted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -51,6 +53,45 @@ function SubmitPageContent() {
       }));
     }
   }, [user]);
+
+  // دالة لمسح الكاش وإعادة تعيين النموذج
+  const clearCacheAndReset = () => {
+    // مسح localStorage المتعلق بالنموذج
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('submit') || key.includes('draft') || key.includes('form'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+
+    // إعادة تعيين النموذج
+    setFormData({
+      title: '',
+      research_type: '',
+      category: '',
+      description: '',
+      country: '',
+      submitter_type: 'فرد',
+      full_name: user?.username || '',
+      email: user?.email || '',
+      organization_name: '',
+      organization_type: '',
+      main_researcher: '',
+      file: null,
+    });
+    setFileUrl(null);
+    setError('');
+    setSuccess('');
+    setDraftId(null);
+    setDeclarationAccepted(false);
+    setCurrentStep(1);
+    setIsSubmitting(false);
+    
+    // مسح معاملات URL
+    router.replace('/researcher/submit', { scroll: false });
+  };
 
   // Load draft if draft ID is provided in URL
   useEffect(() => {
@@ -186,6 +227,17 @@ function SubmitPageContent() {
       }
     }
 
+    if (step === 4) {
+      if (!fileUrl) {
+        setError('يجب رفع الملف قبل الإرسال');
+        return false;
+      }
+      if (!declarationAccepted) {
+        setError('يجب الموافقة على التعهد قبل الإرسال');
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -218,14 +270,33 @@ function SubmitPageContent() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    // منع الإرسال المتعدد
+    if (isSubmitting || loading) {
+      console.log('الإرسال قيد التنفيذ بالفعل');
+      return;
+    }
+    
+    setIsSubmitting(true);
     setError('');
     setSuccess('');
 
-    if (!validateStep(4)) return;
+    if (!validateStep(4)) {
+      setIsSubmitting(false);
+      return;
+    }
 
     // التحقق من وجود الملف
     if (!formData.file || !fileUrl) {
       setError('يجب رفع ملف البحث قبل الإرسال');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // التحقق من التعهد
+    if (!declarationAccepted) {
+      setError('يجب الموافقة على التعهد قبل الإرسال');
+      setIsSubmitting(false);
       return;
     }
 
@@ -252,23 +323,29 @@ function SubmitPageContent() {
       // إنشاء رقم مرجعي
       const referenceNumber = `REF-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
 
+      // إعداد البيانات حسب نوع مقدم البحث
+      const fullName = (formData.submitter_type === 'فرد') 
+        ? formData.full_name 
+        : formData.organization_name || '';
+      
+      const mainResearcher = formData.main_researcher || 
+        ((formData.submitter_type === 'فرد') 
+          ? formData.full_name 
+          : formData.organization_name) || '';
+
       const result = await createSubmission({
-        title: formData.title,
+        // الحقول المطلوبة في جدول submissions (بدون user_id - سيتم إضافته في الـ context)
         research_type: formData.research_type,
         category: formData.category,
-        description: formData.description || '',
-        file_url: fileUrl,
+        file_url: fileUrl || '',
         file_name: formData.file.name,
         file_size: formData.file.size,
-        submitter_type: formData.submitter_type === 'فرد' ? 'أفراد' : formData.submitter_type === 'جهة' ? 'أعمال' : formData.submitter_type,
-        full_name: (formData.submitter_type === 'فرد') ? formData.full_name : formData.organization_name || '',
+        full_name: fullName,
         email: formData.email,
-        organization_name: formData.organization_name || '',
-        organization_type: formData.organization_type || '',
-        main_researcher: formData.main_researcher || ((formData.submitter_type === 'فرد') ? formData.full_name : formData.organization_name) || '',
         country: formData.country,
         gender: userData?.gender || 'ذكر',
         id_number: userData?.national_id || '',
+        main_researcher: mainResearcher,
         general_specialization: formData.category || '',
         detailed_specialization: formData.description || '',
         declaration_accepted: true,
@@ -280,15 +357,23 @@ function SubmitPageContent() {
 
       if (result.success) {
         setSuccess('تم تقديم البحث بنجاح!');
+        setIsSubmitting(false);
+        // مسح الكاش بعد النجاح
         setTimeout(() => {
+          clearCacheAndReset();
           router.push('/researcher/submissions');
         }, 2000);
       } else {
         setError(result.error || 'فشل تقديم البحث');
+        setIsSubmitting(false);
       }
     } catch (err: any) {
       console.error('خطأ في إرسال الطلب:', err);
       setError('حدث خطأ: ' + (err.message || 'خطأ غير معروف'));
+      setIsSubmitting(false);
+    } finally {
+      // التأكد من إعادة تعيين الحالة في جميع الحالات
+      setIsSubmitting(false);
     }
   };
 
@@ -313,13 +398,32 @@ function SubmitPageContent() {
         <Topbar />
 
         <div className="dashboard-content">
-          <div className="page-header">
+          <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
             <div>
               <h1>{draftId ? 'تعديل مسودة' : 'تقديم بحث جديد'}</h1>
               <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
                 {draftId ? 'جاري تعديل مسودة موجودة' : 'املأ جميع الحقول المطلوبة لتقديم بحثك للمراجعة'}
               </p>
             </div>
+            {currentStep < 4 && (
+              <button
+                type="button"
+                onClick={clearCacheAndReset}
+                className="btn btn-outline"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 'var(--spacing-sm)',
+                  fontSize: 'var(--font-size-sm)',
+                  padding: 'var(--spacing-sm) var(--spacing-md)',
+                  whiteSpace: 'nowrap'
+                }}
+                title="مسح الكاش وإعادة تعيين النموذج"
+              >
+                <i className="fas fa-trash-alt"></i>
+                مسح الكاش
+              </button>
+            )}
           </div>
 
           {/* Progress Steps */}
@@ -862,6 +966,78 @@ function SubmitPageContent() {
                       </div>
                     )}
                   </div>
+
+                  {/* Declaration Section */}
+                  <div className="review-section" style={{ marginTop: 'var(--spacing-xl)', padding: 'var(--spacing-lg)', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', border: '2px solid var(--border-color)' }}>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-md)', color: 'var(--primary-color)' }}>
+                      <i className="fas fa-file-contract"></i>
+                      التعهد والموافقة
+                    </h4>
+                    <div style={{ 
+                      padding: 'var(--spacing-md)', 
+                      background: 'var(--bg-primary)', 
+                      borderRadius: 'var(--radius-md)',
+                      marginBottom: 'var(--spacing-md)',
+                      border: '1px solid var(--border-color)',
+                      lineHeight: 1.8,
+                      fontSize: 'var(--font-size-sm)',
+                      color: 'var(--text-primary)'
+                    }}>
+                      {(formData.submitter_type === 'فرد') ? (
+                        <p style={{ margin: 0, textAlign: 'right' }}>
+                          أتعهد بأن جميع البيانات والمعلومات المقدمة ضمن هذا الطلب/العمل صحيحة ودقيقة، وأن المحتوى مستخدم لغرض مشروع ومتوافق مع الأنظمة والتعليمات. كما أقرّ بأنني أتحمل المسؤولية الكاملة عن أي استخدام غير نظامي أو مخالف، دون تضمين أي ادعاء بملكية بحث أو مادة علمية ما لم يُذكر ذلك بشكل مستقل وواضح.
+                        </p>
+                      ) : (
+                        <p style={{ margin: 0, textAlign: 'right' }}>
+                          نقرّ بأن جميع البيانات والمعلومات المقدمة ضمن هذا الطلب/العمل صحيحة وتمثل الجهة مقدمة الطلب، كما نلتزم باستخدام المحتوى فيما يتوافق مع سياسات الجهة والأنظمة ذات العلاقة. {formData.main_researcher && `ونقرّ بأن هذا البحث ملك ل${formData.main_researcher}.`} ولا يُعتبر هذا التعهّد إثباتًا لملكية بحث أو مادة علمية لأي فرد أو جهة إلا إذا تم إرفاق ما يثبت ذلك بشكل مستقل. ونقرّ بتحمل المسؤولية الكاملة عن أي استخدام مخالف.
+                        </p>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-sm)' }}>
+                      <input
+                        type="checkbox"
+                        id="declaration"
+                        name="declaration"
+                        checked={declarationAccepted}
+                        onChange={(e) => setDeclarationAccepted(e.target.checked)}
+                        required
+                        style={{ 
+                          marginTop: '0.25rem',
+                          width: '18px',
+                          height: '18px',
+                          cursor: 'pointer',
+                          accentColor: 'var(--primary-color)'
+                        }}
+                      />
+                      <label htmlFor="declaration" style={{ 
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        fontSize: 'var(--font-size-sm)',
+                        color: declarationAccepted ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        fontWeight: declarationAccepted ? 600 : 400,
+                        lineHeight: 1.6
+                      }}>
+                        {(formData.submitter_type === 'فرد') ? (
+                          <>أقرّ وأوافق على التعهد أعلاه وأتحمل المسؤولية الكاملة عن صحة البيانات والمعلومات المقدمة</>
+                        ) : (
+                          <>نقرّ ونوافق على التعهد أعلاه ونتحمل المسؤولية الكاملة عن صحة البيانات والمعلومات المقدمة</>
+                        )}
+                      </label>
+                    </div>
+                    {error && !declarationAccepted && currentStep === 4 && (
+                      <p style={{ 
+                        marginTop: 'var(--spacing-sm)', 
+                        color: 'var(--error-color)', 
+                        fontSize: 'var(--font-size-sm)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--spacing-xs)'
+                      }}>
+                        <i className="fas fa-exclamation-circle"></i>
+                        {error}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -885,12 +1061,38 @@ function SubmitPageContent() {
                 )}
                 {currentStep === 4 && (
                   <>
-                    <button type="button" className="btn btn-outline" onClick={handleSaveDraft} disabled={loading} style={{ minWidth: '140px' }}>
+                    <button type="button" className="btn btn-outline" onClick={handleSaveDraft} disabled={isSubmitting || loadingDraft} style={{ minWidth: '140px' }}>
                       <i className="fas fa-save"></i>
-                      حفظ مسودة
+                      {loadingDraft ? 'جاري الحفظ...' : 'حفظ مسودة'}
                     </button>
-                    <button type="submit" className="btn btn-primary" disabled={loading || !fileUrl} style={{ minWidth: '160px' }}>
-                      {loading ? (
+                    <button 
+                      type="submit" 
+                      className="btn btn-primary" 
+                      disabled={isSubmitting || loading || !fileUrl || !declarationAccepted} 
+                      style={{ 
+                        minWidth: '160px',
+                        opacity: (isSubmitting || loading || !fileUrl || !declarationAccepted) ? 0.6 : 1,
+                        cursor: (isSubmitting || loading || !fileUrl || !declarationAccepted) ? 'not-allowed' : 'pointer'
+                      }}
+                      title={!fileUrl ? 'يجب رفع الملف أولاً' : !declarationAccepted ? 'يجب الموافقة على التعهد أولاً' : (isSubmitting || loading) ? 'جاري الإرسال...' : 'إرسال البحث'}
+                      onClick={(e) => {
+                        if (isSubmitting || loading) {
+                          e.preventDefault();
+                          return;
+                        }
+                        if (!fileUrl) {
+                          e.preventDefault();
+                          setError('يجب رفع الملف قبل الإرسال');
+                          return;
+                        }
+                        if (!declarationAccepted) {
+                          e.preventDefault();
+                          setError('يجب الموافقة على التعهد قبل الإرسال');
+                          return;
+                        }
+                      }}
+                    >
+                      {(isSubmitting || loading) ? (
                         <>
                           <i className="fas fa-spinner fa-spin"></i>
                           جاري الإرسال...
@@ -902,6 +1104,46 @@ function SubmitPageContent() {
                         </>
                       )}
                     </button>
+                    {(isSubmitting || loading) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSubmitting(false);
+                          // إعادة تحميل الصفحة لإعادة تعيين جميع الحالات
+                          window.location.reload();
+                        }}
+                        className="btn btn-outline"
+                        style={{
+                          marginTop: 'var(--spacing-sm)',
+                          fontSize: 'var(--font-size-sm)',
+                          padding: 'var(--spacing-xs) var(--spacing-sm)',
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          color: 'var(--error-color)',
+                          borderColor: 'var(--error-color)'
+                        }}
+                      >
+                        <i className="fas fa-times-circle"></i>
+                        إيقاف الإرسال وإعادة التحميل
+                      </button>
+                    )}
+                    {(!fileUrl || !declarationAccepted) && !isSubmitting && !loading && (
+                      <div style={{ 
+                        marginTop: 'var(--spacing-sm)', 
+                        padding: 'var(--spacing-sm)', 
+                        background: 'rgba(239, 68, 68, 0.1)', 
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: 'var(--font-size-sm)',
+                        color: 'var(--error-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--spacing-xs)',
+                        width: '100%',
+                        marginRight: 'var(--spacing-md)'
+                      }}>
+                        <i className="fas fa-exclamation-circle"></i>
+                        {!fileUrl && !declarationAccepted ? 'يجب رفع الملف والموافقة على التعهد أولاً' : !fileUrl ? 'يجب رفع الملف أولاً' : 'يجب الموافقة على التعهد أولاً'}
+                      </div>
+                    )}
                   </>
                 )}
               </div>

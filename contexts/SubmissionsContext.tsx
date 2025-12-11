@@ -211,22 +211,27 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      // التحقق من الحقول المطلوبة
-      const requiredFields = ['title', 'research_type', 'category', 'file_url', 'file_name', 'file_size', 'full_name', 'email', 'country', 'gender', 'id_number', 'main_researcher', 'general_specialization', 'detailed_specialization', 'reference_number'];
-      const missingFields = requiredFields.filter(field => !data[field as keyof Submission]);
-      
-      if (missingFields.length > 0) {
-        throw new Error(`الحقول التالية مطلوبة: ${missingFields.join(', ')}`);
-      }
+      // إزالة الحقول غير الموجودة في الجدول
+      const {
+        title,
+        description,
+        submitter_type,
+        organization_name,
+        organization_type,
+        user_id, // إزالة user_id إذا كان موجوداً في data
+        ...validData
+      } = data;
 
       const submissionData = {
-        ...data,
-        user_id: user.id,
+        ...validData,
+        user_id: user.id, // إضافة user_id من المستخدم الحالي
         is_draft: data.is_draft ?? false,
         status: data.status || 'pending',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
+
+      console.log('إرسال البيانات إلى Supabase:', submissionData);
 
       const { data: newSubmission, error } = await supabase
         .from('submissions')
@@ -234,10 +239,7 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
         .select()
         .single();
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw new Error(error.message || 'حدث خطأ أثناء إنشاء الطلب');
-      }
+      if (error) throw error;
 
       setState(prev => ({
         ...prev,
@@ -248,13 +250,12 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
       return { success: true, data: newSubmission };
     } catch (error: any) {
       console.error('Error creating submission:', error);
-      const errorMessage = error.message || 'حدث خطأ أثناء إنشاء الطلب';
       setState(prev => ({
         ...prev,
-        error: errorMessage,
+        error: error.message || 'حدث خطأ أثناء إنشاء الطلب',
         loading: false,
       }));
-      return { success: false, error: errorMessage };
+      return { success: false, error: error.message };
     }
   }, [user, supabase]);
 
