@@ -157,12 +157,12 @@ function SubmitPageContent() {
       // في الخطوات الأولى، Enter ينتقل للخطوة التالية
       e.preventDefault();
       handleNext();
-    } else if (e.key === 'Enter' && currentStep === 4) {
-      // في الخطوة الأخيرة، Enter لا يرسل تلقائياً إلا إذا كان الزر مفعلاً
-      if (isSubmitting || loading || !fileUrl || !declarationAccepted) {
-        e.preventDefault();
+      } else if (e.key === 'Enter' && currentStep === 4) {
+        // في الخطوة الأخيرة، Enter لا يرسل تلقائياً إلا إذا كان الزر مفعلاً
+        if (isSubmitting || !fileUrl || !declarationAccepted) {
+          e.preventDefault();
+        }
       }
-    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -345,8 +345,8 @@ function SubmitPageContent() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
-    // منع الإرسال المتعدد
-    if (isSubmitting || loading) {
+    // منع الإرسال المتعدد - استخدام isSubmitting فقط
+    if (isSubmitting) {
       console.log('الإرسال قيد التنفيذ بالفعل');
       return;
     }
@@ -644,7 +644,7 @@ function SubmitPageContent() {
             onSubmit={(e) => {
               e.preventDefault();
               // التأكد من أن الإرسال يتم فقط عند الضغط على زر الإرسال
-              if (currentStep === 4 && !isSubmitting && !loading && fileUrl && declarationAccepted) {
+              if (currentStep === 4 && !isSubmitting && fileUrl && declarationAccepted) {
                 handleSubmit(e);
               }
             }} 
@@ -1260,25 +1260,59 @@ function SubmitPageContent() {
                 )}
                 {currentStep === 4 && (
                   <>
-                    <button type="button" className="btn btn-outline" onClick={handleSaveDraft} disabled={isSubmitting || loadingDraft} style={{ minWidth: '140px' }}>
+                    <button 
+                      type="button" 
+                      className="btn btn-outline" 
+                      onClick={handleSaveDraft} 
+                      disabled={isSubmitting || loadingDraft} 
+                      style={{ 
+                        minWidth: '140px',
+                        cursor: (isSubmitting || loadingDraft) ? 'not-allowed !important' : 'pointer !important',
+                        pointerEvents: (isSubmitting || loadingDraft) ? 'none' : 'auto'
+                      }}
+                    >
                       <i className="fas fa-save"></i>
                       {loadingDraft ? 'جاري الحفظ...' : 'حفظ مسودة'}
                     </button>
                     <button 
                       type="button"
                       className="btn btn-primary" 
-                      disabled={isSubmitting || loading || !fileUrl || !declarationAccepted} 
+                      disabled={isSubmitting || !fileUrl || !declarationAccepted} 
                       style={{ 
                         minWidth: '160px',
-                        opacity: (isSubmitting || loading || !fileUrl || !declarationAccepted) ? 0.6 : 1,
-                        cursor: (isSubmitting || loading || !fileUrl || !declarationAccepted) ? 'not-allowed' : 'pointer'
+                        opacity: (isSubmitting || !fileUrl || !declarationAccepted) ? 0.6 : 1,
+                        cursor: (isSubmitting || !fileUrl || !declarationAccepted) ? 'not-allowed !important' : 'pointer !important',
+                        pointerEvents: (isSubmitting || !fileUrl || !declarationAccepted) ? 'none' : 'auto'
                       }}
-                      title={!fileUrl ? 'يجب رفع الملف أولاً' : !declarationAccepted ? 'يجب الموافقة على التعهد أولاً' : (isSubmitting || loading) ? 'جاري الإرسال...' : 'إرسال البحث'}
+                      onMouseEnter={(e) => {
+                        // التأكد من أن الـ cursor صحيح عند hover
+                        const isDisabled = isSubmitting || !fileUrl || !declarationAccepted;
+                        if (isDisabled) {
+                          e.currentTarget.style.setProperty('cursor', 'not-allowed', 'important');
+                        } else {
+                          e.currentTarget.style.setProperty('cursor', 'pointer', 'important');
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        // إعادة تعيين الـ cursor عند مغادرة الزر
+                        const isDisabled = isSubmitting || !fileUrl || !declarationAccepted;
+                        if (isDisabled) {
+                          e.currentTarget.style.setProperty('cursor', 'not-allowed', 'important');
+                        } else {
+                          e.currentTarget.style.setProperty('cursor', 'pointer', 'important');
+                        }
+                      }}
+                      title={!fileUrl ? 'يجب رفع الملف أولاً' : !declarationAccepted ? 'يجب الموافقة على التعهد أولاً' : isSubmitting ? 'جاري الإرسال...' : 'إرسال البحث'}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         
-                        if (isSubmitting || loading) {
+                        // منع النقر إذا كان الزر معطلاً
+                        if (isSubmitting || !fileUrl || !declarationAccepted) {
+                          return;
+                        }
+                        
+                        if (isSubmitting) {
                           console.log('الإرسال قيد التنفيذ بالفعل');
                           return;
                         }
@@ -1302,7 +1336,7 @@ function SubmitPageContent() {
                         handleSubmit(fakeEvent);
                       }}
                     >
-                      {(isSubmitting || loading) ? (
+                      {isSubmitting ? (
                         <>
                           <i className="fas fa-spinner fa-spin"></i>
                           جاري الإرسال...
@@ -1314,7 +1348,7 @@ function SubmitPageContent() {
                         </>
                       )}
                     </button>
-                    {(isSubmitting || loading) && (
+                    {isSubmitting && (
                       <button
                         type="button"
                         onClick={() => {
@@ -1336,7 +1370,7 @@ function SubmitPageContent() {
                         إيقاف الإرسال وإعادة التحميل
                       </button>
                     )}
-                    {(!fileUrl || !declarationAccepted) && !isSubmitting && !loading && (
+                    {(!fileUrl || !declarationAccepted) && !isSubmitting && (
                       <div style={{ 
                         marginTop: 'var(--spacing-sm)', 
                         padding: 'var(--spacing-sm)', 
