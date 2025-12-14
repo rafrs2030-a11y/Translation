@@ -797,7 +797,9 @@
         width: 280px;
     }
     
-    .sidebar.active {
+    /* Allow both 'active' and 'open' classes to show sidebar on mobile */
+    .sidebar.active,
+    .sidebar.open {
         transform: translateX(0);
     }
     
