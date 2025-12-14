@@ -314,6 +314,41 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
         loading: false,
       }));
 
+      // محاولة إرسال إيميل تأكيد باستلام الطلب للباحث عبر Edge Function
+      try {
+        const baseData: any = submissionData as any;
+        const researcherEmail = baseData.email || user.email || '';
+        const fullName = baseData.full_name || 'الباحث';
+        const referenceNumber = baseData.reference_number;
+
+        if (researcherEmail) {
+          await supabase.functions.invoke('send-notification-email', {
+            body: {
+              emailData: {
+                to: researcherEmail,
+                subject: 'تم استلام طلبك بنجاح',
+                html: `
+                  <h1>تم استلام طلبك</h1>
+                  <p>عزيزي ${fullName}،</p>
+                  <p>تم استلام طلبك بنجاح في منصة نشر الأبحاث العربية.</p>
+                  ${
+                    referenceNumber
+                      ? `<p><strong>رقم المرجع:</strong> ${referenceNumber}</p>`
+                      : ''
+                  }
+                  <p>ستصلك إشعارات عند تغيير حالة الطلب.</p>
+                `,
+                type: 'new_submission',
+                userId: user.id,
+                submissionId: newSubmission.id,
+              },
+            },
+          });
+        }
+      } catch (emailError) {
+        console.warn('فشل إرسال إيميل تأكيد استلام الطلب:', emailError);
+      }
+
       return { success: true, data: newSubmission };
     } catch (error: any) {
       console.error('Error creating submission:', error);

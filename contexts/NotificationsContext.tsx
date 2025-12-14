@@ -247,32 +247,44 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   }, [fetchNotifications]);
 
   useEffect(() => {
-    if (user && isAuthenticated) {
-      fetchNotifications();
-      fetchPreferences();
+    if (!user || !isAuthenticated) return;
 
-      // Subscribe to realtime notifications
-      const channel = supabase
-        .channel('notifications')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${user.id}`,
-          },
-          () => {
-            fetchNotifications();
-          }
-        )
-        .subscribe();
+    // جلب تفضيلات المستخدم دائماً أولاً
+    fetchPreferences();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+    // إذا عطّل المستخدم الإشعارات داخل التطبيق، لا نقوم بجلب أو الاشتراك
+    if (!state.preferences.in_app_enabled) {
+      setState(prev => ({
+        ...prev,
+        notifications: [],
+        unreadCount: 0,
+      }));
+      return;
     }
-  }, [user, isAuthenticated, fetchNotifications, fetchPreferences, supabase]);
+
+    // جلب الإشعارات والاشتراك في التحديثات الفورية
+    fetchNotifications();
+
+    const channel = supabase
+      .channel('notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, isAuthenticated, state.preferences.in_app_enabled, fetchNotifications, fetchPreferences, supabase]);
 
   return (
     <NotificationsContext.Provider

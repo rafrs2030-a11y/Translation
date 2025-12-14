@@ -110,6 +110,7 @@ export default function AdminSubmissionDetailsPage() {
 
     try {
       const supabase = createClient();
+      const previousStatus = submission.status;
       const updateData: any = {
         status: newStatus,
         updated_at: new Date().toISOString(),
@@ -128,12 +129,97 @@ export default function AdminSubmissionDetailsPage() {
 
       // Create notification for user (if not already created by trigger)
       if (submission.user_id) {
+        // إشعار بتغيير الحالة
         await supabase.from('notifications').insert({
           user_id: submission.user_id,
           submission_id: submission.id,
           type: 'status_change',
           message: `تم تحديث حالة طلبك إلى ${getStatusLabel(newStatus)}`,
         });
+
+        // إذا كتب المدير ردًا، أرسل إشعارًا منفصلًا يحتوي نص الرد
+        if (adminReply && adminReply.trim().length > 0) {
+          await supabase.from('notifications').insert({
+            user_id: submission.user_id,
+            submission_id: submission.id,
+            type: 'comment_added',
+            message: adminReply.trim(),
+          });
+        }
+      }
+
+      // محاولة إرسال إشعارات البريد الإلكتروني (تغيير حالة + رد المدير) عبر Edge Function
+      try {
+        // تحديد البريد واسم الباحث
+        const researcherEmail = submission.email;
+        const researcherName =
+          submission.full_name ||
+          submission.main_researcher ||
+          submission.user?.username ||
+          'الباحث';
+
+        if (researcherEmail) {
+          // 1) إيميل تغيير حالة الطلب (يستخدم قالب HTML داخل Edge Function)
+          const statusData = {
+            researcherName,
+            referenceNumber: submission.reference_number || submission.id.slice(0, 8).toUpperCase(),
+            oldStatus: previousStatus,
+            newStatus: newStatus,
+            newStatusLabel: getStatusLabel(newStatus),
+            oldStatusLabel: getStatusLabel(previousStatus),
+            researchTitle: submission.main_researcher || submission.full_name || '',
+            researchType: submission.research_type || '',
+            submissionDate: new Date(submission.created_at).toLocaleDateString('ar-SA', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            }),
+            comment: adminReply || adminNotes || '',
+            submissionLink:
+              typeof window !== 'undefined'
+                ? `${window.location.origin}/researcher/submissions/${submission.id}`
+                : null,
+          };
+
+          await supabase.functions.invoke('send-notification-email', {
+            body: {
+              emailData: {
+                to: researcherEmail,
+                subject: `تحديث حالة طلبك - ${statusData.newStatusLabel}`,
+                html: '',
+                type: 'status_change',
+                userId: submission.user_id,
+                submissionId: submission.id,
+              },
+              statusData,
+            },
+          });
+
+          // 2) إيميل منفصل لرسالة المدير إن وُجد رد
+          if (adminReply && adminReply.trim().length > 0) {
+            const cleanReply = adminReply.trim();
+            await supabase.functions.invoke('send-notification-email', {
+              body: {
+                emailData: {
+                  to: researcherEmail,
+                  subject: 'رد جديد على طلبك البحثي',
+                  html: `
+                    <h1>رد جديد من فريق المراجعة</h1>
+                    <p>عزيزي ${researcherName}،</p>
+                    <p>تم إضافة رد جديد من المدير على طلبك.</p>
+                    <p><strong>نص الرد:</strong></p>
+                    <blockquote>${cleanReply.replace(/\n/g, '<br />')}</blockquote>
+                  `,
+                  type: 'comment_added',
+                  userId: submission.user_id,
+                  submissionId: submission.id,
+                },
+              },
+            });
+          }
+        }
+      } catch (emailError) {
+        console.warn('فشل إرسال إشعارات البريد الإلكتروني عن الطلب:', emailError);
       }
 
       setMessage({ type: 'success', text: 'تم تحديث حالة الطلب بنجاح' });
