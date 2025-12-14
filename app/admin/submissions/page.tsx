@@ -163,7 +163,7 @@ export default function AdminSubmissionsPage() {
               </h2>
             </div>
             <div className="card-body">
-              <form onSubmit={handleSearch} className="filters-form">
+              <form onSubmit={handleSearch} className="filters-form users-filters">
                 <div className="form-group" style={{ display: 'flex', gap: 'var(--spacing-md)', alignItems: 'flex-end' }}>
                   <div className="search-input-wrapper" style={{ flex: 1 }}>
                     <input

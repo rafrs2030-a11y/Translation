@@ -210,15 +210,18 @@ export default function AdminVerificationRequestsPage() {
           {/* Filters */}
           <div className="card">
             <div className="card-body">
-              <form onSubmit={handleSearch} className="filters-form">
-                <div className="form-group">
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="ابحث بالاسم أو البريد الإلكتروني..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+              <form onSubmit={handleSearch} className="filters-form users-filters">
+                <div className="form-group" style={{ display: 'flex', gap: 'var(--spacing-md)', alignItems: 'flex-end' }}>
+                  <div className="search-input-wrapper" style={{ flex: 1 }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="ابحث بالاسم أو البريد الإلكتروني..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <i className="fas fa-search"></i>
+                  </div>
                   <button type="submit" className="btn btn-primary">
                     <i className="fas fa-search"></i>
                     بحث
