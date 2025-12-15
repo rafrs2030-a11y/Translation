@@ -314,18 +314,6 @@ export function SubmissionsProvider({ children }: { children: React.ReactNode })
         loading: false,
       }));
 
-      // إنشاء إشعار داخل النظام للطلب الجديد (يُرى من الباحث والإدمن)
-      try {
-        await supabase.from('notifications').insert({
-          user_id: user.id,
-          submission_id: newSubmission.id,
-          type: 'new_submission',
-          message: `تم استلام طلب بحث جديد برقم المرجع ${submissionData.reference_number || newSubmission.reference_number || ''}`,
-        });
-      } catch (notifError) {
-        console.warn('فشل إنشاء إشعار new_submission:', notifError);
-      }
-
       // محاولة إرسال إيميل تأكيد باستلام الطلب للباحث عبر Edge Function
       try {
         const baseData: any = submissionData as any;

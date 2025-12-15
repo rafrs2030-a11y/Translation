@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotifications } from '@/contexts/NotificationsContext';
 
 export default function AdminSidebar() {
   const pathname = usePathname();
   const { logout } = useAuth();
+  const { unreadCount } = useNotifications();
 
   const navItems = [
     { href: '/admin/dashboard', icon: 'fa-home', label: 'الرئيسية' },
@@ -15,6 +17,7 @@ export default function AdminSidebar() {
     { href: '/admin/verification-requests', icon: 'fa-user-check', label: 'طلبات التوثيق' },
     { href: '/admin/statistics', icon: 'fa-chart-bar', label: 'الإحصائيات' },
     { href: '/admin/reports', icon: 'fa-file-export', label: 'التقارير' },
+    { href: '/admin/notifications', icon: 'fa-bell', label: 'الإشعارات', badge: 'notifications' as const },
     { href: '/admin/settings', icon: 'fa-cog', label: 'الإعدادات' },
     { href: '/admin/profile', icon: 'fa-user', label: 'الملف الشخصي' },
   ];
@@ -35,6 +38,15 @@ export default function AdminSidebar() {
           >
             <i className={`fas ${item.icon}`}></i>
             <span>{item.label}</span>
+            {item.badge === 'notifications' && unreadCount > 0 && (
+              <span
+                className="nav-badge"
+                data-badge="notifications"
+                style={{ display: 'inline-flex' }}
+              >
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
           </Link>
         ))}
       </nav>
