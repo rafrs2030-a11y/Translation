@@ -224,11 +224,16 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     try {
       const { error } = await supabase
         .from('notification_preferences')
-        .upsert({
-          user_id: user.id,
-          ...preferences,
-          updated_at: new Date().toISOString(),
-        });
+        .upsert(
+          {
+            user_id: user.id,
+            ...preferences,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'user_id',
+          }
+        );
 
       if (error) throw error;
 
