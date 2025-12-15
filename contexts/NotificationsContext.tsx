@@ -74,12 +74,18 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
+
+      // الباحث يرى إشعاراته فقط، أما الإدمن فيمكنه رؤية جميع الإشعارات
+      if (user.role !== 'admin' && user.role !== 'super_admin') {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 

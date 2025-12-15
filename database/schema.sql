@@ -297,6 +297,16 @@ CREATE POLICY "Users can view their own notifications"
   ON notifications FOR SELECT
   USING (auth.uid() = user_id);
 
+CREATE POLICY "Admins can view all notifications"
+  ON notifications FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE id = auth.uid() 
+      AND role IN ('admin', 'super_admin')
+    )
+  );
+
 CREATE POLICY "Users can update their own notifications"
   ON notifications FOR UPDATE
   USING (auth.uid() = user_id);
