@@ -168,21 +168,21 @@ CREATE INDEX idx_audit_log_created_at ON audit_log(created_at DESC);
 -- ============================================
 CREATE TABLE IF NOT EXISTS email_log (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  queue_id UUID,
   user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-  email_type VARCHAR(50) NOT NULL,
-  recipient_email VARCHAR(255) NOT NULL,
-  subject TEXT NOT NULL,
-  status VARCHAR(20) NOT NULL CHECK (status IN ('sent', 'failed', 'queued')),
-  error_message TEXT,
-  sent_at TIMESTAMP WITH TIME ZONE,
+  recipient_email TEXT NOT NULL,
+  type TEXT NOT NULL,
+  status TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  provider_response JSONB,
+  error_text TEXT,
+  attempts INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Indexes for email_log table
-CREATE INDEX idx_email_log_user_id ON email_log(user_id);
-CREATE INDEX idx_email_log_status ON email_log(status);
-CREATE INDEX idx_email_log_email_type ON email_log(email_type);
-CREATE INDEX idx_email_log_created_at ON email_log(created_at DESC);
+CREATE INDEX idx_email_log_queue ON email_log(queue_id);
+CREATE INDEX idx_email_log_user ON email_log(user_id);
 
 -- ============================================
 -- TRIGGERS
@@ -309,6 +309,10 @@ CREATE POLICY "Users can delete their own notifications"
 CREATE POLICY "Users can view their own preferences"
   ON notification_preferences FOR SELECT
   USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own preferences"
+  ON notification_preferences FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Users can update their own preferences"
   ON notification_preferences FOR UPDATE
