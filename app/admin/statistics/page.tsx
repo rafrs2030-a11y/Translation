@@ -13,8 +13,7 @@ interface Stats {
   pendingSubmissions: number;
   approvedSubmissions: number;
   rejectedSubmissions: number;
-  underReviewSubmissions: number;
-  revisionRequestedSubmissions: number;
+  needsRevisionSubmissions: number;
   submissionsByType: Array<{ type: string; count: number }>;
   submissionsByCategory: Array<{ category: string; count: number }>;
   submissionsByMonth: Array<{ month: string; count: number }>;
@@ -68,8 +67,7 @@ export default function AdminStatisticsPage() {
         pending: 0,
         approved: 0,
         rejected: 0,
-        under_review: 0,
-        revision_requested: 0,
+        needs_revision: 0,
       };
 
       submissions?.forEach((sub: any) => {
@@ -124,8 +122,7 @@ export default function AdminStatisticsPage() {
         pendingSubmissions: statusCounts.pending,
         approvedSubmissions: statusCounts.approved,
         rejectedSubmissions: statusCounts.rejected,
-        underReviewSubmissions: statusCounts.under_review,
-        revisionRequestedSubmissions: statusCounts.revision_requested,
+        needsRevisionSubmissions: statusCounts.needs_revision,
         submissionsByType,
         submissionsByCategory,
         submissionsByMonth,
@@ -198,7 +195,7 @@ export default function AdminStatisticsPage() {
                     <i className="fas fa-clock" style={{ color: '#E89A3C' }}></i>
                   </div>
                   <div className="stat-details">
-                    <h3>{stats.pendingSubmissions + stats.underReviewSubmissions}</h3>
+                    <h3>{stats.pendingSubmissions + stats.needsRevisionSubmissions}</h3>
                     <p>قيد المراجعة</p>
                   </div>
                 </div>
@@ -226,12 +223,8 @@ export default function AdminStatisticsPage() {
                       <span className="breakdown-value">{stats.pendingSubmissions}</span>
                     </div>
                     <div className="breakdown-item">
-                      <span className="breakdown-label">قيد المراجعة الفعلية:</span>
-                      <span className="breakdown-value">{stats.underReviewSubmissions}</span>
-                    </div>
-                    <div className="breakdown-item">
                       <span className="breakdown-label">يحتاج مراجعة:</span>
-                      <span className="breakdown-value">{stats.revisionRequestedSubmissions}</span>
+                      <span className="breakdown-value">{stats.needsRevisionSubmissions}</span>
                     </div>
                     <div className="breakdown-item">
                       <span className="breakdown-label">مقبول:</span>

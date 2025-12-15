@@ -58,8 +58,8 @@ export default function SubmissionDetailsPage() {
       pending: 'قيد المراجعة',
       approved: 'مقبول',
       rejected: 'مرفوض',
-      under_review: 'قيد المراجعة',
-      revision_requested: 'يحتاج مراجعة',
+      needs_revision: 'يحتاج مراجعة',
+      draft: 'مسودة',
     };
     return labels[status] || status;
   };
@@ -69,8 +69,8 @@ export default function SubmissionDetailsPage() {
       pending: 'warning',
       approved: 'success',
       rejected: 'error',
-      under_review: 'info',
-      revision_requested: 'warning',
+      needs_revision: 'warning',
+      draft: 'info',
     };
     return colors[status] || 'info';
   };
@@ -112,6 +112,19 @@ export default function SubmissionDetailsPage() {
               </div>
             </div>
           </div>
+
+          {/* Status explanation for researcher */}
+          {submission.status === 'needs_revision' && (
+            <div className="card" style={{ marginTop: 'var(--spacing-md)', borderColor: 'rgba(59,130,246,0.35)', background: 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(37,99,235,0.02))' }}>
+              <div className="card-body" style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'flex-start' }}>
+                <i className="fas fa-info-circle" style={{ color: 'var(--info-color)', marginTop: '0.2rem' }}></i>
+                <p style={{ margin: 0, lineHeight: 1.8, fontSize: 'var(--font-size-sm)', color: 'var(--text-primary)' }}>
+                  تم وضع حالتك على <strong>يحتاج مراجعة</strong>، يرجى قراءة رد الإدارة بعناية وإجراء التعديلات المطلوبة على البحث ثم إعادة التقديم
+                  (أو تقديم طلب جديد محدث) وفق التعليمات الواردة في الرد.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Main Content */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--spacing-lg)', marginTop: 'var(--spacing-lg)' }}>

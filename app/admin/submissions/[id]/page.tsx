@@ -239,8 +239,8 @@ export default function AdminSubmissionDetailsPage() {
       pending: 'قيد المراجعة',
       approved: 'مقبول',
       rejected: 'مرفوض',
-      under_review: 'قيد المراجعة',
-      revision_requested: 'يحتاج مراجعة',
+      needs_revision: 'يحتاج مراجعة',
+      draft: 'مسودة',
     };
     return labels[status] || status;
   };
@@ -250,8 +250,8 @@ export default function AdminSubmissionDetailsPage() {
       pending: 'warning',
       approved: 'success',
       rejected: 'error',
-      under_review: 'info',
-      revision_requested: 'warning',
+      needs_revision: 'warning',
+      draft: 'info',
     };
     return colors[status] || 'info';
   };
@@ -531,14 +531,14 @@ export default function AdminSubmissionDetailsPage() {
                       disabled={updating}
                       style={{ width: '100%' }}
                     >
-                      <option value="pending">
-                        <i className="fas fa-clock"></i> قيد المراجعة
-                      </option>
-                      <option value="under_review">قيد المراجعة الفعلية</option>
-                      <option value="revision_requested">يحتاج مراجعة</option>
-                      <option value="approved">مقبول</option>
+                      <option value="pending">قيد المراجعة (بانتظار التقييم)</option>
+                      <option value="needs_revision">يحتاج مراجعة (يتطلب تعديلات من الباحث)</option>
+                      <option value="approved">مقبول للنشر</option>
                       <option value="rejected">مرفوض</option>
                     </select>
+                    <small className="form-help-text">
+                      اختر الحالة المناسبة بناءً على نتيجة التقييم، ويمكنك توضيح التفاصيل في حقل الرد على الباحث.
+                    </small>
                   </div>
 
                   <div className="form-group">

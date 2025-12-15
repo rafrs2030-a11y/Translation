@@ -56,8 +56,8 @@ export default function SubmissionsPage() {
       pending: 'قيد المراجعة',
       approved: 'مقبول',
       rejected: 'مرفوض',
-      under_review: 'قيد المراجعة',
-      revision_requested: 'يحتاج مراجعة',
+      needs_revision: 'يحتاج مراجعة',
+      draft: 'مسودة',
     };
     return labels[status] || status;
   };
@@ -67,8 +67,8 @@ export default function SubmissionsPage() {
       pending: 'warning',
       approved: 'success',
       rejected: 'error',
-      under_review: 'info',
-      revision_requested: 'warning',
+      needs_revision: 'warning',
+      draft: 'info',
     };
     return colors[status] || 'info';
   };

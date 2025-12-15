@@ -104,8 +104,8 @@ export default function AdminSubmissionsPage() {
       pending: 'قيد المراجعة',
       approved: 'مقبول',
       rejected: 'مرفوض',
-      under_review: 'قيد المراجعة',
-      revision_requested: 'يحتاج مراجعة',
+      needs_revision: 'يحتاج مراجعة',
+      draft: 'مسودة',
     };
     return labels[status] || status;
   };
@@ -115,8 +115,8 @@ export default function AdminSubmissionsPage() {
       pending: 'warning',
       approved: 'success',
       rejected: 'error',
-      under_review: 'info',
-      revision_requested: 'warning',
+      needs_revision: 'warning',
+      draft: 'info',
     };
     return colors[status] || 'info';
   };
@@ -198,13 +198,6 @@ export default function AdminSubmissionsPage() {
                   </button>
                   <button
                     type="button"
-                    className={`btn btn-small ${statusFilter === 'under_review' ? 'btn-primary' : 'btn-outline'}`}
-                    onClick={() => handleStatusFilter('under_review')}
-                  >
-                    قيد المراجعة الفعلية
-                  </button>
-                  <button
-                    type="button"
                     className={`btn btn-small ${statusFilter === 'approved' ? 'btn-primary' : 'btn-outline'}`}
                     onClick={() => handleStatusFilter('approved')}
                   >
@@ -219,8 +212,8 @@ export default function AdminSubmissionsPage() {
                   </button>
                   <button
                     type="button"
-                    className={`btn btn-small ${statusFilter === 'revision_requested' ? 'btn-primary' : 'btn-outline'}`}
-                    onClick={() => handleStatusFilter('revision_requested')}
+                    className={`btn btn-small ${statusFilter === 'needs_revision' ? 'btn-primary' : 'btn-outline'}`}
+                    onClick={() => handleStatusFilter('needs_revision')}
                   >
                     يحتاج مراجعة
                   </button>

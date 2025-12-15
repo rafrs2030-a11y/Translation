@@ -208,8 +208,7 @@ export default function AdminReportsPage() {
                       >
                         <option value="all">الكل</option>
                         <option value="pending">قيد المراجعة</option>
-                        <option value="under_review">قيد المراجعة الفعلية</option>
-                        <option value="revision_requested">يحتاج مراجعة</option>
+                        <option value="needs_revision">يحتاج مراجعة</option>
                         <option value="approved">مقبول</option>
                         <option value="rejected">مرفوض</option>
                       </select>
