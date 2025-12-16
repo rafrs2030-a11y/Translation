@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,13 +38,7 @@ export default function AdminUsersPage() {
     }
   }, [isAuthenticated, authLoading, role, router]);
 
-  useEffect(() => {
-    if (isAuthenticated && (role === 'admin' || role === 'super_admin')) {
-      fetchUsers();
-    }
-  }, [isAuthenticated, role, roleFilter, page, searchTerm]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const supabase = createClient();
@@ -76,7 +70,13 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [roleFilter, page, searchTerm]);
+
+  useEffect(() => {
+    if (isAuthenticated && (role === 'admin' || role === 'super_admin')) {
+      fetchUsers();
+    }
+  }, [isAuthenticated, role, fetchUsers]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

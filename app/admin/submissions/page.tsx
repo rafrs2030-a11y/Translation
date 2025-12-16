@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,13 +46,7 @@ export default function AdminSubmissionsPage() {
     }
   }, [isAuthenticated, authLoading, role, router]);
 
-  useEffect(() => {
-    if (isAuthenticated && (role === 'admin' || role === 'super_admin')) {
-      fetchSubmissions();
-    }
-  }, [isAuthenticated, role, statusFilter, page, searchTerm]);
-
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = useCallback(async () => {
     setLoading(true);
     try {
       const supabase = createClient();
@@ -86,7 +80,13 @@ export default function AdminSubmissionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, searchTerm, page]);
+
+  useEffect(() => {
+    if (isAuthenticated && (role === 'admin' || role === 'super_admin')) {
+      fetchSubmissions();
+    }
+  }, [isAuthenticated, role, fetchSubmissions]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

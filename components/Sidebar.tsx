@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -19,7 +20,15 @@ export default function Sidebar() {
   return (
     <aside className="sidebar" id="sidebar">
       <div className="sidebar-header">
-        <img src="/images/logo.png" alt="Research Assistant Logo" className="sidebar-logo" style={{ maxWidth: '120px' }} />
+        <Image
+          src="/images/logo.png"
+          alt="Research Assistant Logo"
+          className="sidebar-logo"
+          style={{ maxWidth: '120px' }}
+          width={120}
+          height={28}
+          priority
+        />
         <h2>لوحة الباحث</h2>
       </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,13 +62,7 @@ export default function AdminUserDetailsPage() {
     }
   }, [isAuthenticated, authLoading, role, router]);
 
-  useEffect(() => {
-    if (params.id && isAuthenticated && (role === 'admin' || role === 'super_admin')) {
-      fetchUser();
-    }
-  }, [params.id, isAuthenticated, role]);
-
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     setLoading(true);
     try {
       const supabase = createClient();
@@ -102,7 +96,13 @@ export default function AdminUserDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    if (params.id && isAuthenticated && (role === 'admin' || role === 'super_admin')) {
+      fetchUser();
+    }
+  }, [params.id, isAuthenticated, role, fetchUser]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

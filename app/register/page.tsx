@@ -4,6 +4,7 @@ import { useState, FormEvent, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ALL_COUNTRIES } from '@/config/constants';
 
 type AccountType = 'أفراد' | 'أعمال' | '';
@@ -154,7 +155,14 @@ export default function RegisterPage() {
           <div className="auth-card register-card">
             <div className="auth-header">
               <Link href="/" className="auth-logo">
-                <img src="/images/logo.png" alt="Research Assistant Logo" className="auth-logo-img" />
+                <Image
+                  src="/images/logo.png"
+                  alt="Research Assistant Logo"
+                  className="auth-logo-img"
+                  width={160}
+                  height={40}
+                  priority
+                />
               </Link>
               <h1>إنشاء حساب جديد</h1>
               <p>انضم إلى آلاف الباحثين العرب</p>
@@ -464,7 +472,14 @@ export default function RegisterPage() {
       {/* Developer Credit */}
       <div className="developer-credit">
         <a href="https://wa.me/966533189111" target="_blank" rel="noopener noreferrer" className="developer-credit-content">
-          <img src="/images/logob.png" alt="باكورة التقنيات" className="developer-logo" width="24" height="24" loading="lazy" />
+          <Image
+            src="/images/logob.png"
+            alt="باكورة التقنيات"
+            className="developer-logo"
+            width={24}
+            height={24}
+            loading="lazy"
+          />
           <span>تم تطوير المنصة بواسطة الحاضنة الرقمية باكورة التقنيات</span>
         </a>
       </div>

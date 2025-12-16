@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,23 +21,23 @@ export default function SubmissionDetailsPage() {
     }
   }, [isAuthenticated, authLoading, router]);
 
+  const loadSubmission = useCallback(async () => {
+    if (params.id && typeof params.id === 'string') {
+      await fetchSubmissionById(params.id);
+    }
+  }, [params.id, fetchSubmissionById]);
+
   useEffect(() => {
     if (params.id && isAuthenticated) {
       loadSubmission();
     }
-  }, [params.id, isAuthenticated]);
+  }, [params.id, isAuthenticated, loadSubmission]);
 
   useEffect(() => {
     if (currentSubmission) {
       setSubmission(currentSubmission);
     }
   }, [currentSubmission]);
-
-  const loadSubmission = async () => {
-    if (params.id && typeof params.id === 'string') {
-      await fetchSubmissionById(params.id);
-    }
-  };
 
   if (authLoading || loading) {
     return (

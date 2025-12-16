@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissions } from '@/contexts/SubmissionsContext';
 import Sidebar from '@/components/Sidebar';
@@ -20,20 +21,20 @@ export default function ResearcherDashboard() {
     }
   }, [isAuthenticated, authLoading, router]);
 
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      loadStats();
-    }
-  }, [isAuthenticated, user, getStats]);
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const statsData = await getStats();
       setStats(statsData);
     } catch (error) {
       console.error('Error loading stats:', error);
     }
-  };
+  }, [getStats]);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadStats();
+    }
+  }, [isAuthenticated, user, loadStats]);
 
   if (authLoading) {
     return (
@@ -327,15 +328,15 @@ export default function ResearcherDashboard() {
               rel="noopener noreferrer"
               className="developer-credit-content"
             >
-              <img
+              <Image
                 src="/images/logob.png"
                 alt="باكورة التقنيات"
                 className="developer-logo"
-                width="24"
-                height="24"
+                width={24}
+                height={24}
                 loading="lazy"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
+                  e.currentTarget.style.display = 'none';
                 }}
               />
               <span>تم تطوير المنصة بواسطة الحاضنة الرقمية باكورة التقنيات</span>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
@@ -39,13 +39,7 @@ export default function AdminVerificationRequestsPage() {
     }
   }, [isAuthenticated, authLoading, role, router]);
 
-  useEffect(() => {
-    if (isAuthenticated && (role === 'admin' || role === 'super_admin')) {
-      fetchVerificationRequests();
-    }
-  }, [isAuthenticated, role, statusFilter, page, searchTerm]);
-
-  const fetchVerificationRequests = async () => {
+  const fetchVerificationRequests = useCallback(async () => {
     setLoading(true);
     try {
       const supabase = createClient();
@@ -95,7 +89,13 @@ export default function AdminVerificationRequestsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, page, searchTerm]);
+
+  useEffect(() => {
+    if (isAuthenticated && (role === 'admin' || role === 'super_admin')) {
+      fetchVerificationRequests();
+    }
+  }, [isAuthenticated, role, fetchVerificationRequests]);
 
   const handleVerification = async (userId: string, action: 'approve' | 'reject', notes?: string) => {
     if (!confirm(`هل أنت متأكد من ${action === 'approve' ? 'الموافقة على' : 'رفض'} طلب التوثيق؟`)) {

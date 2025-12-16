@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/AdminSidebar';
@@ -166,15 +167,15 @@ export default function AdminDashboard() {
               rel="noopener noreferrer"
               className="developer-credit-content"
             >
-              <img
+              <Image
                 src="/images/logob.png"
                 alt="باكورة التقنيات"
                 className="developer-logo"
-                width="24"
-                height="24"
+                width={24}
+                height={24}
                 loading="lazy"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
+                  e.currentTarget.style.display = 'none';
                 }}
               />
               <span>تم تطوير المنصة بواسطة الحاضنة الرقمية باكورة التقنيات</span>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, FormEvent, Suspense } from 'react';
+import { useState, useEffect, useCallback, FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissions } from '@/contexts/SubmissionsContext';
@@ -97,15 +97,7 @@ function SubmitPageContent() {
     router.replace('/researcher/submit', { scroll: false });
   };
 
-  // Load draft if draft ID is provided in URL
-  useEffect(() => {
-    const draftIdParam = searchParams.get('draft');
-    if (draftIdParam && isAuthenticated && user) {
-      loadDraft(draftIdParam);
-    }
-  }, [searchParams, isAuthenticated, user]);
-
-  const loadDraft = async (id: string) => {
+  const loadDraft = useCallback(async (id: string) => {
     setLoadingDraft(true);
     try {
       const draft = await fetchSubmissionById(id);
@@ -144,7 +136,15 @@ function SubmitPageContent() {
     } finally {
       setLoadingDraft(false);
     }
-  };
+  }, [fetchSubmissionById]);
+
+  // Load draft if draft ID is provided in URL
+  useEffect(() => {
+    const draftIdParam = searchParams.get('draft');
+    if (draftIdParam && isAuthenticated && user) {
+      loadDraft(draftIdParam);
+    }
+  }, [searchParams, isAuthenticated, user, loadDraft]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,13 +54,7 @@ export default function AdminSubmissionDetailsPage() {
     }
   }, [isAuthenticated, authLoading, role, router]);
 
-  useEffect(() => {
-    if (params.id && isAuthenticated && (role === 'admin' || role === 'super_admin')) {
-      fetchSubmission();
-    }
-  }, [params.id, isAuthenticated, role]);
-
-  const fetchSubmission = async () => {
+  const fetchSubmission = useCallback(async () => {
     setLoading(true);
     try {
       const supabase = createClient();
@@ -100,7 +94,13 @@ export default function AdminSubmissionDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    if (params.id && isAuthenticated && (role === 'admin' || role === 'super_admin')) {
+      fetchSubmission();
+    }
+  }, [params.id, isAuthenticated, role, fetchSubmission]);
 
   const handleStatusUpdate = async () => {
     if (!submission || !newStatus) return;

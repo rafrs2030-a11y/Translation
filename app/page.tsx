@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import './globals.css';
 
 export default function HomePage() {
@@ -8,7 +9,14 @@ export default function HomePage() {
       <nav className="navbar">
         <div className="container">
           <div className="nav-brand">
-            <img src="/images/logo.png" alt="Research Assistant Logo" className="brand-logo" width="120" height="28" loading="eager" />
+            <Image
+              src="/images/logo.png"
+              alt="Research Assistant Logo"
+              className="brand-logo"
+              width={120}
+              height={28}
+              priority
+            />
             <span className="commercial-registry">
               <i className="fas fa-certificate" aria-hidden="true"></i>
               <span className="cr-label">سجل تجاري:</span>
@@ -186,7 +194,15 @@ export default function HomePage() {
         <div className="container">
           <div className="footer-content">
             <div className="footer-section">
-              <img src="/images/logo.png" alt="Research Assistant Logo" className="footer-logo" style={{ maxWidth: '200px', marginBottom: '1rem', aspectRatio: '3/1', height: 'auto', objectFit: 'contain' }} width="200" height="67" loading="lazy" />
+              <Image
+                src="/images/logo.png"
+                alt="Research Assistant Logo"
+                className="footer-logo"
+                style={{ maxWidth: '200px', marginBottom: '1rem', aspectRatio: '3/1', height: 'auto', objectFit: 'contain' }}
+                width={200}
+                height={67}
+                loading="lazy"
+              />
               <h4 style={{ marginBottom: '1rem', color: 'white' }}>المنصة العالمية لنشر الأبحاث والدراسات العربية إلى الإنجليزية</h4>
               <p>تتشرف المنصة العالمية لنشر الأبحاث العربية إلى الإنجليزية الخاصة بشركة مساعد البحث للبحوث والدراسات باستقبال طلباتكم وأبحاثكم لنشرها في مجلات عالمية علمية محكمة <span className="no-break-text">ISI- Scopus (Q1-Q2-Q3-Q4)</span>.<br /><br />
               وذلك لتمكين الهيئات والجامعات والمؤسسات والباحث الأكاديمي من النشر العالمي لأبحاثهم العلمية العربية عالمياً.</p>
