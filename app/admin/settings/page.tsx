@@ -32,13 +32,13 @@ export default function AdminSettingsPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || role !== 'admin')) {
+    if (!authLoading && (!isAuthenticated || (role !== 'admin' && role !== 'super_admin'))) {
       router.push('/login');
     }
   }, [isAuthenticated, authLoading, role, router]);
 
   useEffect(() => {
-    if (isAuthenticated && role === 'admin') {
+    if (isAuthenticated && (role === 'admin' || role === 'super_admin')) {
       fetchSettings();
     }
   }, [isAuthenticated, role]);
@@ -80,19 +80,21 @@ export default function AdminSettingsPage() {
     try {
       const supabase = createClient();
 
-      // Update or insert each setting
+      // Prepare upsert payload for each setting
       const updates = Object.entries(settings).map(([key, value]) => ({
         setting_key: key,
         setting_value: value.toString(),
+        setting_type: 'boolean',
       }));
 
-      // Delete existing settings
-      await supabase.from('platform_settings').delete().in('setting_key', Object.keys(settings));
+      // Upsert settings by key (preserves other unrelated settings)
+      const { error } = await supabase
+        .from('platform_settings')
+        .upsert(updates, { onConflict: 'setting_key' });
 
-      // Insert new settings
-      const { error } = await supabase.from('platform_settings').insert(updates);
-
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       setMessage({ type: 'success', text: 'تم حفظ الإعدادات بنجاح' });
       showToast('تم حفظ الإعدادات بنجاح', 'success');
