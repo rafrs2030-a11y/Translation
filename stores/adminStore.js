@@ -660,8 +660,9 @@ class AdminStore {
       };
 
       // إرسال البريد عبر Supabase Edge Function
-      const supabaseUrl = 'https://rzenhmmwocctvonwhnrj.supabase.co';
-      const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6ZW5obW13b2NjdHZvbndobnJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxOTAwODYsImV4cCI6MjA3ODc2NjA4Nn0.wGQZ4osd-MrQudrt6lBhHaumbFjYT26-hoNR4TnjEQM';
+      // استخدام متغيرات البيئة بدلاً من hardcode (للمزيد من الأمان)
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || supabaseUrl;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || supabaseKey;
       const { data: session } = await supabase.auth.getSession();
       
       const response = await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
@@ -738,8 +739,9 @@ class AdminStore {
       };
 
       // إرسال البريد عبر Supabase Edge Function
-      const supabaseUrl = 'https://rzenhmmwocctvonwhnrj.supabase.co';
-      const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6ZW5obW13b2NjdHZvbndobnJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxOTAwODYsImV4cCI6MjA3ODc2NjA4Nn0.wGQZ4osd-MrQudrt6lBhHaumbFjYT26-hoNR4TnjEQM';
+      // استخدام متغيرات البيئة بدلاً من hardcode (للمزيد من الأمان)
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || supabaseUrl;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || supabaseKey;
       const { data: session } = await supabase.auth.getSession();
       
       const response = await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {

@@ -19,6 +19,7 @@ export default function AdminSidebar() {
     { href: '/admin/statistics', icon: 'fa-chart-bar', label: 'الإحصائيات' },
     { href: '/admin/reports', icon: 'fa-file-export', label: 'التقارير' },
     { href: '/admin/notifications', icon: 'fa-bell', label: 'الإشعارات', badge: 'notifications' as const },
+    { href: '/admin/monitoring', icon: 'fa-chart-line', label: 'المراقبة' },
     { href: '/admin/settings', icon: 'fa-cog', label: 'الإعدادات' },
     { href: '/admin/profile', icon: 'fa-user', label: 'الملف الشخصي' },
   ];
