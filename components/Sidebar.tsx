@@ -15,6 +15,7 @@ export default function Sidebar() {
     { href: '/researcher/submissions', icon: 'fa-folder-open', label: 'طلباتي' },
     { href: '/researcher/profile', icon: 'fa-user', label: 'الملف الشخصي' },
     { href: '/researcher/settings', icon: 'fa-cog', label: 'الإعدادات' },
+    { href: '/instructions', icon: 'fa-book-reader', label: 'دليل الاستخدام' },
   ];
 
   return (

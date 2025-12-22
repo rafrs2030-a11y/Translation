@@ -219,6 +219,7 @@ export default function HomePage() {
             <div className="footer-section">
               <h4>الدعم</h4>
               <ul>
+                <li><Link href="/instructions">دليل الاستخدام</Link></li>
                 <li><a href="#">الأسئلة الشائعة</a></li>
                 <li><a href="#">المساعدة</a></li>
                 <li><Link href="/terms">الشروط والأحكام</Link></li>
