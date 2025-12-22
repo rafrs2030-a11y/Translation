@@ -252,7 +252,7 @@ function ResearcherGuide({ expandedSections, toggleSection }: { expandedSections
             <li style={{ marginBottom: '0.5rem' }}>
               <strong>الانتقال إلى صفحة التسجيل</strong>
               <ul style={{ marginTop: '0.5rem', paddingRight: '1.5rem' }}>
-                <li>اضغط على زر "تسجيل" أو "إنشاء حساب"</li>
+                <li>اضغط على زر &quot;تسجيل&quot; أو &quot;إنشاء حساب&quot;</li>
                 <li>املأ البيانات المطلوبة (اسم المستخدم، البريد الإلكتروني، رقم الهوية، رقم الهاتف، كلمة المرور)</li>
               </ul>
             </li>
@@ -313,7 +313,7 @@ function ResearcherGuide({ expandedSections, toggleSection }: { expandedSections
                 <li>راجع جميع المعلومات المدخلة</li>
                 <li>اقرأ التعهد والموافقة بعناية</li>
                 <li>ضع علامة ✓ في مربع الموافقة</li>
-                <li>اضغط "إرسال البحث"</li>
+                <li>اضغط &quot;إرسال البحث&quot;</li>
               </ul>
             </div>
           </div>
@@ -334,7 +334,7 @@ function ResearcherGuide({ expandedSections, toggleSection }: { expandedSections
           <ol style={{ lineHeight: '2', paddingRight: '1.5rem' }}>
             <li style={{ marginBottom: '0.5rem' }}>
               <strong>الوصول إلى صفحة الطلبات</strong>
-              <p style={{ margin: '0.5rem 0', color: '#6b7280' }}>من القائمة الجانبية، اضغط على "طلباتي" أو "الطلبات"</p>
+              <p style={{ margin: '0.5rem 0', color: '#6b7280' }}>من القائمة الجانبية، اضغط على &quot;طلباتي&quot; أو &quot;الطلبات&quot;</p>
             </li>
             <li style={{ marginBottom: '0.5rem' }}>
               <strong>معلومات الطلبات</strong>
@@ -419,7 +419,7 @@ function AdminGuide({ expandedSections, toggleSection }: { expandedSections: Set
           <ol style={{ lineHeight: '2', paddingRight: '1.5rem' }}>
             <li style={{ marginBottom: '0.5rem' }}>
               <strong>الوصول إلى صفحة الطلبات</strong>
-              <p style={{ margin: '0.5rem 0', color: '#6b7280' }}>من القائمة الجانبية، اضغط على "الطلبات"</p>
+              <p style={{ margin: '0.5rem 0', color: '#6b7280' }}>من القائمة الجانبية، اضغط على &quot;الطلبات&quot;</p>
             </li>
             <li style={{ marginBottom: '0.5rem' }}>
               <strong>البحث والفلترة</strong>
@@ -427,7 +427,7 @@ function AdminGuide({ expandedSections, toggleSection }: { expandedSections: Set
             </li>
             <li style={{ marginBottom: '0.5rem' }}>
               <strong>فتح تفاصيل الطلب</strong>
-              <p style={{ margin: '0.5rem 0', color: '#6b7280' }}>اضغط على "مراجعة" لفتح صفحة تفاصيل الطلب</p>
+              <p style={{ margin: '0.5rem 0', color: '#6b7280' }}>اضغط على &quot;مراجعة&quot; لفتح صفحة تفاصيل الطلب</p>
             </li>
             <li style={{ marginBottom: '0.5rem' }}>
               <strong>مراجعة المحتوى</strong>
