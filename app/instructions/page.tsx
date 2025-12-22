@@ -3,10 +3,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function InstructionsPage() {
-  const [activeTab, setActiveTab] = useState<'researcher' | 'admin'>('researcher');
+  const { role, loading: authLoading } = useAuth();
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['register']));
+  
+  // تحديد الدليل المناسب حسب الدور
+  const isAdmin = role === 'admin' || role === 'super_admin';
+  const isResearcher = role === 'researcher' || !role; // إذا لم يكن مسجل دخول، يعتبر باحث
 
   const toggleSection = (section: string) => {
     const newExpanded = new Set(expandedSections);
@@ -68,64 +73,25 @@ export default function InstructionsPage() {
               textAlign: 'center',
             }}>
               <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 700, marginBottom: '1rem' }}>
-                <i className="fas fa-book-reader" style={{ marginLeft: '1rem' }}></i>
-                دليل استخدام المنصة
+                <i className={`fas ${isAdmin ? 'fa-user-shield' : 'fa-user-graduate'}`} style={{ marginLeft: '1rem' }}></i>
+                {isAdmin ? 'دليل استخدام المنصة - للمسؤولين' : 'دليل استخدام المنصة - للباحثين'}
               </h1>
               <p style={{ margin: 0, fontSize: '1.2rem', opacity: 0.9 }}>
-                دليل مبسّط لاستخدام المنصة من قبل الباحثين والمسؤولين
+                {isAdmin ? 'دليل مبسّط لاستخدام المنصة من قبل المسؤولين' : 'دليل مبسّط لاستخدام المنصة من قبل الباحثين'}
               </p>
-            </div>
-
-            {/* Tabs */}
-            <div className="instructions-tabs" style={{
-              display: 'flex',
-              borderBottom: '2px solid #e5e7eb',
-              background: '#f9fafb',
-            }}>
-              <button
-                onClick={() => setActiveTab('researcher')}
-                style={{
-                  flex: 1,
-                  padding: '1.5rem',
-                  background: activeTab === 'researcher' ? 'white' : 'transparent',
-                  border: 'none',
-                  borderBottom: activeTab === 'researcher' ? '3px solid #3D5A94' : '3px solid transparent',
-                  cursor: 'pointer',
-                  fontSize: '1.1rem',
-                  fontWeight: activeTab === 'researcher' ? 600 : 400,
-                  color: activeTab === 'researcher' ? '#3D5A94' : '#6b7280',
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                <i className="fas fa-user-graduate" style={{ marginLeft: '0.5rem' }}></i>
-                دليل الباحث
-              </button>
-              <button
-                onClick={() => setActiveTab('admin')}
-                style={{
-                  flex: 1,
-                  padding: '1.5rem',
-                  background: activeTab === 'admin' ? 'white' : 'transparent',
-                  border: 'none',
-                  borderBottom: activeTab === 'admin' ? '3px solid #3D5A94' : '3px solid transparent',
-                  cursor: 'pointer',
-                  fontSize: '1.1rem',
-                  fontWeight: activeTab === 'admin' ? 600 : 400,
-                  color: activeTab === 'admin' ? '#3D5A94' : '#6b7280',
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                <i className="fas fa-user-shield" style={{ marginLeft: '0.5rem' }}></i>
-                دليل المسؤول
-              </button>
             </div>
 
             {/* Content */}
             <div className="instructions-content" style={{ padding: '2rem' }}>
-              {activeTab === 'researcher' ? (
-                <ResearcherGuide expandedSections={expandedSections} toggleSection={toggleSection} />
-              ) : (
+              {authLoading ? (
+                <div style={{ textAlign: 'center', padding: '3rem' }}>
+                  <div className="loading-spinner" style={{ margin: '0 auto' }}></div>
+                  <p style={{ marginTop: '1rem', color: '#6b7280' }}>جاري التحميل...</p>
+                </div>
+              ) : isAdmin ? (
                 <AdminGuide expandedSections={expandedSections} toggleSection={toggleSection} />
+              ) : (
+                <ResearcherGuide expandedSections={expandedSections} toggleSection={toggleSection} />
               )}
             </div>
           </div>
