@@ -34,7 +34,7 @@ export default function RegisterPage() {
   // Redirect to dashboard if already logged in
   useEffect(() => {
     if (!loading && isAuthenticated) {
-        if (role === 'admin' || role === 'super_admin') {
+      if (role === 'admin' || role === 'super_admin') {
         router.push('/admin/dashboard');
       } else {
         router.push('/researcher/dashboard');
@@ -117,7 +117,7 @@ export default function RegisterPage() {
 
   // Show loading only during initial auth check (first render)
   const [initialLoading, setInitialLoading] = useState(true);
-  
+
   useEffect(() => {
     // After initial check, stop showing loading overlay
     if (!loading) {
@@ -151,22 +151,22 @@ export default function RegisterPage() {
 
   return (
     <div className="auth-page">
-        <div className="auth-container">
-          <div className="auth-card register-card">
-            <div className="auth-header">
-              <Link href="/" className="auth-logo">
-                <Image
-                  src="/images/logo.png"
-                  alt="Research Assistant Logo"
-                  className="auth-logo-img"
-                  width={160}
-                  height={40}
-                  priority
-                />
-              </Link>
-              <h1>إنشاء حساب جديد</h1>
-              <p>انضم إلى آلاف الباحثين العرب</p>
-            </div>
+      <div className="auth-container">
+        <div className="auth-card register-card">
+          <div className="auth-header">
+            <Link href="/" className="auth-logo">
+              <Image
+                src="/images/logo.png"
+                alt="Research Assistant Logo"
+                className="auth-logo-img"
+                width={160}
+                height={40}
+                priority
+              />
+            </Link>
+            <h1>إنشاء حساب جديد</h1>
+            <p>انضم إلى آلاف الباحثين العرب</p>
+          </div>
 
           {(error || localError) && (
             <div className="alert alert-error">

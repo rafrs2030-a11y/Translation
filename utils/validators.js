@@ -6,7 +6,7 @@
 import { REGEX_PATTERNS, ERROR_MESSAGES } from '../config/constants';
 
 // Cache for minimum password length (fetched from settings)
-let cachedMinPasswordLength = 8;
+let cachedMinPasswordLength = 6;
 
 /**
  * التحقق من البريد الإلكتروني
@@ -15,11 +15,11 @@ export const validateEmail = (email) => {
   if (!email) {
     return { valid: false, error: ERROR_MESSAGES.REQUIRED_FIELD };
   }
-  
+
   if (!REGEX_PATTERNS.EMAIL.test(email)) {
     return { valid: false, error: ERROR_MESSAGES.INVALID_EMAIL };
   }
-  
+
   return { valid: true };
 };
 
@@ -30,9 +30,9 @@ export const getMinimumPasswordLength = async () => {
   try {
     // Check if we're in browser environment
     if (typeof window === 'undefined') {
-      return 8; // Default for server-side
+      return 6; // Default for server-side
     }
-    
+
     // Check localStorage cache first
     const cached = localStorage.getItem('minimum_password_length');
     if (cached) {
@@ -42,7 +42,7 @@ export const getMinimumPasswordLength = async () => {
         return length;
       }
     }
-    
+
     // Try to fetch from Supabase if available
     if (typeof window.supabase !== 'undefined') {
       const { data, error } = await window.supabase
@@ -50,7 +50,7 @@ export const getMinimumPasswordLength = async () => {
         .select('setting_value')
         .eq('setting_key', 'minimum_password_length')
         .single();
-      
+
       if (!error && data && data.setting_value) {
         const length = parseInt(data.setting_value, 10);
         if (!isNaN(length) && length >= 6 && length <= 32) {
@@ -60,7 +60,7 @@ export const getMinimumPasswordLength = async () => {
         }
       }
     }
-    
+
     // Return cached value or default
     return cachedMinPasswordLength;
   } catch (error) {
@@ -79,27 +79,15 @@ export const validatePassword = (password) => {
 /**
  * التحقق من كلمة المرور مع طول محدد
  */
-export const validatePasswordWithLength = (password, minLength = 8) => {
+export const validatePasswordWithLength = (password, minLength = 6) => {
   if (!password) {
     return { valid: false, error: ERROR_MESSAGES.REQUIRED_FIELD };
   }
-  
+
   if (password.length < minLength) {
     return { valid: false, error: `كلمة المرور يجب أن تكون ${minLength} أحرف على الأقل` };
   }
-  
-  // التحقق من وجود حرف كبير وصغير ورقم
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  
-  if (!hasUpperCase || !hasLowerCase || !hasNumber) {
-    return { 
-      valid: false, 
-      error: 'كلمة المرور يجب أن تحتوي على أحرف كبيرة وصغيرة وأرقام' 
-    };
-  }
-  
+
   return { valid: true };
 };
 
@@ -128,11 +116,11 @@ export const validatePhone = (phone) => {
   if (!phone) {
     return { valid: false, error: ERROR_MESSAGES.REQUIRED_FIELD };
   }
-  
+
   if (!REGEX_PATTERNS.PHONE.test(phone)) {
     return { valid: false, error: 'رقم الهاتف غير صحيح' };
   }
-  
+
   return { valid: true };
 };
 
@@ -143,11 +131,11 @@ export const validateNationalId = (nationalId) => {
   if (!nationalId) {
     return { valid: false, error: ERROR_MESSAGES.REQUIRED_FIELD };
   }
-  
+
   if (!REGEX_PATTERNS.NATIONAL_ID.test(nationalId)) {
     return { valid: false, error: 'رقم الهوية غير صحيح' };
   }
-  
+
   return { valid: true };
 };
 
@@ -168,11 +156,11 @@ export const validateFileType = (file, allowedTypes) => {
   if (!file) {
     return { valid: false, error: 'لم يتم اختيار ملف' };
   }
-  
+
   if (!allowedTypes.includes(file.type)) {
     return { valid: false, error: ERROR_MESSAGES.INVALID_FILE_TYPE };
   }
-  
+
   return { valid: true };
 };
 
@@ -183,15 +171,15 @@ export const validateFileSize = (file, maxSize) => {
   if (!file) {
     return { valid: false, error: 'لم يتم اختيار ملف' };
   }
-  
+
   if (file.size > maxSize) {
     const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(0);
-    return { 
-      valid: false, 
-      error: `حجم الملف يجب أن لا يتجاوز ${maxSizeMB} ميجابايت` 
+    return {
+      valid: false,
+      error: `حجم الملف يجب أن لا يتجاوز ${maxSizeMB} ميجابايت`
     };
   }
-  
+
   return { valid: true };
 };
 
@@ -200,14 +188,14 @@ export const validateFileSize = (file, maxSize) => {
  */
 export const validateFileExtension = (filename, allowedExtensions) => {
   const extension = filename.substring(filename.lastIndexOf('.')).toLowerCase();
-  
+
   if (!allowedExtensions.includes(extension)) {
-    return { 
-      valid: false, 
-      error: `الامتدادات المسموحة: ${allowedExtensions.join(', ')}` 
+    return {
+      valid: false,
+      error: `الامتدادات المسموحة: ${allowedExtensions.join(', ')}`
     };
   }
-  
+
   return { valid: true };
 };
 
@@ -216,7 +204,7 @@ export const validateFileExtension = (filename, allowedExtensions) => {
  */
 export const validateSubmissionForm = (formData) => {
   const errors = {};
-  
+
   // التحقق من الحقول المطلوبة
   const requiredFields = [
     'full_name',
@@ -230,14 +218,14 @@ export const validateSubmissionForm = (formData) => {
     'general_specialization',
     'detailed_specialization',
   ];
-  
+
   requiredFields.forEach(field => {
     const validation = validateRequired(formData[field]);
     if (!validation.valid) {
       errors[field] = validation.error;
     }
   });
-  
+
   // التحقق من البريد الإلكتروني
   if (formData.email) {
     const emailValidation = validateEmail(formData.email);
@@ -245,12 +233,12 @@ export const validateSubmissionForm = (formData) => {
       errors.email = emailValidation.error;
     }
   }
-  
+
   // التحقق من الإقرار
   if (!formData.declaration_accepted) {
     errors.declaration_accepted = 'يجب الموافقة على الإقرار';
   }
-  
+
   return {
     valid: Object.keys(errors).length === 0,
     errors,
@@ -262,37 +250,37 @@ export const validateSubmissionForm = (formData) => {
  */
 export const validateRegistrationForm = (formData) => {
   const errors = {};
-  
+
   // اسم المستخدم
   const usernameValidation = validateRequired(formData.username, 'اسم المستخدم');
   if (!usernameValidation.valid) {
     errors.username = usernameValidation.error;
   }
-  
+
   // البريد الإلكتروني
   const emailValidation = validateEmail(formData.email);
   if (!emailValidation.valid) {
     errors.email = emailValidation.error;
   }
-  
+
   // رقم الهوية
   const nationalIdValidation = validateNationalId(formData.national_id);
   if (!nationalIdValidation.valid) {
     errors.national_id = nationalIdValidation.error;
   }
-  
+
   // رقم الهاتف
   const phoneValidation = validatePhone(formData.phone);
   if (!phoneValidation.valid) {
     errors.phone = phoneValidation.error;
   }
-  
+
   // كلمة المرور
   const passwordValidation = validatePassword(formData.password);
   if (!passwordValidation.valid) {
     errors.password = passwordValidation.error;
   }
-  
+
   // تطابق كلمة المرور
   if (formData.confirm_password) {
     const matchValidation = validatePasswordMatch(
@@ -303,7 +291,7 @@ export const validateRegistrationForm = (formData) => {
       errors.confirm_password = matchValidation.error;
     }
   }
-  
+
   return {
     valid: Object.keys(errors).length === 0,
     errors,
@@ -315,7 +303,7 @@ export const validateRegistrationForm = (formData) => {
  */
 export const sanitizeInput = (input) => {
   if (typeof input !== 'string') return input;
-  
+
   return input
     .trim()
     .replace(/[<>]/g, '') // إزالة علامات HTML
