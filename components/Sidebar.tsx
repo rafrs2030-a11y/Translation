@@ -25,9 +25,9 @@ export default function Sidebar() {
           src="/images/logo.png"
           alt="Research Assistant Logo"
           className="sidebar-logo"
-          style={{ maxWidth: '120px' }}
+          style={{ maxWidth: '120px', height: 'auto', objectFit: 'contain' }}
           width={120}
-          height={28}
+          height={35}
           priority
         />
         <h2>لوحة الباحث</h2>

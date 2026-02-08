@@ -13,8 +13,9 @@ export default function HomePage() {
               src="/images/logo.png"
               alt="Research Assistant Logo"
               className="brand-logo"
-              width={120}
-              height={28}
+              width={150}
+              height={45}
+              style={{ height: 'auto', objectFit: 'contain', maxHeight: '50px' }}
               priority
             />
             <span className="commercial-registry">
@@ -198,14 +199,14 @@ export default function HomePage() {
                 src="/images/logo.png"
                 alt="Research Assistant Logo"
                 className="footer-logo"
-                style={{ maxWidth: '200px', marginBottom: '1rem', aspectRatio: '3/1', height: 'auto', objectFit: 'contain' }}
+                style={{ maxWidth: '200px', marginBottom: '1rem', height: 'auto', objectFit: 'contain' }}
                 width={200}
                 height={67}
                 loading="lazy"
               />
               <h4 style={{ marginBottom: '1rem', color: 'white' }}>المنصة العالمية لنشر الأبحاث والدراسات العربية إلى الإنجليزية</h4>
               <p>تتشرف المنصة العالمية لنشر الأبحاث العربية إلى الإنجليزية الخاصة بشركة مساعد البحث للبحوث والدراسات باستقبال طلباتكم وأبحاثكم لنشرها في مجلات عالمية علمية محكمة <span className="no-break-text">ISI- Scopus (Q1-Q2-Q3-Q4)</span>.<br /><br />
-              وذلك لتمكين الهيئات والجامعات والمؤسسات والباحث الأكاديمي من النشر العالمي لأبحاثهم العلمية العربية عالمياً.</p>
+                وذلك لتمكين الهيئات والجامعات والمؤسسات والباحث الأكاديمي من النشر العالمي لأبحاثهم العلمية العربية عالمياً.</p>
             </div>
             <div className="footer-section">
               <h4>روابط سريعة</h4>

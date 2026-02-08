@@ -108,7 +108,7 @@ html {
     height: 42px !important;
     width: auto;
     max-height: 42px;
-    object-fit: cover;
+    object-fit: contain;
     object-position: center;
     transition: all var(--transition-base);
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));

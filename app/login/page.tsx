@@ -16,7 +16,7 @@ export default function LoginPage() {
   // Redirect to dashboard if already logged in
   useEffect(() => {
     if (!loading && isAuthenticated) {
-        if (role === 'admin' || role === 'super_admin') {
+      if (role === 'admin' || role === 'super_admin') {
         router.push('/admin/dashboard');
       } else {
         router.push('/researcher/dashboard');
@@ -45,7 +45,7 @@ export default function LoginPage() {
 
   // Show loading only during initial auth check (first render)
   const [initialLoading, setInitialLoading] = useState(true);
-  
+
   useEffect(() => {
     // After initial check, stop showing loading overlay
     if (!loading) {
@@ -87,8 +87,9 @@ export default function LoginPage() {
                 src="/images/logo.png"
                 alt="Research Assistant Logo"
                 className="auth-logo-img"
-                width={160}
-                height={40}
+                width={200}
+                height={60}
+                style={{ height: 'auto', objectFit: 'contain' }}
                 priority
               />
             </Link>

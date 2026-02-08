@@ -159,8 +159,9 @@ export default function RegisterPage() {
                 src="/images/logo.png"
                 alt="Research Assistant Logo"
                 className="auth-logo-img"
-                width={160}
-                height={40}
+                width={200}
+                height={60}
+                style={{ height: 'auto', objectFit: 'contain' }}
                 priority
               />
             </Link>
