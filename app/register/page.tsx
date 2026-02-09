@@ -28,6 +28,8 @@ export default function RegisterPage() {
     commercial_registration_number: '',
   });
   const [localError, setLocalError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { register, loading, error, isAuthenticated, role } = useAuth();
   const router = useRouter();
 
@@ -385,7 +387,7 @@ export default function RegisterPage() {
                 <div className="input-with-icon">
                   <i className="fas fa-lock"></i>
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     id="password"
                     name="password"
                     className="form-input"
@@ -395,6 +397,14 @@ export default function RegisterPage() {
                     required
                     minLength={6}
                   />
+                  <button
+                    type="button"
+                    className="toggle-password"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                  >
+                    <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+                  </button>
                 </div>
               </div>
 
@@ -403,7 +413,7 @@ export default function RegisterPage() {
                 <div className="input-with-icon">
                   <i className="fas fa-lock"></i>
                   <input
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     id="confirmPassword"
                     name="confirmPassword"
                     className="form-input"
@@ -412,6 +422,14 @@ export default function RegisterPage() {
                     onChange={handleInputChange}
                     required
                   />
+                  <button
+                    type="button"
+                    className="toggle-password"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                  >
+                    <i className={showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+                  </button>
                 </div>
               </div>
 

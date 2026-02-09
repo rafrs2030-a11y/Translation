@@ -15,6 +15,8 @@ function ResetPasswordContent() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -107,12 +109,12 @@ function ResetPasswordContent() {
         if (accessToken && type === 'recovery') {
           // The session should already be established by Supabase, but let's verify
           const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-          
+
           if (sessionError || !session) {
             // Try to verify the OTP manually
             const tokenFromQuery = searchParams.get('token');
             const tokenFromHash = hashParams.get('token');
-            
+
             if (tokenFromQuery || tokenFromHash) {
               const { error: verifyError } = await supabase.auth.verifyOtp({
                 token_hash: tokenFromQuery || tokenFromHash || '',
@@ -226,96 +228,112 @@ function ResetPasswordContent() {
               <p>أدخل كلمة المرور الجديدة</p>
             </div>
 
-          {isValidToken === false && !error && (
-            <div className="alert alert-error">
-              <i className="fas fa-exclamation-circle"></i>
-              <span>رابط إعادة تعيين كلمة المرور غير صحيح أو منتهي الصلاحية. يرجى طلب رابط جديد من <Link href="/forgot-password">صفحة نسيت كلمة المرور</Link>.</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="alert alert-error">
-              <i className="fas fa-exclamation-circle"></i>
-              <span>{error}</span>
-            </div>
-          )}
-
-          {message && (
-            <div className="alert alert-success">
-              <i className="fas fa-check-circle"></i>
-              <span>{message}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="password" className="form-label required">
-                كلمة المرور الجديدة
-              </label>
-              <div className="input-with-icon">
-                <i className="fas fa-lock"></i>
-                <input
-                  type="password"
-                  id="password"
-                  className="form-input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  placeholder="6 أحرف على الأقل"
-                  minLength={6}
-                />
+            {isValidToken === false && !error && (
+              <div className="alert alert-error">
+                <i className="fas fa-exclamation-circle"></i>
+                <span>رابط إعادة تعيين كلمة المرور غير صحيح أو منتهي الصلاحية. يرجى طلب رابط جديد من <Link href="/forgot-password">صفحة نسيت كلمة المرور</Link>.</span>
               </div>
-            </div>
+            )}
 
-            <div className="form-group">
-              <label htmlFor="confirmPassword" className="form-label required">
-                تأكيد كلمة المرور
-              </label>
-              <div className="input-with-icon">
-                <i className="fas fa-lock"></i>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  className="form-input"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  placeholder="أعد إدخال كلمة المرور"
-                  minLength={6}
-                />
+            {error && (
+              <div className="alert alert-error">
+                <i className="fas fa-exclamation-circle"></i>
+                <span>{error}</span>
               </div>
+            )}
+
+            {message && (
+              <div className="alert alert-success">
+                <i className="fas fa-check-circle"></i>
+                <span>{message}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="auth-form">
+              <div className="form-group">
+                <label htmlFor="password" className="form-label required">
+                  كلمة المرور الجديدة
+                </label>
+                <div className="input-with-icon">
+                  <i className="fas fa-lock"></i>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    className="form-input"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    placeholder="6 أحرف على الأقل"
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    className="toggle-password"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                  >
+                    <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="confirmPassword" className="form-label required">
+                  تأكيد كلمة المرور
+                </label>
+                <div className="input-with-icon">
+                  <i className="fas fa-lock"></i>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    id="confirmPassword"
+                    className="form-input"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    placeholder="أعد إدخال كلمة المرور"
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    className="toggle-password"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                  >
+                    <i className={showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary btn-large"
+                disabled={loading || isValidToken === false}
+              >
+                {loading ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    جاري التحديث...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-key"></i>
+                    تحديث كلمة المرور
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="auth-footer">
+              <p>
+                <Link href="/login" className="auth-link">
+                  <i className="fas fa-arrow-right"></i>
+                  العودة إلى تسجيل الدخول
+                </Link>
+              </p>
             </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary btn-large"
-              disabled={loading || isValidToken === false}
-            >
-              {loading ? (
-                <>
-                  <i className="fas fa-spinner fa-spin"></i>
-                  جاري التحديث...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-key"></i>
-                  تحديث كلمة المرور
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="auth-footer">
-            <p>
-              <Link href="/login" className="auth-link">
-                <i className="fas fa-arrow-right"></i>
-                العودة إلى تسجيل الدخول
-              </Link>
-            </p>
           </div>
-        </div>
         </div>
       </div>
 
@@ -335,7 +353,7 @@ function ResetPasswordContent() {
               />
               <h4 style={{ marginBottom: '1rem', color: 'white' }}>المنصة العالمية لنشر الأبحاث والدراسات العربية إلى الإنجليزية</h4>
               <p>تتشرف المنصة العالمية لنشر الأبحاث العربية إلى الإنجليزية الخاصة بشركة مساعد البحث للبحوث والدراسات باستقبال طلباتكم وأبحاثكم لنشرها في مجلات عالمية علمية محكمة <span className="no-break-text">ISI- Scopus (Q1-Q2-Q3-Q4)</span>.<br /><br />
-              وذلك لتمكين الهيئات والجامعات والمؤسسات والباحث الأكاديمي من النشر العالمي لأبحاثهم العلمية العربية عالمياً.</p>
+                وذلك لتمكين الهيئات والجامعات والمؤسسات والباحث الأكاديمي من النشر العالمي لأبحاثهم العلمية العربية عالمياً.</p>
             </div>
             <div className="footer-section">
               <h4>روابط سريعة</h4>
