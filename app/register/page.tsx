@@ -109,7 +109,7 @@ export default function RegisterPage() {
 
     const result = await register(userData);
     if (result.success) {
-      router.push('/verify-email');
+      router.push('/verify-email?registered=true');
     } else {
       setLocalError(result.error || 'حدث خطأ أثناء التسجيل');
     }

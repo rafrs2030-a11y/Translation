@@ -5,7 +5,7 @@
  * لوحة مراقبة المسؤول - عرض Logs والأخطاء وإحصائيات النظام
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -50,13 +50,7 @@ export default function MonitoringPage() {
     }
   }, [isAuthenticated, authLoading, role, router]);
 
-  useEffect(() => {
-    if (isAuthenticated && (role === 'admin' || role === 'super_admin')) {
-      loadMonitoringData();
-    }
-  }, [isAuthenticated, role, refreshKey]);
-
-  const loadMonitoringData = async () => {
+  const loadMonitoringData = useCallback(async () => {
     setLoading(true);
     try {
       const supabase = createClient();
@@ -95,7 +89,7 @@ export default function MonitoringPage() {
         totalSubmissions,
         pendingSubmissions,
         recentErrors: errors.length,
-        rlsEnabled: checks.find((c) => c.name === 'RLS Enabled')?.status === 'pass' || false,
+        rlsEnabled: checks.find((c: any) => c.name === 'RLS Enabled')?.status === 'pass' || false,
         rateLimitConfigured: true, // Always true since we have rateLimiter.js
       });
 
@@ -106,7 +100,13 @@ export default function MonitoringPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && (role === 'admin' || role === 'super_admin')) {
+      loadMonitoringData();
+    }
+  }, [isAuthenticated, role, refreshKey, loadMonitoringData]);
 
   const runSecurityChecks = async (supabase: any): Promise<SecurityCheck[]> => {
     const checks: SecurityCheck[] = [];
@@ -114,7 +114,7 @@ export default function MonitoringPage() {
     try {
       // Check 1: RLS enabled on critical tables
       const { data: rlsCheck } = await supabase.rpc('check_rls_enabled').catch(() => ({ data: null }));
-      
+
       if (rlsCheck !== null) {
         checks.push({
           name: 'RLS Enabled',
@@ -145,14 +145,14 @@ export default function MonitoringPage() {
     });
 
     // Check 3: Environment variables secured
-    const hasEnvVars = typeof window !== 'undefined' 
+    const hasEnvVars = typeof window !== 'undefined'
       ? !window.location.href.includes('SUPABASE_SERVICE_ROLE_KEY')
       : true;
-    
+
     checks.push({
       name: 'Environment Variables',
       status: hasEnvVars ? 'pass' : 'fail',
-      message: hasEnvVars 
+      message: hasEnvVars
         ? 'المتغيرات البيئية محمية (لا تظهر في الكود المكشوف)'
         : '⚠️ تحذير: قد تكون هناك مشكلة في المتغيرات البيئية',
     });

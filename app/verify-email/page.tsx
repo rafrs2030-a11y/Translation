@@ -9,16 +9,17 @@ import Image from 'next/image';
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'instruction'>('loading');
   const [message, setMessage] = useState('');
   const supabase = createClient();
 
   useEffect(() => {
-    const verifyEmail = async () => {
-      const token = searchParams.get('token');
-      const type = searchParams.get('type');
+    const token = searchParams.get('token');
+    const type = searchParams.get('type');
+    const registered = searchParams.get('registered');
 
-      if (token && type === 'signup') {
+    if (token && type === 'signup') {
+      const verifyEmail = async () => {
         try {
           const { error } = await supabase.auth.verifyOtp({
             token_hash: token,
@@ -31,8 +32,7 @@ function VerifyEmailContent() {
           } else {
             setStatus('success');
             setMessage('تم التحقق من بريدك الإلكتروني بنجاح! سيتم توجيهك إلى لوحة التحكم.');
-            
-            // Get user role and redirect to appropriate dashboard
+
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
               const { data: userData } = await supabase
@@ -40,16 +40,12 @@ function VerifyEmailContent() {
                 .select('role')
                 .eq('id', user.id)
                 .single();
-              
+
               const userRole = userData?.role || 'researcher';
               setTimeout(() => {
-                // Handle all role types including super_admin
                 if (userRole === 'admin' || userRole === 'super_admin') {
                   router.push('/admin/dashboard');
-                } else if (userRole === 'researcher') {
-                  router.push('/researcher/dashboard');
                 } else {
-                  // Fallback to researcher dashboard
                   router.push('/researcher/dashboard');
                 }
               }, 2000);
@@ -63,13 +59,16 @@ function VerifyEmailContent() {
           setStatus('error');
           setMessage('حدث خطأ أثناء التحقق من البريد الإلكتروني.');
         }
-      } else {
-        setStatus('error');
-        setMessage('رابط التحقق غير صحيح أو منتهي الصلاحية.');
-      }
-    };
-
-    verifyEmail();
+      };
+      verifyEmail();
+    } else if (registered === 'true' || !token) {
+      // Show registration success message
+      setStatus('instruction');
+      setMessage('تم إنشاء حسابك بنجاح! يرجى التحقق من بريدك الإلكتروني (الوارد أو المزعج) لتنشيط حسابك قبل تسجيل الدخول.');
+    } else {
+      setStatus('error');
+      setMessage('رابط التحقق غير صحيح أو منتهي الصلاحية.');
+    }
   }, [searchParams, router, supabase]);
 
   return (
@@ -116,43 +115,57 @@ function VerifyEmailContent() {
               <h1>التحقق من البريد الإلكتروني</h1>
             </div>
 
-          {status === 'loading' && (
-            <div className="text-center">
-              <div className="loading-spinner" style={{ margin: '2rem auto' }}></div>
-              <p>جاري التحقق من بريدك الإلكتروني...</p>
-            </div>
-          )}
+            {status === 'loading' && (
+              <div className="text-center">
+                <div className="loading-spinner" style={{ margin: '2rem auto' }}></div>
+                <p>جاري التحقق من بريدك الإلكتروني...</p>
+              </div>
+            )}
 
-          {status === 'success' && (
-            <div className="alert alert-success">
-              <i className="fas fa-check-circle"></i>
-              <div>
-                <p>{message}</p>
-                <p style={{ marginTop: '1rem', fontSize: '0.9rem' }}>
-                  سيتم توجيهك إلى صفحة تسجيل الدخول تلقائياً...
-                </p>
+            {status === 'success' && (
+              <div className="alert alert-success">
+                <i className="fas fa-check-circle"></i>
+                <div>
+                  <p>{message}</p>
+                  <p style={{ marginTop: '1rem', fontSize: '0.9rem' }}>
+                    سيتم توجيهك إلى لوحة التحكم تلقائياً...
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {status === 'error' && (
-            <>
-              <div className="alert alert-error">
-                <i className="fas fa-exclamation-circle"></i>
-                <p>{message}</p>
+            {status === 'instruction' && (
+              <div className="alert alert-info" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#1e40af', border: '1px solid #3b82f6', padding: '2rem', borderRadius: '1rem', textAlign: 'center' }}>
+                <i className="fas fa-envelope-open-text" style={{ fontSize: '3rem', marginBottom: '1.5rem', display: 'block' }}></i>
+                <h2 style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>تفعيل الحساب</h2>
+                <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>{message}</p>
+                <div style={{ marginTop: '2rem' }}>
+                  <Link href="/login" className="btn btn-primary">
+                    <i className="fas fa-sign-in-alt"></i>
+                    الذهاب لصفحة تسجيل الدخول
+                  </Link>
+                </div>
               </div>
-              <div className="auth-footer">
-                <Link href="/login" className="btn btn-primary">
-                  <i className="fas fa-sign-in-alt"></i>
-                  تسجيل الدخول
-                </Link>
-                <Link href="/register" className="btn btn-outline">
-                  <i className="fas fa-user-plus"></i>
-                  إنشاء حساب جديد
-                </Link>
-              </div>
-            </>
-          )}
+            )}
+
+            {status === 'error' && (
+              <>
+                <div className="alert alert-error">
+                  <i className="fas fa-exclamation-circle"></i>
+                  <p>{message}</p>
+                </div>
+                <div className="auth-footer">
+                  <Link href="/login" className="btn btn-primary">
+                    <i className="fas fa-sign-in-alt"></i>
+                    تسجيل الدخول
+                  </Link>
+                  <Link href="/register" className="btn btn-outline">
+                    <i className="fas fa-user-plus"></i>
+                    إنشاء حساب جديد
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -173,7 +186,7 @@ function VerifyEmailContent() {
               />
               <h4 style={{ marginBottom: '1rem', color: 'white' }}>المنصة العالمية لنشر الأبحاث والدراسات العربية إلى الإنجليزية</h4>
               <p>تتشرف المنصة العالمية لنشر الأبحاث العربية إلى الإنجليزية الخاصة بشركة مساعد البحث للبحوث والدراسات باستقبال طلباتكم وأبحاثكم لنشرها في مجلات عالمية علمية محكمة <span className="no-break-text">ISI- Scopus (Q1-Q2-Q3-Q4)</span>.<br /><br />
-              وذلك لتمكين الهيئات والجامعات والمؤسسات والباحث الأكاديمي من النشر العالمي لأبحاثهم العلمية العربية عالمياً.</p>
+                وذلك لتمكين الهيئات والجامعات والمؤسسات والباحث الأكاديمي من النشر العالمي لأبحاثهم العلمية العربية عالمياً.</p>
             </div>
             <div className="footer-section">
               <h4>روابط سريعة</h4>

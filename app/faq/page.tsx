@@ -42,7 +42,7 @@ export default function FAQPage() {
                         <div className="legal-content">
                             <div className="faq-item" style={{ marginBottom: '2rem' }}>
                                 <h3 style={{ color: '#3D5A94' }}>كيف يمكنني تقديم بحث جديد؟</h3>
-                                <p>عن طريق إنشاء حساب باحث، ثم الانتقال إلى لوحة التحكم والضغط على "تقديم بحث جديد".</p>
+                                <p>عن طريق إنشاء حساب باحث، ثم الانتقال إلى لوحة التحكم والضغط على &quot;تقديم بحث جديد&quot;.</p>
                             </div>
                             <div className="faq-item" style={{ marginBottom: '2rem' }}>
                                 <h3 style={{ color: '#3D5A94' }}>كم يستغرق وقت المراجعة؟</h3>
