@@ -124,7 +124,7 @@ export default async function PrivacyPage() {
               />
               <h4 style={{ marginBottom: '1rem', color: 'white' }}>المنصة العالمية لنشر الأبحاث والدراسات العربية إلى الإنجليزية</h4>
               <p>تتشرف المنصة العالمية لنشر الأبحاث العربية إلى الإنجليزية الخاصة بشركة مساعد البحث للبحوث والدراسات باستقبال طلباتكم وأبحاثكم لنشرها في مجلات عالمية علمية محكمة <span className="no-break-text">ISI- Scopus (Q1-Q2-Q3-Q4)</span>.<br /><br />
-              وذلك لتمكين الهيئات والجامعات والمؤسسات والباحث الأكاديمي من النشر العالمي لأبحاثهم العلمية العربية عالمياً.</p>
+                وذلك لتمكين الهيئات والجامعات والمؤسسات والباحث الأكاديمي من النشر العالمي لأبحاثهم العلمية العربية عالمياً.</p>
             </div>
             <div className="footer-section">
               <h4>روابط سريعة</h4>
@@ -137,8 +137,9 @@ export default async function PrivacyPage() {
             <div className="footer-section">
               <h4>الدعم</h4>
               <ul>
-                <li><a href="#">الأسئلة الشائعة</a></li>
-                <li><a href="#">المساعدة</a></li>
+                <li><Link href="/instructions">دليل الاستخدام</Link></li>
+                <li><Link href="/faq">الأسئلة الشائعة</Link></li>
+                <li><Link href="/help">المساعدة</Link></li>
                 <li><Link href="/terms">الشروط والأحكام</Link></li>
                 <li><Link href="/privacy">سياسة الخصوصية</Link></li>
               </ul>

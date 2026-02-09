@@ -221,8 +221,8 @@ export default function HomePage() {
               <h4>الدعم</h4>
               <ul>
                 <li><Link href="/instructions">دليل الاستخدام</Link></li>
-                <li><a href="#">الأسئلة الشائعة</a></li>
-                <li><a href="#">المساعدة</a></li>
+                <li><Link href="/faq">الأسئلة الشائعة</Link></li>
+                <li><Link href="/help">المساعدة</Link></li>
                 <li><Link href="/terms">الشروط والأحكام</Link></li>
                 <li><Link href="/privacy">سياسة الخصوصية</Link></li>
               </ul>
