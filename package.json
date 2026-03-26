@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:cloudflare": "npx @opennextjs/cloudflare@latest build --dangerouslyUseUnsupportedNextVersion",
+    "preview": "npm run build:cloudflare && npx @opennextjs/cloudflare@latest preview",
+    "deploy": "npm run build:cloudflare && npx wrangler deploy",
     "start": "next start",
     "lint": "next lint",
     "db:migrate": "node database/run-migrations.js",
@@ -17,28 +20,24 @@
     "arabic",
     "platform"
   ],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@supabase/ssr": "^0.1.0",
     "@supabase/supabase-js": "^2.39.0",
     "bmad-method": "^4.44.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
-    "multer": "^1.4.5-lts.1",
-    "next": "^14.2.35",
-    "nodemailer": "^6.9.7",
+    "next": "^16.2.1",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "resend": "^4.0.0"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.17.3",
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "cypress": "^13.17.0",
-    "typescript": "^5.3.0",
     "eslint": "^8.57.0",
-    "eslint-config-next": "^14.2.0"
+    "eslint-config-next": "^14.2.0",
+    "typescript": "^5.3.0",
+    "wrangler": "^4.77.0"
   }
 }

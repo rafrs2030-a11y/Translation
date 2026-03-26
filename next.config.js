@@ -1,13 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
-  
-  // RTL support
-  i18n: {
-    locales: ['ar'],
-    defaultLocale: 'ar',
-  },
 
   // Environment variables
   env: {
@@ -17,27 +10,12 @@ const nextConfig = {
 
   // Images configuration
   images: {
-    domains: ['*.supabase.co'],
     remotePatterns: [
       {
         protocol: 'https',
         hostname: '**.supabase.co',
       },
     ],
-  },
-
-  // Webpack configuration for Supabase
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      };
-    }
-    
-    return config;
   },
 
   // Output configuration for Netlify
@@ -67,4 +45,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-
