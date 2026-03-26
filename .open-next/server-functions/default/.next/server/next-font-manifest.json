@@ -1,0 +1,131 @@
+{
+  "app": {
+    "[project]/app/_not-found/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/admin/dashboard/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/admin/monitoring/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/admin/notifications/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/admin/profile/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/admin/reports/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/admin/settings/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/admin/statistics/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/admin/submissions/[id]/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/admin/submissions/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/admin/users/[id]/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/admin/users/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/admin/verification-requests/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/faq/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/forgot-password/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/help/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/instructions/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/login/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/privacy/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/register/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/researcher/dashboard/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/researcher/notifications/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/researcher/profile/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/researcher/settings/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/researcher/submissions/[id]/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/researcher/submissions/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/researcher/submit/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/reset-password/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/terms/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ],
+    "[project]/app/verify-email/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2",
+      "static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}
