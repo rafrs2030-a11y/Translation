@@ -18,10 +18,10 @@ const nextConfig = {
     ],
   },
 
-  // Output configuration for Netlify
+  // Output configuration for Cloudflare Workers
   output: 'standalone',
   
-  // Server Actions are enabled by default in Next.js 14+
+  // Server Actions are enabled by default in Next.js 16+
   
   // Ensure we only use React/Next.js pages, not HTML files
   async rewrites() {

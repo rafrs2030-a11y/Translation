@@ -39,9 +39,6 @@ next-env.d.ts
 cypress/videos
 cypress/screenshots
 
-# netlify
-.netlify/
-.netlify/
 
 # build files
 *.zip
