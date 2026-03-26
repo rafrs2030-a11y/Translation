@@ -18,7 +18,8 @@ const nextConfig = {
     ],
   },
 
-  // Output configuration for Cloudflare Workers
+  // Output configuration for Cloudflare Workers (with OpenNext adapter)
+  // Must be 'standalone' for OpenNext to work
   output: 'standalone',
   
   // Server Actions are enabled by default in Next.js 16+
