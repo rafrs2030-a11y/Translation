@@ -63,3 +63,4 @@ cypress/screenshots
 /server/
 /stores/
 /config/
+/.next/cache/
