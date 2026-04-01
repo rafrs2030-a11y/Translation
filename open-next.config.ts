@@ -12,11 +12,6 @@ const config: OpenNextConfig = {
     },
   },
   edgeExternals: ['node:crypto'],
-  middleware: {
-    // Middleware is built into the main worker for maximum stability
-    // and to avoid cross-worker call failures.
-    external: false,
-  },
 };
 
 export default config;
