@@ -5,8 +5,7 @@ import { updateSession } from '@/lib/supabase/middleware';
 
 
 export async function middleware(request: NextRequest) {
-  // DIAGNOSTIC: Bypassing middleware to isolate 500 error source.
-  return NextResponse.next();
+  return await updateSession(request);
 }
 
 

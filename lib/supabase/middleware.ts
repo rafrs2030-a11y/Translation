@@ -7,19 +7,11 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 function getSupabaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 
-              process.env.SUPABASE_URL || 
-              (globalThis as any).NEXT_PUBLIC_SUPABASE_URL || 
-              (globalThis as any).SUPABASE_URL;
-  return url || '';
+  return 'https://rzenhmmwocctvonwhnrj.supabase.co';
 }
 
 function getSupabaseAnonKey(): string {
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
-              process.env.SUPABASE_ANON_KEY || 
-              (globalThis as any).NEXT_PUBLIC_SUPABASE_ANON_KEY || 
-              (globalThis as any).SUPABASE_ANON_KEY;
-  return key || '';
+  return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6ZW5obW13b2NjdHZvbndobnJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMyNzczMDYsImV4cCI6MjA1ODg1MzMwNn0.VqyJXgO5rG500wHdNt1ps2rkzwtXuHd2VTx9OpTN191dc880';
 }
 
 export async function updateSession(request: NextRequest) {

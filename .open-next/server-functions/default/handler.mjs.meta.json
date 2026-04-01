@@ -3638,16 +3638,6 @@
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/terms/page_client-reference-manifest.js": {
-      "bytes": 17807,
-      "imports": [],
-      "format": "cjs"
-    },
-    ".open-next/server-functions/default/.next/server/app/reset-password/page_client-reference-manifest.js": {
-      "bytes": 17963,
-      "imports": [],
-      "format": "cjs"
-    },
     ".open-next/server-functions/default/.next/server/app/register/page_client-reference-manifest.js": {
       "bytes": 17945,
       "imports": [],
@@ -3655,6 +3645,16 @@
     },
     ".open-next/server-functions/default/.next/server/app/privacy/page_client-reference-manifest.js": {
       "bytes": 17819,
+      "imports": [],
+      "format": "cjs"
+    },
+    ".open-next/server-functions/default/.next/server/app/terms/page_client-reference-manifest.js": {
+      "bytes": 17807,
+      "imports": [],
+      "format": "cjs"
+    },
+    ".open-next/server-functions/default/.next/server/app/reset-password/page_client-reference-manifest.js": {
+      "bytes": 17963,
       "imports": [],
       "format": "cjs"
     },
@@ -3678,13 +3678,13 @@
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/faq/page_client-reference-manifest.js": {
-      "bytes": 17795,
+    ".open-next/server-functions/default/.next/server/app/_not-found/page_client-reference-manifest.js": {
+      "bytes": 17793,
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/_not-found/page_client-reference-manifest.js": {
-      "bytes": 17793,
+    ".open-next/server-functions/default/.next/server/app/faq/page_client-reference-manifest.js": {
+      "bytes": 17795,
       "imports": [],
       "format": "cjs"
     },
@@ -3703,16 +3703,6 @@
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/researcher/profile/page_client-reference-manifest.js": {
-      "bytes": 18071,
-      "imports": [],
-      "format": "cjs"
-    },
-    ".open-next/server-functions/default/.next/server/app/researcher/settings/page_client-reference-manifest.js": {
-      "bytes": 18074,
-      "imports": [],
-      "format": "cjs"
-    },
     ".open-next/server-functions/default/.next/server/app/researcher/dashboard/page_client-reference-manifest.js": {
       "bytes": 18125,
       "imports": [],
@@ -3720,6 +3710,11 @@
     },
     ".open-next/server-functions/default/.next/server/app/researcher/notifications/page_client-reference-manifest.js": {
       "bytes": 18089,
+      "imports": [],
+      "format": "cjs"
+    },
+    ".open-next/server-functions/default/.next/server/app/researcher/profile/page_client-reference-manifest.js": {
+      "bytes": 18071,
       "imports": [],
       "format": "cjs"
     },
@@ -3733,8 +3728,33 @@
       "imports": [],
       "format": "cjs"
     },
+    ".open-next/server-functions/default/.next/server/app/researcher/settings/page_client-reference-manifest.js": {
+      "bytes": 18074,
+      "imports": [],
+      "format": "cjs"
+    },
     ".open-next/server-functions/default/.next/server/app/admin/statistics/page_client-reference-manifest.js": {
       "bytes": 18065,
+      "imports": [],
+      "format": "cjs"
+    },
+    ".open-next/server-functions/default/.next/server/app/admin/settings/page_client-reference-manifest.js": {
+      "bytes": 18059,
+      "imports": [],
+      "format": "cjs"
+    },
+    ".open-next/server-functions/default/.next/server/app/admin/profile/page_client-reference-manifest.js": {
+      "bytes": 18056,
+      "imports": [],
+      "format": "cjs"
+    },
+    ".open-next/server-functions/default/.next/server/app/admin/notifications/page_client-reference-manifest.js": {
+      "bytes": 18073,
+      "imports": [],
+      "format": "cjs"
+    },
+    ".open-next/server-functions/default/.next/server/app/admin/monitoring/page_client-reference-manifest.js": {
+      "bytes": 18063,
       "imports": [],
       "format": "cjs"
     },
@@ -3748,26 +3768,6 @@
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/admin/settings/page_client-reference-manifest.js": {
-      "bytes": 18059,
-      "imports": [],
-      "format": "cjs"
-    },
-    ".open-next/server-functions/default/.next/server/app/admin/notifications/page_client-reference-manifest.js": {
-      "bytes": 18073,
-      "imports": [],
-      "format": "cjs"
-    },
-    ".open-next/server-functions/default/.next/server/app/admin/profile/page_client-reference-manifest.js": {
-      "bytes": 18056,
-      "imports": [],
-      "format": "cjs"
-    },
-    ".open-next/server-functions/default/.next/server/app/admin/monitoring/page_client-reference-manifest.js": {
-      "bytes": 18063,
-      "imports": [],
-      "format": "cjs"
-    },
     ".open-next/server-functions/default/.next/server/app/admin/dashboard/page_client-reference-manifest.js": {
       "bytes": 18062,
       "imports": [],
@@ -3778,8 +3778,13 @@
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/api/auth/verify-email/route_client-reference-manifest.js": {
-      "bytes": 409,
+    ".open-next/server-functions/default/.next/server/app/admin/users/[id]/page_client-reference-manifest.js": {
+      "bytes": 18433,
+      "imports": [],
+      "format": "cjs"
+    },
+    ".open-next/server-functions/default/.next/server/app/admin/submissions/[id]/page_client-reference-manifest.js": {
+      "bytes": 18462,
       "imports": [],
       "format": "cjs"
     },
@@ -3788,8 +3793,8 @@
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/api/auth/me/route_client-reference-manifest.js": {
-      "bytes": 389,
+    ".open-next/server-functions/default/.next/server/app/api/auth/verify-email/route_client-reference-manifest.js": {
+      "bytes": 409,
       "imports": [],
       "format": "cjs"
     },
@@ -3798,23 +3803,18 @@
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/api/auth/login/route_client-reference-manifest.js": {
-      "bytes": 395,
-      "imports": [],
-      "format": "cjs"
-    },
     ".open-next/server-functions/default/.next/server/app/api/auth/logout/route_client-reference-manifest.js": {
       "bytes": 397,
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/admin/users/[id]/page_client-reference-manifest.js": {
-      "bytes": 18433,
+    ".open-next/server-functions/default/.next/server/app/api/auth/me/route_client-reference-manifest.js": {
+      "bytes": 389,
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/admin/submissions/[id]/page_client-reference-manifest.js": {
-      "bytes": 18462,
+    ".open-next/server-functions/default/.next/server/app/api/auth/login/route_client-reference-manifest.js": {
+      "bytes": 395,
       "imports": [],
       "format": "cjs"
     },
@@ -3857,16 +3857,6 @@
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/verify-email/page_client-reference-manifest.js"
         },
         {
-          "path": ".open-next/server-functions/default/.next/server/app/terms/page_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/terms/page_client-reference-manifest.js"
-        },
-        {
-          "path": ".open-next/server-functions/default/.next/server/app/reset-password/page_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/reset-password/page_client-reference-manifest.js"
-        },
-        {
           "path": ".open-next/server-functions/default/.next/server/app/register/page_client-reference-manifest.js",
           "kind": "require-call",
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/register/page_client-reference-manifest.js"
@@ -3875,6 +3865,16 @@
           "path": ".open-next/server-functions/default/.next/server/app/privacy/page_client-reference-manifest.js",
           "kind": "require-call",
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/privacy/page_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/terms/page_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/terms/page_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/reset-password/page_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/reset-password/page_client-reference-manifest.js"
         },
         {
           "path": ".open-next/server-functions/default/.next/server/app/login/page_client-reference-manifest.js",
@@ -3897,14 +3897,14 @@
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/forgot-password/page_client-reference-manifest.js"
         },
         {
-          "path": ".open-next/server-functions/default/.next/server/app/faq/page_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/faq/page_client-reference-manifest.js"
-        },
-        {
           "path": ".open-next/server-functions/default/.next/server/app/_not-found/page_client-reference-manifest.js",
           "kind": "require-call",
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/_not-found/page_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/faq/page_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/faq/page_client-reference-manifest.js"
         },
         {
           "path": ".open-next/server-functions/default/.next/server/app/_global-error/page_client-reference-manifest.js",
@@ -3922,16 +3922,6 @@
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/researcher/submissions/page_client-reference-manifest.js"
         },
         {
-          "path": ".open-next/server-functions/default/.next/server/app/researcher/profile/page_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/researcher/profile/page_client-reference-manifest.js"
-        },
-        {
-          "path": ".open-next/server-functions/default/.next/server/app/researcher/settings/page_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/researcher/settings/page_client-reference-manifest.js"
-        },
-        {
           "path": ".open-next/server-functions/default/.next/server/app/researcher/dashboard/page_client-reference-manifest.js",
           "kind": "require-call",
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/researcher/dashboard/page_client-reference-manifest.js"
@@ -3940,6 +3930,11 @@
           "path": ".open-next/server-functions/default/.next/server/app/researcher/notifications/page_client-reference-manifest.js",
           "kind": "require-call",
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/researcher/notifications/page_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/researcher/profile/page_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/researcher/profile/page_client-reference-manifest.js"
         },
         {
           "path": ".open-next/server-functions/default/.next/server/app/admin/verification-requests/page_client-reference-manifest.js",
@@ -3952,9 +3947,34 @@
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/users/page_client-reference-manifest.js"
         },
         {
+          "path": ".open-next/server-functions/default/.next/server/app/researcher/settings/page_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/researcher/settings/page_client-reference-manifest.js"
+        },
+        {
           "path": ".open-next/server-functions/default/.next/server/app/admin/statistics/page_client-reference-manifest.js",
           "kind": "require-call",
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/statistics/page_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/admin/settings/page_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/settings/page_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/admin/profile/page_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/profile/page_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/admin/notifications/page_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/notifications/page_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/admin/monitoring/page_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/monitoring/page_client-reference-manifest.js"
         },
         {
           "path": ".open-next/server-functions/default/.next/server/app/admin/submissions/page_client-reference-manifest.js",
@@ -3967,26 +3987,6 @@
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/reports/page_client-reference-manifest.js"
         },
         {
-          "path": ".open-next/server-functions/default/.next/server/app/admin/settings/page_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/settings/page_client-reference-manifest.js"
-        },
-        {
-          "path": ".open-next/server-functions/default/.next/server/app/admin/notifications/page_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/notifications/page_client-reference-manifest.js"
-        },
-        {
-          "path": ".open-next/server-functions/default/.next/server/app/admin/profile/page_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/profile/page_client-reference-manifest.js"
-        },
-        {
-          "path": ".open-next/server-functions/default/.next/server/app/admin/monitoring/page_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/monitoring/page_client-reference-manifest.js"
-        },
-        {
           "path": ".open-next/server-functions/default/.next/server/app/admin/dashboard/page_client-reference-manifest.js",
           "kind": "require-call",
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/dashboard/page_client-reference-manifest.js"
@@ -3997,36 +3997,6 @@
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/researcher/submissions/[id]/page_client-reference-manifest.js"
         },
         {
-          "path": ".open-next/server-functions/default/.next/server/app/api/auth/verify-email/route_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/api/auth/verify-email/route_client-reference-manifest.js"
-        },
-        {
-          "path": ".open-next/server-functions/default/.next/server/app/api/auth/reset-password-direct/route_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/api/auth/reset-password-direct/route_client-reference-manifest.js"
-        },
-        {
-          "path": ".open-next/server-functions/default/.next/server/app/api/auth/me/route_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/api/auth/me/route_client-reference-manifest.js"
-        },
-        {
-          "path": ".open-next/server-functions/default/.next/server/app/api/auth/register/route_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/api/auth/register/route_client-reference-manifest.js"
-        },
-        {
-          "path": ".open-next/server-functions/default/.next/server/app/api/auth/login/route_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/api/auth/login/route_client-reference-manifest.js"
-        },
-        {
-          "path": ".open-next/server-functions/default/.next/server/app/api/auth/logout/route_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/api/auth/logout/route_client-reference-manifest.js"
-        },
-        {
           "path": ".open-next/server-functions/default/.next/server/app/admin/users/[id]/page_client-reference-manifest.js",
           "kind": "require-call",
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/users/[id]/page_client-reference-manifest.js"
@@ -4035,6 +4005,36 @@
           "path": ".open-next/server-functions/default/.next/server/app/admin/submissions/[id]/page_client-reference-manifest.js",
           "kind": "require-call",
           "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/admin/submissions/[id]/page_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/api/auth/reset-password-direct/route_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/api/auth/reset-password-direct/route_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/api/auth/verify-email/route_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/api/auth/verify-email/route_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/api/auth/register/route_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/api/auth/register/route_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/api/auth/logout/route_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/api/auth/logout/route_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/api/auth/me/route_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/api/auth/me/route_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/api/auth/login/route_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "/Users/muhammedelnaggar/Desktop/Rafrs/Sites (translation and Experince)/Translation/.open-next/server-functions/default/.next/server/app/api/auth/login/route_client-reference-manifest.js"
         },
         {
           "path": ".open-next/server-functions/default/.next/server/app/api/admin/users/[id]/verification/route_client-reference-manifest.js",
@@ -10644,17 +10644,17 @@
         ".open-next/server-functions/default/.next/server/app/verify-email/page_client-reference-manifest.js": {
           "bytesInOutput": 16396
         },
-        ".open-next/server-functions/default/.next/server/app/terms/page_client-reference-manifest.js": {
-          "bytesInOutput": 16239
-        },
-        ".open-next/server-functions/default/.next/server/app/reset-password/page_client-reference-manifest.js": {
-          "bytesInOutput": 16404
-        },
         ".open-next/server-functions/default/.next/server/app/register/page_client-reference-manifest.js": {
           "bytesInOutput": 16380
         },
         ".open-next/server-functions/default/.next/server/app/privacy/page_client-reference-manifest.js": {
           "bytesInOutput": 16253
+        },
+        ".open-next/server-functions/default/.next/server/app/terms/page_client-reference-manifest.js": {
+          "bytesInOutput": 16239
+        },
+        ".open-next/server-functions/default/.next/server/app/reset-password/page_client-reference-manifest.js": {
+          "bytesInOutput": 16404
         },
         ".open-next/server-functions/default/.next/server/app/login/page_client-reference-manifest.js": {
           "bytesInOutput": 16368
@@ -10668,11 +10668,11 @@
         ".open-next/server-functions/default/.next/server/app/forgot-password/page_client-reference-manifest.js": {
           "bytesInOutput": 16409
         },
-        ".open-next/server-functions/default/.next/server/app/faq/page_client-reference-manifest.js": {
-          "bytesInOutput": 16226
-        },
         ".open-next/server-functions/default/.next/server/app/_not-found/page_client-reference-manifest.js": {
           "bytesInOutput": 16231
+        },
+        ".open-next/server-functions/default/.next/server/app/faq/page_client-reference-manifest.js": {
+          "bytesInOutput": 16226
         },
         ".open-next/server-functions/default/.next/server/app/_global-error/page_client-reference-manifest.js": {
           "bytesInOutput": 16240
@@ -10683,17 +10683,14 @@
         ".open-next/server-functions/default/.next/server/app/researcher/submissions/page_client-reference-manifest.js": {
           "bytesInOutput": 16581
         },
-        ".open-next/server-functions/default/.next/server/app/researcher/profile/page_client-reference-manifest.js": {
-          "bytesInOutput": 16517
-        },
-        ".open-next/server-functions/default/.next/server/app/researcher/settings/page_client-reference-manifest.js": {
-          "bytesInOutput": 16521
-        },
         ".open-next/server-functions/default/.next/server/app/researcher/dashboard/page_client-reference-manifest.js": {
           "bytesInOutput": 16573
         },
         ".open-next/server-functions/default/.next/server/app/researcher/notifications/page_client-reference-manifest.js": {
           "bytesInOutput": 16541
+        },
+        ".open-next/server-functions/default/.next/server/app/researcher/profile/page_client-reference-manifest.js": {
+          "bytesInOutput": 16517
         },
         ".open-next/server-functions/default/.next/server/app/admin/verification-requests/page_client-reference-manifest.js": {
           "bytesInOutput": 16553
@@ -10701,8 +10698,23 @@
         ".open-next/server-functions/default/.next/server/app/admin/users/page_client-reference-manifest.js": {
           "bytesInOutput": 16489
         },
+        ".open-next/server-functions/default/.next/server/app/researcher/settings/page_client-reference-manifest.js": {
+          "bytesInOutput": 16521
+        },
         ".open-next/server-functions/default/.next/server/app/admin/statistics/page_client-reference-manifest.js": {
           "bytesInOutput": 16509
+        },
+        ".open-next/server-functions/default/.next/server/app/admin/settings/page_client-reference-manifest.js": {
+          "bytesInOutput": 16501
+        },
+        ".open-next/server-functions/default/.next/server/app/admin/profile/page_client-reference-manifest.js": {
+          "bytesInOutput": 16497
+        },
+        ".open-next/server-functions/default/.next/server/app/admin/notifications/page_client-reference-manifest.js": {
+          "bytesInOutput": 16520
+        },
+        ".open-next/server-functions/default/.next/server/app/admin/monitoring/page_client-reference-manifest.js": {
+          "bytesInOutput": 16507
         },
         ".open-next/server-functions/default/.next/server/app/admin/submissions/page_client-reference-manifest.js": {
           "bytesInOutput": 16513
@@ -10710,47 +10722,35 @@
         ".open-next/server-functions/default/.next/server/app/admin/reports/page_client-reference-manifest.js": {
           "bytesInOutput": 16497
         },
-        ".open-next/server-functions/default/.next/server/app/admin/settings/page_client-reference-manifest.js": {
-          "bytesInOutput": 16501
-        },
-        ".open-next/server-functions/default/.next/server/app/admin/notifications/page_client-reference-manifest.js": {
-          "bytesInOutput": 16520
-        },
-        ".open-next/server-functions/default/.next/server/app/admin/profile/page_client-reference-manifest.js": {
-          "bytesInOutput": 16497
-        },
-        ".open-next/server-functions/default/.next/server/app/admin/monitoring/page_client-reference-manifest.js": {
-          "bytesInOutput": 16507
-        },
         ".open-next/server-functions/default/.next/server/app/admin/dashboard/page_client-reference-manifest.js": {
           "bytesInOutput": 16505
         },
         ".open-next/server-functions/default/.next/server/app/researcher/submissions/[id]/page_client-reference-manifest.js": {
           "bytesInOutput": 17040
         },
-        ".open-next/server-functions/default/.next/server/app/api/auth/verify-email/route_client-reference-manifest.js": {
-          "bytesInOutput": 577
-        },
-        ".open-next/server-functions/default/.next/server/app/api/auth/reset-password-direct/route_client-reference-manifest.js": {
-          "bytesInOutput": 605
-        },
-        ".open-next/server-functions/default/.next/server/app/api/auth/me/route_client-reference-manifest.js": {
-          "bytesInOutput": 548
-        },
-        ".open-next/server-functions/default/.next/server/app/api/auth/register/route_client-reference-manifest.js": {
-          "bytesInOutput": 566
-        },
-        ".open-next/server-functions/default/.next/server/app/api/auth/login/route_client-reference-manifest.js": {
-          "bytesInOutput": 557
-        },
-        ".open-next/server-functions/default/.next/server/app/api/auth/logout/route_client-reference-manifest.js": {
-          "bytesInOutput": 560
-        },
         ".open-next/server-functions/default/.next/server/app/admin/users/[id]/page_client-reference-manifest.js": {
           "bytesInOutput": 16877
         },
         ".open-next/server-functions/default/.next/server/app/admin/submissions/[id]/page_client-reference-manifest.js": {
           "bytesInOutput": 16912
+        },
+        ".open-next/server-functions/default/.next/server/app/api/auth/reset-password-direct/route_client-reference-manifest.js": {
+          "bytesInOutput": 604
+        },
+        ".open-next/server-functions/default/.next/server/app/api/auth/verify-email/route_client-reference-manifest.js": {
+          "bytesInOutput": 578
+        },
+        ".open-next/server-functions/default/.next/server/app/api/auth/register/route_client-reference-manifest.js": {
+          "bytesInOutput": 566
+        },
+        ".open-next/server-functions/default/.next/server/app/api/auth/logout/route_client-reference-manifest.js": {
+          "bytesInOutput": 560
+        },
+        ".open-next/server-functions/default/.next/server/app/api/auth/me/route_client-reference-manifest.js": {
+          "bytesInOutput": 548
+        },
+        ".open-next/server-functions/default/.next/server/app/api/auth/login/route_client-reference-manifest.js": {
+          "bytesInOutput": 557
         },
         ".open-next/server-functions/default/.next/server/app/api/admin/users/[id]/verification/route_client-reference-manifest.js": {
           "bytesInOutput": 614
