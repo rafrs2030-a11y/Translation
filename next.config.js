@@ -10,10 +10,6 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
 
-  experimental: {
-    turbo: false,
-  },
-
   // Images configuration
   images: {
     remotePatterns: [
