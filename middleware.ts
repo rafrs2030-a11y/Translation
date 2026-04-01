@@ -1,12 +1,14 @@
-import { type NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
 // Next.js 16/App Router Middleware
 
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request);
+  // DIAGNOSTIC: Bypassing middleware to isolate 500 error source.
+  return NextResponse.next();
 }
+
 
 export const config = {
   matcher: [
