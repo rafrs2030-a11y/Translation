@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
-    "build:cloudflare": "npx @opennextjs/cloudflare@latest build --dangerouslyUseUnsupportedNextVersion && find .open-next -mindepth 1 -maxdepth 1 ! -name assets -exec cp -r {} .open-next/assets/ \\; && mv .open-next/assets/worker.js .open-next/assets/_worker.js",
+    "build:cloudflare": "npx @opennextjs/cloudflare@latest build --dangerouslyUseUnsupportedNextVersion && cp .open-next/worker.js .open-next/assets/_worker.js && echo '{\"version\":1,\"include\":[\"/*\"],\"exclude\":[\"/_next/static/*\",\"/_next/image/*\",\"/favicon.ico\",\"/images/*\",\"/robots.txt\",\"/sw.js\"]}' > .open-next/assets/_routes.json",
     "preview": "npm run build:cloudflare && npx @opennextjs/cloudflare@latest preview",
     "deploy": "npm run build:cloudflare && npx wrangler deploy",
     "start": "next start",
