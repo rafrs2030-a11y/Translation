@@ -1,0 +1,43 @@
+{
+  "name": "assistant-for-evaluating-scientific-research",
+  "version": "1.0.0",
+  "description": "Arab Research Publishing Platform - A digital platform for Arabic researchers to publish research globally",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build --webpack",
+    "build:cloudflare": "npx @opennextjs/cloudflare@latest build --dangerouslyUseUnsupportedNextVersion && find .open-next -mindepth 1 -maxdepth 1 ! -name assets -exec cp -r {} .open-next/assets/ \\; && mv .open-next/assets/worker.js .open-next/assets/_worker.js && echo '{\"version\":1,\"include\":[\"/*\"],\"exclude\":[\"/_next/static/*\",\"/_next/image/*\",\"/favicon.ico\",\"/images/*\",\"/robots.txt\",\"/sw.js\"]}' > .open-next/assets/_routes.json",
+    "preview": "npm run build:cloudflare && npx @opennextjs/cloudflare@latest preview",
+    "deploy": "npm run build:cloudflare && npx wrangler deploy",
+    "start": "next start",
+    "lint": "next lint",
+    "db:migrate": "node database/run-migrations.js",
+    "db:seed": "psql $DATABASE_URL -f database/seed.sql"
+  },
+  "keywords": [
+    "research",
+    "publishing",
+    "arabic",
+    "platform"
+  ],
+  "dependencies": {
+    "@supabase/ssr": "^0.1.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "bmad-method": "^4.44.3",
+    "next": "^16.2.1",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "resend": "^4.0.0"
+  },
+  "devDependencies": {
+    "@opennextjs/cloudflare": "^1.18.0",
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "cypress": "^13.17.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0",
+    "typescript": "^5.3.0",
+    "wrangler": "^4.77.0"
+  }
+}

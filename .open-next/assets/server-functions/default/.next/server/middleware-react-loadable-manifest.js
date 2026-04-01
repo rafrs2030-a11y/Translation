@@ -1,0 +1,1 @@
+self.__REACT_LOADABLE_MANIFEST='{"app/admin/dashboard/page.tsx -> @/lib/supabase/client":{"id":7236,"files":[]}}';

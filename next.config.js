@@ -2,9 +2,14 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Environment variables are managed via Cloudflare Dashboard
-  // during runtime (worker bindings).
-
+  // Environment variables are hardcoded for maximum stability
+  // in the compiled worker bundle.
+  env: {
+    SUPABASE_URL: 'https://rzenhmmwocctvonwhnrj.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6ZW5obW13b2NjdHZvbndobnJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMyNzczMDYsImV4cCI6MjA1ODg1MzMwNn0.VqyJXgO5rG500wHdNt1ps2rkzwtXuHd2VTx9OpTN191dc880',
+    NEXT_PUBLIC_SUPABASE_URL: 'https://rzenhmmwocctvonwhnrj.supabase.co',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6ZW5obW13b2NjdHZvbndobnJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMyNzczMDYsImV4cCI6MjA1ODg1MzMwNn0.VqyJXgO5rG500wHdNt1ps2rkzwtXuHd2VTx9OpTN191dc880',
+  },
 
   // Images configuration
   images: {

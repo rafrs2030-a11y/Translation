@@ -13,15 +13,9 @@ const config: OpenNextConfig = {
   },
   edgeExternals: ['node:crypto'],
   middleware: {
-    external: true,
-    override: {
-      wrapper: 'cloudflare-edge',
-      converter: 'edge',
-      proxyExternalRequest: 'fetch',
-      incrementalCache: 'dummy',
-      tagCache: 'dummy',
-      queue: 'dummy',
-    },
+    // Middleware is built into the main worker for maximum stability
+    // and to avoid cross-worker call failures.
+    external: false,
   },
 };
 
