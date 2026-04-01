@@ -7,13 +7,13 @@ import { createBrowserClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 function getSupabaseUrl(): string | undefined {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 
+              process.env.SUPABASE_URL || 
+              (globalThis as any).NEXT_PUBLIC_SUPABASE_URL || 
+              (globalThis as any).SUPABASE_URL;
   if (!url) {
-    // Log warning but don't throw - allow graceful degradation
     if (typeof window !== 'undefined') {
-      console.warn(
-        '⚠️ Missing Supabase URL. Please set NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL in your environment variables.'
-      );
+      console.warn('⚠️ Missing Supabase URL in client context.');
     }
     return undefined;
   }
@@ -21,13 +21,13 @@ function getSupabaseUrl(): string | undefined {
 }
 
 function getSupabaseAnonKey(): string | undefined {
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+              process.env.SUPABASE_ANON_KEY || 
+              (globalThis as any).NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+              (globalThis as any).SUPABASE_ANON_KEY;
   if (!key) {
-    // Log warning but don't throw - allow graceful degradation
     if (typeof window !== 'undefined') {
-      console.warn(
-        '⚠️ Missing Supabase Anon Key. Please set NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY in your environment variables.'
-      );
+      console.warn('⚠️ Missing Supabase Anon Key in client context.');
     }
     return undefined;
   }

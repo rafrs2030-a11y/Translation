@@ -8,29 +8,34 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 function getSupabaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  if (!url) {
-    throw new Error(
-      'Missing Supabase URL. Please set NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL in your .env.local file.'
-    );
-  }
-  return url;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 
+              process.env.SUPABASE_URL || 
+              (globalThis as any).NEXT_PUBLIC_SUPABASE_URL || 
+              (globalThis as any).SUPABASE_URL;
+  return url || '';
 }
 
 function getSupabaseAnonKey(): string {
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-  if (!key) {
-    throw new Error(
-      'Missing Supabase Anon Key. Please set NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY in your .env.local file.'
-    );
-  }
-  return key;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+              process.env.SUPABASE_ANON_KEY || 
+              (globalThis as any).NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+              (globalThis as any).SUPABASE_ANON_KEY;
+  return key || '';
 }
 
 export async function createClient() {
   const cookieStore = await cookies();
   const supabaseUrl = getSupabaseUrl();
   const supabaseAnonKey = getSupabaseAnonKey();
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Supabase credentials missing on server. Deployment may be incomplete or missing secrets.');
+    // Return a proxy that handles common cases
+    return {
+      auth: { getUser: async () => ({ data: { user: null }, error: null }) },
+      from: () => ({ select: () => ({ eq: () => ({ data: [], error: null }) }) }),
+    } as any;
+  }
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {

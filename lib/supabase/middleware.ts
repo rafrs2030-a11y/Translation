@@ -7,25 +7,19 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 function getSupabaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  if (!url) {
-    // Return empty string to allow middleware to pass through during build
-    // Runtime errors will be handled by the application
-    console.warn('Missing Supabase URL in middleware');
-    return '';
-  }
-  return url;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 
+              process.env.SUPABASE_URL || 
+              (globalThis as any).NEXT_PUBLIC_SUPABASE_URL || 
+              (globalThis as any).SUPABASE_URL;
+  return url || '';
 }
 
 function getSupabaseAnonKey(): string {
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-  if (!key) {
-    // Return empty string to allow middleware to pass through during build
-    // Runtime errors will be handled by the application
-    console.warn('Missing Supabase Anon Key in middleware');
-    return '';
-  }
-  return key;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+              process.env.SUPABASE_ANON_KEY || 
+              (globalThis as any).NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+              (globalThis as any).SUPABASE_ANON_KEY;
+  return key || '';
 }
 
 export async function updateSession(request: NextRequest) {
